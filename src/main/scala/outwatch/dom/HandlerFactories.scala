@@ -2,15 +2,12 @@ package outwatch.dom
 
 import cats.effect.IO
 import org.scalajs.dom.{ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent}
-import outwatch.dom.helpers.InputEvent
 
 /**
   * Trait containing event handlers, so they can be mixed in to other objects if needed.
   */
 trait HandlerFactories {
 
-  @deprecated("Use Handler.inputEvents instead", "0.11.0")
-  def createInputHandler() = Handler.create[InputEvent]
   @deprecated("Use Handler.mouseEvents instead", "0.11.0")
   def createMouseHandler() = Handler.create[MouseEvent]
   @deprecated("Use Handler.keyboardEvents instead", "0.11.0")
@@ -32,7 +29,6 @@ trait HandlerFactories {
 
 
   implicit class HandlerCreateHelpers(handler: Handler.type) {
-    lazy val inputEvents = Handler.create[InputEvent]
     lazy val mouseEvents = Handler.create[MouseEvent]
     lazy val keyboardEvents = Handler.create[KeyboardEvent]
     lazy val dragEvents = Handler.create[DragEvent]
