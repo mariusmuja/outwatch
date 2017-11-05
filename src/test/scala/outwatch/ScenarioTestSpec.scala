@@ -1,7 +1,5 @@
 package outwatch
 
-import java.util.concurrent.TimeUnit
-
 import monix.eval.Task
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
@@ -10,9 +8,6 @@ import org.scalajs.dom.raw.HTMLInputElement
 import org.scalatest.BeforeAndAfterEach
 import outwatch.dom._
 import outwatch.dom.helpers.DomUtils
-
-import scala.concurrent.Future
-import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 
 class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
   override def afterEach(): Unit = {
@@ -24,13 +19,6 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     root.id = "app"
     document.body.appendChild(root)
     ()
-  }
-
-
-  private def waitForDispatch[T](expr: => T): Future[T] = {
-    Task(expr)
-      .delayExecution(FiniteDuration(10, TimeUnit.MILLISECONDS))
-      .runAsync
   }
 
   "A simple counter application" should "work as intended" in {
@@ -62,13 +50,21 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
 
     document.getElementById("counter").innerHTML shouldBe 0.toString
 
-    document.getElementById("minus").dispatchEvent(event)
-    waitForDispatch(document.getElementById("counter").innerHTML shouldBe (-1).toString)
+    val testMinus = for {
+      _ <- Task(document.getElementById("minus").dispatchEvent(event))
+      assertion <- Task(document.getElementById("counter").innerHTML shouldBe (-1).toString)
+    } yield assertion
 
-    for (i <- 0 to 10) {
-      document.getElementById("plus").dispatchEvent(event)
-      waitForDispatch(document.getElementById("counter").innerHTML shouldBe i.toString)
-    }
+    testMinus.runAsync
+
+    def testPlus = Task.sequence(for (i <- 0 to 10) yield {
+      for {
+        _ <- Task(document.getElementById("plus").dispatchEvent(event))
+        assertion <- Task(document.getElementById("counter").innerHTML shouldBe i.toString)
+      } yield assertion
+    })
+
+    testPlus.runAsync
 
   }
 
@@ -221,29 +217,31 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    waitForDispatch(list.childElementCount shouldBe 1)
+    Task(list.childElementCount shouldBe 1).runAsync
 
     val todo2 = "wash dishes"
     inputElement.value = todo2
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    waitForDispatch(list.childElementCount shouldBe 2)
+    Task(list.childElementCount shouldBe 2).runAsync
 
     val todo3 = "clean windows"
     inputElement.value = todo3
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    for {
-      _ <- waitForDispatch(list.childElementCount shouldBe 3)
-      _ <- waitForDispatch(document.getElementById(todo2)).map(_.dispatchEvent(clickEvt))
-      _ <- waitForDispatch(list.childElementCount shouldBe 2)
-      _ <- waitForDispatch(document.getElementById(todo3)).map(_.dispatchEvent(clickEvt))
-      _ <- waitForDispatch(list.childElementCount shouldBe 1)
-      _ <- waitForDispatch(document.getElementById(todo)).map(_.dispatchEvent(clickEvt))
-      _ <- waitForDispatch(list.childElementCount shouldBe 0)
+    val test = for {
+      _ <- Task(list.childElementCount shouldBe 3)
+      _ <- Task(document.getElementById(todo2).dispatchEvent(clickEvt))
+      _ <- Task(list.childElementCount shouldBe 2)
+      _ <- Task(document.getElementById(todo3).dispatchEvent(clickEvt))
+      _ <- Task(list.childElementCount shouldBe 1)
+      _ <- Task(document.getElementById(todo).dispatchEvent(clickEvt))
+      _ <- Task(list.childElementCount shouldBe 0)
     } yield ()
+
+    test.runAsync
 
 
 
