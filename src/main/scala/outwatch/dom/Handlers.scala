@@ -4,8 +4,8 @@ import org.scalajs.dom.MouseEvent
 import org.scalajs.dom.raw.{ClipboardEvent, DragEvent, KeyboardEvent}
 import outwatch.Sink
 import outwatch.dom.helpers.InputEvent
-import rxscalajs.Observable
 import cats.effect.IO
+import monix.reactive.Observable
 
 /**
   * Trait containing event handlers, so they can be mixed in to other objects if needed.

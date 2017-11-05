@@ -1,8 +1,8 @@
 package outwatch.util
 
 import cats.effect.IO
+import monix.reactive.Observable
 import outwatch.dom.{Attribute, AttributeStreamReceiver}
-import rxscalajs.Observable
 
 
 object SyntaxSugar {

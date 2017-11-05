@@ -1,36 +1,38 @@
 package outwatch.util
 
 import cats.effect.IO
+import monix.execution.{Ack, Cancelable, Scheduler}
+import monix.reactive.Observable
 import outwatch.Sink
 import outwatch.dom._
 import outwatch.dom.helpers.STRef
-import rxscalajs.Observable
-import rxscalajs.subscription.Subscription
 
+import scala.concurrent.Future
 import scala.language.implicitConversions
 
 
 final case class Store[State, Action](initialState: State,
                                            reducer: (State, Action) => (State, Option[IO[Action]]),
-                                           handler: Observable[Action] with Sink[Action]) {
+                                           handler: Observable[Action] with Sink[Action]
+                                     )(implicit scheduler: Scheduler) {
   val sink: Sink[Action] = handler
   val source: Observable[State] = handler
     .scan(initialState)(fold)
-    .startWith(initialState)
+    .startWith(Seq(initialState))
     .share
 
   private def fold(state: State, action: Action): State = {
     val (newState, next) = reducer(state, action)
 
     next.foreach(_.unsafeRunAsync {
-      case Left(e) => sink.observer.error(e.toString)
-      case Right(r) => sink.observer.next(r)
+      case Left(e) => sink.observer.onError(e)
+      case Right(r) => sink.observer.onNext(r)
     })
 
     newState
   }
 
-  def subscribe(f: State => IO[Unit]): IO[Subscription] =
+  def subscribe(f: State => IO[Future[Ack]]): IO[Cancelable] =
     IO(source.subscribe(f andThen(_.unsafeRunSync())))
 }
 
@@ -40,7 +42,8 @@ object Store {
 
   private val storeRef = STRef.empty
 
-  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode): IO[Unit] = for {
+  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode)
+                           (implicit scheduler: Scheduler): IO[Unit] = for {
     handler <- createHandler[A]()
     store <- IO(Store(initialState, reducer, handler))
     _ <- storeRef.asInstanceOf[STRef[Store[S, A]]].put(store)

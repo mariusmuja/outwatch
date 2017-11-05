@@ -1,10 +1,18 @@
 package outwatch
 
+import java.util.concurrent.TimeUnit
+
+import monix.eval.Task
+import monix.execution.Scheduler.Implicits.global
+import monix.reactive.Observable
 import org.scalajs.dom._
 import org.scalajs.dom.raw.HTMLInputElement
 import org.scalatest.BeforeAndAfterEach
 import outwatch.dom._
 import outwatch.dom.helpers.DomUtils
+
+import scala.concurrent.Future
+import scala.concurrent.duration.{FiniteDuration, TimeUnit}
 
 class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
   override def afterEach(): Unit = {
@@ -18,27 +26,40 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     ()
   }
 
+
+  private def eval[T](expr: => T): Future[T] = {
+    Task(expr)
+      .delayExecution(FiniteDuration(10, TimeUnit.MILLISECONDS))
+      .runAsync
+  }
+
   "A simple counter application" should "work as intended" in {
-    val node = for {
+    val node = (for {
       handlePlus <- createMouseHandler()
-      plusOne = handlePlus.mapTo(1)
+      plusOne = handlePlus.map(_ => 1)
 
       handleMinus <- createMouseHandler()
-      minusOne = handleMinus.mapTo(-1)
+      minusOne = handleMinus.map{_ =>
+        println("Hanlde minus")
+        -1}
 
-      count = plusOne.merge(minusOne).scan(0)(_ + _).startWith(0)
-    } yield div(
+      count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
+    } yield (handlePlus, handleMinus, count))
+      .flatMap { case (handlePlus, handleMinus, count) =>
+
         div(
-          button(id := "plus", "+", click --> handlePlus),
-          button(id := "minus", "-", click --> handleMinus),
-          span(id:="counter",child <-- count)
+          div(
+            button(id := "plus", "+", click --> handlePlus),
+            button(id := "minus", "-", click --> handleMinus),
+            span(id := "counter", child <-- count)
+          )
         )
-      )
+      }
 
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    node.flatMap(node => DomUtils.render(root, node)).unsafeRunSync()
+    DomUtils.render(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
@@ -47,11 +68,12 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
 
     document.getElementById("minus").dispatchEvent(event)
 
-    document.getElementById("counter").innerHTML shouldBe (-1).toString
+    eval(document.getElementById("counter").innerHTML shouldBe (-1).toString)
+
 
     for (i <- 0 to 10) {
       document.getElementById("plus").dispatchEvent(event)
-      document.getElementById("counter").innerHTML shouldBe i.toString
+      eval(document.getElementById("counter").innerHTML shouldBe i.toString)
     }
 
   }
@@ -139,13 +161,13 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
 
       buttonDisabled = textFieldStream
         .map(_.length < 2)
-        .startWith(true)
+        .startWith(Seq(true))
 
       enterPressed = keyStream
         .filter(_.key == "Enter")
 
-      confirm = enterPressed.merge(clickStream)
-        .withLatestFromWith(textFieldStream)((_, input) => input)
+      confirm = Observable.merge(enterPressed, clickStream)
+        .withLatestFrom(textFieldStream)((_, input) => input)
 
       _ <- (outputStream <-- confirm)
     } yield div(
@@ -174,7 +196,7 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
       deletes = deleteHandler
         .map(removeFromList)
 
-      state = adds.merge(deletes)
+      state = Observable.merge(adds, deletes)
         .scan(Vector[String]())((state, modify) => modify(state))
         .map(_.map(n => TodoComponent(n, deleteHandler)))
       textFieldComponent <- TextFieldComponent("Todo: ", inputHandler)
@@ -205,33 +227,33 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 1
+    eval(list.childElementCount shouldBe 1)
 
     val todo2 = "wash dishes"
     inputElement.value = todo2
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 2
+    eval(list.childElementCount shouldBe 2)
 
     val todo3 = "clean windows"
     inputElement.value = todo3
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 3
+    eval(list.childElementCount shouldBe 3)
 
     document.getElementById(todo2).dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 2
+    eval(list.childElementCount shouldBe 2)
 
     document.getElementById(todo3).dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 1
+    eval(list.childElementCount shouldBe 1)
 
     document.getElementById(todo).dispatchEvent(clickEvt)
 
-    list.childElementCount shouldBe 0
+    eval(list.childElementCount shouldBe 0)
 
   }
 }

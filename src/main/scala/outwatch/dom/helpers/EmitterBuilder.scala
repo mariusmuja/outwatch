@@ -1,10 +1,11 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
+import monix.reactive.{Observable, Observer}
 import org.scalajs.dom._
 import outwatch.Sink
 import outwatch.dom.{BoolEventEmitter, NumberEventEmitter, StringEventEmitter, _}
-import rxscalajs.{Observable, Observer}
+import monix.execution.Scheduler.Implicits.global
 
 final case class GenericMappedEmitterBuilder[T,E](constructor: Observer[E] => Emitter, mapping: E => T){
   def -->[U >: T](sink: Sink[U]): IO[Emitter] = {
@@ -24,7 +25,7 @@ final case class FilteredGenericMappedEmitterBuilder[T,E](
 
 final case class WithLatestFromEmitterBuilder[T, E <: Event](eventType: String, stream: Observable[T]) {
   def -->[U >: T](sink: Sink[U]): IO[EventEmitter[E]] = {
-    val proxy: Sink[E] = sink.redirect[E](_.withLatestFromWith(stream)((_,u) => u))
+    val proxy: Sink[E] = sink.redirect[E](_.withLatestFrom(stream)((_,u) => u))
     IO.pure(EventEmitter(eventType, proxy.observer))
   }
 }
@@ -35,7 +36,7 @@ final case class FilteredWithLatestFromEmitterBuilder[T, E <: Event](
   predicate: E => Boolean
 ) {
   def -->[U >: T](sink: Sink[U]): IO[EventEmitter[E]] = {
-    val proxy: Sink[E] = sink.redirect(_.filter(predicate).withLatestFromWith(stream)((_, u) => u))
+    val proxy: Sink[E] = sink.redirect(_.filter(predicate).withLatestFrom(stream)((_, u) => u))
     IO.pure(EventEmitter(eventType, proxy.observer))
   }
 }

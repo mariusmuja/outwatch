@@ -1,10 +1,10 @@
 package outwatch
 
+import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
 import org.scalajs.dom.raw.{HTMLInputElement, MouseEvent}
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.prop.PropertyChecks
-import rxscalajs.Subject
 
 class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks {
 
@@ -24,7 +24,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
 
     val vtree = for {
       observable <- createMouseHandler()
-      buttonDisabled = observable.mapTo(true).startWith(false)
+      buttonDisabled = observable.map(_ => true).startWith(Seq(false))
     } yield div(id :="click", click --> observable,
         button(id := "btn", disabled <-- buttonDisabled)
       )
@@ -87,7 +87,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     document.getElementById("child").innerHTML shouldBe ""
 
     val firstMessage = "First"
-    messages.asInstanceOf[Subject[String]].next(firstMessage)
+    messages.observer.onNext(firstMessage)
 
     val event = document.createEvent("Events")
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
@@ -101,7 +101,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     document.getElementById("child").innerHTML shouldBe firstMessage
 
     val secondMessage = "Second"
-    messages.asInstanceOf[Subject[String]].next(secondMessage)
+    messages.observer.onNext(secondMessage)
 
     document.getElementById("click").dispatchEvent(event)
 
@@ -111,7 +111,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
   it should "be able to set the value of a text field" in {
     import outwatch.dom._
 
-    val values = Subject[String]
+    val values = PublishSubject[String]
 
     val vtree = input(id:= "input", outwatch.dom.value <-- values)
 
@@ -122,16 +122,16 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     patched.value shouldBe ""
 
     val value1 = "Hello"
-    values.next(value1)
+    values.onNext(value1)
 
     patched.value shouldBe value1
 
     val value2 = "World"
-    values.next(value2)
+    values.onNext(value2)
 
     patched.value shouldBe value2
 
-    values.next("")
+    values.onNext("")
 
     patched.value shouldBe ""
   }
@@ -140,7 +140,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     import outwatch.dom._
 
 
-    val state = Subject[Seq[VNode]]
+    val state = PublishSubject[Seq[VNode]]
 
 
     val vtree = div(
@@ -155,13 +155,13 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
 
     val first = "Test"
 
-    state.next(Seq(span(first)))
+    state.onNext(Seq(span(first)))
 
     list.childElementCount shouldBe 1
     list.innerHTML.contains(first) shouldBe true
 
     val second = "Hello"
-    state.next(Seq(span(first), span(second)))
+    state.onNext(Seq(span(first), span(second)))
 
     list.childElementCount shouldBe 2
     list.innerHTML.contains(first) shouldBe true
@@ -169,14 +169,14 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
 
     val third = "World"
 
-    state.next(Seq(span(first), span(second), span(third)))
+    state.onNext(Seq(span(first), span(second), span(third)))
 
     list.childElementCount shouldBe 3
     list.innerHTML.contains(first) shouldBe true
     list.innerHTML.contains(second) shouldBe true
     list.innerHTML.contains(third) shouldBe true
 
-    state.next(Seq(span(first), span(third)))
+    state.onNext(Seq(span(first), span(third)))
 
     list.childElementCount shouldBe 2
     list.innerHTML.contains(first) shouldBe true

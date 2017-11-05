@@ -1,11 +1,12 @@
 package snabbdom
 
+import monix.reactive.Observer
 import org.scalajs.dom._
 import org.scalajs.dom.raw.HTMLInputElement
+
 import scala.scalajs.js.|
 import outwatch.dom._
 import outwatch.dom.{Attr, Prop}
-import rxscalajs.Observer
 
 import scala.scalajs.js
 
@@ -40,10 +41,10 @@ object VDomProxy {
   }
 
   private def emitterToFunction(emitter: Emitter): Event => Unit = emitter match {
-    case se: StringEventEmitter => (e: Event) => se.sink.next(e.target.asInstanceOf[HTMLInputElement].value)
-    case be: BoolEventEmitter => (e: Event) => be.sink.next(e.target.asInstanceOf[HTMLInputElement].checked)
-    case ne: NumberEventEmitter => (e: Event) => ne.sink.next(e.target.asInstanceOf[HTMLInputElement].valueAsNumber)
-    case ee: EventEmitter[_] => (e: Event) => ee.sink.asInstanceOf[Observer[Event]].next(e)
+    case se: StringEventEmitter => (e: Event) => se.sink.onNext(e.target.asInstanceOf[HTMLInputElement].value)
+    case be: BoolEventEmitter => (e: Event) => be.sink.onNext(e.target.asInstanceOf[HTMLInputElement].checked)
+    case ne: NumberEventEmitter => (e: Event) => ne.sink.onNext(e.target.asInstanceOf[HTMLInputElement].valueAsNumber)
+    case ee: EventEmitter[_] => (e: Event) => ee.sink.asInstanceOf[Observer[Event]].onNext(e)
   }
 
 

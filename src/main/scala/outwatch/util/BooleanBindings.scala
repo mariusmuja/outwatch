@@ -1,7 +1,8 @@
 package outwatch.util
 
+import monix.reactive.Observable
 import outwatch.dom.{Attribute, AttributeStreamReceiver}
-import rxscalajs.Observable
+
 
 
 object BooleanBindings {

@@ -1,10 +1,11 @@
 package outwatch.dom
 
 import cats.effect.IO
+import monix.reactive.{Observable, Observer}
 import org.scalajs.dom._
 import outwatch.dom.helpers.DomUtils
+
 import scala.scalajs.js.|
-import rxscalajs.{Observable, Observer}
 import snabbdom.{VNodeProxy, h}
 
 import scala.scalajs.js

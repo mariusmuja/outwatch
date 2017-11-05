@@ -1,17 +1,19 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
+import monix.execution.Ack.Continue
+import monix.execution.Cancelable
+import monix.reactive.Observable
 import org.scalajs.dom._
 import org.scalajs.dom.raw.HTMLInputElement
 import outwatch.dom._
-import rxscalajs.Observable
-import rxscalajs.subscription.Subscription
 import snabbdom._
-import collection.breakOut
 
+import collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
+import monix.execution.Scheduler.Implicits.global
 
 object DomUtils {
 
@@ -19,23 +21,25 @@ object DomUtils {
                                  childrenStreamReceivers: Seq[ChildrenStreamReceiver],
                                  childStreamReceivers: Seq[ChildStreamReceiver]) {
     lazy val observable: Observable[(Seq[Attribute], Seq[VNode])] = {
-      val childReceivers: Observable[Seq[VNode]] = Observable.combineLatest(
-        childStreamReceivers.map(_.childStream)
+      val childReceivers: Observable[Seq[VNode]] = Observable.combineLatestList(
+        childStreamReceivers.map(_.childStream) : _*
       )
 
       val childrenReceivers = childrenStreamReceivers.lastOption.map(_.childrenStream)
 
       // only use last encountered observable per attribute
-      val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatest(
+      val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatestList(
         attributeStreamReceivers
           .groupBy(_.attribute)
           .values
-          .map(_.last.attributeStream)(breakOut)
+          .map(_.last.attributeStream)(breakOut) : _*
       )
 
       val allChildReceivers = childrenReceivers.getOrElse(childReceivers)
 
-      attributeReceivers.combineLatest(allChildReceivers)
+      attributeReceivers.startWith(Seq(Seq())).combineLatest(
+        allChildReceivers.startWith(Seq(Seq()))
+      ).dropWhile { case (a, c) => a.isEmpty && c.isEmpty }
     }
 
     lazy val nonEmpty: Boolean = {
@@ -61,8 +65,8 @@ object DomUtils {
     val SeparatedProperties(insert, delete, update, attributes, keys) = separateProperties(properties)
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
 
-    val insertHook = (p: VNodeProxy) => p.elm.foreach(e => insert.foreach(_.sink.next(e)))
-    val deleteHook = (p: VNodeProxy) => p.elm.foreach(e => delete.foreach(_.sink.next(e)))
+    val insertHook = (p: VNodeProxy) => p.elm.foreach(e => insert.foreach(_.sink.onNext(e)))
+    val deleteHook = (p: VNodeProxy) => p.elm.foreach(e => delete.foreach(_.sink.onNext(e)))
     val updateHook = createUpdateHook(update)
     val key = keys.lastOption.map(_.value).orUndefined
 
@@ -90,7 +94,7 @@ object DomUtils {
     val SeparatedProperties(insert, destroy, update, attributes, keys) = separateProperties(properties)
 
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
-    val subscriptionRef = STRef.empty[Subscription]
+    val subscriptionRef = STRef.empty[Cancelable]
     val insertHook = createInsertHook(changeables, subscriptionRef, insert)
     val deleteHook = createDestroyHook(subscriptionRef, destroy)
     val updateHook = createUpdateHook(update)
@@ -106,12 +110,12 @@ object DomUtils {
   }
 
   private def createUpdateHook(hooks: Seq[UpdateHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
-    old.elm.foreach(o => cur.elm.foreach(c => hooks.foreach(_.sink.next((o,c)))))
+    old.elm.foreach(o => cur.elm.foreach(c => hooks.foreach(_.sink.onNext((o,c)))))
   }
 
 
   private def createInsertHook(changables: Changeables,
-                               subscriptionRef: STRef[Subscription],
+                               subscriptionRef: STRef[Cancelable],
                                hooks: Seq[InsertHook]) = (proxy: VNodeProxy) => {
 
     def toProxy(changable: (Seq[Attribute], Seq[VNode])): VNodeProxy = changable match {
@@ -122,18 +126,22 @@ object DomUtils {
 
     val subscription = changables.observable
       .map(toProxy)
-      .startWith(proxy)
-      .pairwise
-      .subscribe(tuple => patch(tuple._1, tuple._2), console.error(_))
+      .startWith(Seq(proxy))
+      .bufferSliding(2, 1)
+      .subscribe({ pair =>
+        patch(pair.head, pair.tail.head)
+        Continue
+      }, e => console.error(e.getMessage)
+      )
 
     subscriptionRef.put(subscription).unsafeRunSync()
 
-    proxy.elm.foreach((e: Element) => hooks.foreach(_.sink.next(e)))
+    proxy.elm.foreach((e: Element) => hooks.foreach(_.sink.onNext(e)))
   }
 
-  private def createDestroyHook(subscription: STRef[Subscription], hooks: Seq[DestroyHook]) = (proxy: VNodeProxy) => {
-    proxy.elm.foreach((e: Element) => hooks.foreach(_.sink.next(e)))
-    subscription.update { s => s.unsubscribe(); s }.unsafeRunSync()
+  private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]) = (proxy: VNodeProxy) => {
+    proxy.elm.foreach((e: Element) => hooks.foreach(_.sink.onNext(e)))
+    subscription.update { s => s.cancel(); s }.unsafeRunSync()
     ()
   }
 

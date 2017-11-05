@@ -1,13 +1,14 @@
 package outwatch
 
 import cats.effect.IO
+import monix.reactive.Observable
+import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.raw.{HTMLElement, HTMLInputElement}
-import org.scalajs.dom.{Event, KeyboardEvent, document}
+import org.scalajs.dom.{Element, Event, KeyboardEvent, document}
 import org.scalatest.BeforeAndAfterEach
 import outwatch.dom.StringNode
 import outwatch.dom._
 import outwatch.dom.helpers._
-import rxscalajs.{Observable, Subject}
 import snabbdom.{DataObject, h}
 
 import scala.collection.immutable.Seq
@@ -23,10 +24,10 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
 
   "Receivers" should "be separated correctly" in {
     val receivers = Seq(
-      AttributeStreamReceiver("hidden",Observable.of()),
-      AttributeStreamReceiver("disabled",Observable.of()),
-      ChildStreamReceiver(Observable.of()),
-      ChildrenStreamReceiver(Observable.of())
+      AttributeStreamReceiver("hidden",Observable()),
+      AttributeStreamReceiver("disabled",Observable()),
+      ChildStreamReceiver(Observable()),
+      ChildrenStreamReceiver(Observable())
     )
 
     val DomUtils.SeparatedReceivers(child$, children$, attribute$) = DomUtils.separateReceivers(receivers)
@@ -40,10 +41,10 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
   "Properties" should "be separated correctly" in {
     val properties = Seq(
       Attribute("hidden", "true"),
-      InsertHook(Subject()),
-      UpdateHook(Subject()),
-      InsertHook(Subject()),
-      DestroyHook(Subject())
+      InsertHook(PublishSubject[Element]),
+      UpdateHook(PublishSubject[(Element, Element)]),
+      InsertHook(PublishSubject[Element]),
+      DestroyHook(PublishSubject[Element])
     )
 
     val DomUtils.SeparatedProperties(inserts, deletes, updates, attributes, keys) = DomUtils.separateProperties(properties)
@@ -59,10 +60,10 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyVDomModifier,
-      EventEmitter("click", Subject()),
+      EventEmitter("click", PublishSubject[Event]),
       new StringNode("Test"),
       div().unsafeRunSync(),
-      AttributeStreamReceiver("hidden",Observable.of())
+      AttributeStreamReceiver("hidden",Observable())
     )
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, vNodes) = DomUtils.separateModifiers(modifiers)
@@ -77,12 +78,12 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyVDomModifier,
-      EventEmitter[Event]("click",Subject()),
-      EventEmitter[InputEvent]("input", Subject()),
-      AttributeStreamReceiver("hidden",Observable.of()),
-      AttributeStreamReceiver("disabled",Observable.of()),
-      ChildrenStreamReceiver(Observable.of()),
-      EventEmitter[KeyboardEvent]("keyup", Subject())
+      EventEmitter[Event]("click",PublishSubject[Event]),
+      EventEmitter[InputEvent]("input", PublishSubject[InputEvent]),
+      AttributeStreamReceiver("hidden",Observable()),
+      AttributeStreamReceiver("disabled",Observable()),
+      ChildrenStreamReceiver(Observable()),
+      EventEmitter[KeyboardEvent]("keyup", PublishSubject[KeyboardEvent])
     )
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
@@ -102,14 +103,14 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyVDomModifier,
-      EventEmitter[Event]("click",Subject()),
-      EventEmitter[InputEvent]("input", Subject()),
-      UpdateHook(Subject()),
-      AttributeStreamReceiver("hidden",Observable.of()),
-      AttributeStreamReceiver("disabled",Observable.of()),
-      ChildrenStreamReceiver(Observable.of()),
-      EventEmitter[KeyboardEvent]("keyup", Subject()),
-      InsertHook(Subject())
+      EventEmitter[Event]("click",PublishSubject[Event]),
+      EventEmitter[InputEvent]("input", PublishSubject[InputEvent]),
+      UpdateHook(PublishSubject[(Element, Element)]),
+      AttributeStreamReceiver("hidden",Observable()),
+      AttributeStreamReceiver("disabled",Observable()),
+      ChildrenStreamReceiver(Observable()),
+      EventEmitter[KeyboardEvent]("keyup", PublishSubject[KeyboardEvent]),
+      InsertHook(PublishSubject[Element])
     )
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
@@ -197,7 +198,7 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
       )
     }
 
-    val pageHandler =  Subject[Int]
+    val pageHandler =  PublishSubject[Int]
 
     val vtree = div(
       div(child <-- pageHandler.map(page))
@@ -208,13 +209,13 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
 
     DomUtils.render(node, vtree).unsafeRunSync()
 
-    pageHandler.next(1)
+    pageHandler.onNext(1)
 
     val domNode = document.getElementById("page")
 
     domNode.textContent shouldBe "1"
 
-    pageHandler.next(2)
+    pageHandler.onNext(2)
 
     domNode.textContent shouldBe "2"
 
@@ -293,8 +294,7 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
 
   it should "change the value of a textfield" in {
 
-
-    val messages = Subject[String]
+    val messages = PublishSubject[String]
     val vtree = div(
       input(outwatch.dom.value <-- messages, id := "input")
     )
@@ -309,57 +309,56 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     field.value shouldBe ""
 
     val message = "Hello"
-    messages.next(message)
-
+    messages.onNext(message)
     field.value shouldBe message
 
     val message2 = "World"
-    messages.next(message2)
+    messages.onNext(message2)
 
     field.value shouldBe message2
 
   }
 
   it should "update merged nodes children correctly" in {
-    val messages = Subject[Seq[VNode]]
-    val otherMessages = Subject[Seq[VNode]]
+    val messages = PublishSubject[Seq[VNode]]
+    val otherMessages = PublishSubject[Seq[VNode]]
     val vNode = div(children <-- messages)(children <-- otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
     DomUtils.render(node, vNode).unsafeRunSync()
 
-    otherMessages.next(Seq(div("otherMessage")))
+    otherMessages.onNext(Seq(div("otherMessage")))
     node.children(0).innerHTML shouldBe "<div>otherMessage</div>"
 
-    messages.next(Seq(div("message")))
+    messages.onNext(Seq(div("message")))
     node.children(0).innerHTML shouldBe "<div>otherMessage</div>"
 
-    otherMessages.next(Seq(div("genus")))
+    otherMessages.onNext(Seq(div("genus")))
     node.children(0).innerHTML shouldBe "<div>genus</div>"
   }
 
   it should "update merged nodes separate children correctly" in {
-    val messages = Subject[String]
-    val otherMessages = Subject[String]
+    val messages = PublishSubject[String]
+    val otherMessages = PublishSubject[String]
     val vNode = div(child <-- messages)(child <-- otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
     DomUtils.render(node, vNode).unsafeRunSync()
 
-    otherMessages.next("otherMessage")
+    otherMessages.onNext("otherMessage")
     node.children(0).innerHTML shouldBe ""
 
-    messages.next("message")
+    messages.onNext("message")
     node.children(0).innerHTML shouldBe "messageotherMessage"
 
-    otherMessages.next("genus")
+    otherMessages.onNext("genus")
     node.children(0).innerHTML shouldBe "messagegenus"
   }
 
   it should "update reused vnodes correctly" in {
-    val messages = Subject[String]
+    val messages = PublishSubject[String]
     val vNode = div(data.ralf := true, child <-- messages)
     val container = div(vNode, vNode)
 
@@ -367,18 +366,18 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     document.body.appendChild(node)
     DomUtils.render(node, container).unsafeRunSync()
 
-    messages.next("message")
+    messages.onNext("message")
     node.children(0).children(0).innerHTML shouldBe "message"
     node.children(0).children(1).innerHTML shouldBe "message"
 
-    messages.next("bumo")
+    messages.onNext("bumo")
     node.children(0).children(0).innerHTML shouldBe "bumo"
     node.children(0).children(1).innerHTML shouldBe "bumo"
   }
 
   it should "update merged nodes correctly (render reuse)" in {
-    val messages = Subject[String]
-    val otherMessages = Subject[String]
+    val messages = PublishSubject[String]
+    val otherMessages = PublishSubject[String]
     val vNodeTemplate = div(child <-- messages)
     val vNode = vNodeTemplate(child <-- otherMessages)
 
@@ -390,55 +389,55 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     document.body.appendChild(node2)
     DomUtils.render(node2, vNode).unsafeRunSync()
 
-    messages.next("gurkon")
-    otherMessages.next("otherMessage")
+    messages.onNext("gurkon")
+    otherMessages.onNext("otherMessage")
     node1.children(0).innerHTML shouldBe "gurkon"
     node2.children(0).innerHTML shouldBe "gurkonotherMessage"
 
-    messages.next("message")
+    messages.onNext("message")
     node1.children(0).innerHTML shouldBe "message"
     node2.children(0).innerHTML shouldBe "messageotherMessage"
 
-    otherMessages.next("genus")
+    otherMessages.onNext("genus")
     node1.children(0).innerHTML shouldBe "message"
     node2.children(0).innerHTML shouldBe "messagegenus"
   }
 
   it should "update merged node attributes correctly" in {
-    val messages = Subject[String]
-    val otherMessages = Subject[String]
+    val messages = PublishSubject[String]
+    val otherMessages = PublishSubject[String]
     val vNode = div(data <-- messages)(data <-- otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
     DomUtils.render(node, vNode).unsafeRunSync()
 
-    otherMessages.next("otherMessage")
+    otherMessages.onNext("otherMessage")
     node.children(0).getAttribute("data") shouldBe "otherMessage"
 
-    messages.next("message") // should be ignored
+    messages.onNext("message") // should be ignored
     node.children(0).getAttribute("data") shouldBe "otherMessage"
 
-    otherMessages.next("genus")
+    otherMessages.onNext("genus")
     node.children(0).getAttribute("data") shouldBe "genus"
   }
 
   it should "update merged node styles correctly" in {
-    val messages = Subject[String]
-    val otherMessages = Subject[String]
+    val messages = PublishSubject[String]
+    val otherMessages = PublishSubject[String]
     val vNode = div(stl("color") <-- messages)(stl("color") <-- otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
     DomUtils.render(node, vNode).unsafeRunSync()
 
-    otherMessages.next("red")
+    otherMessages.onNext("red")
     node.children(0).asInstanceOf[HTMLElement].style.color shouldBe "red"
 
-    messages.next("blue") // should be ignored
+    messages.onNext("blue") // should be ignored
     node.children(0).asInstanceOf[HTMLElement].style.color shouldBe "red"
 
-    otherMessages.next("green")
+    otherMessages.onNext("green")
     node.children(0).asInstanceOf[HTMLElement].style.color shouldBe "green"
   }
 

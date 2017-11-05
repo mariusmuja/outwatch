@@ -1,10 +1,10 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
+import monix.reactive.Observable
 
 import scala.language.dynamics
 import outwatch.dom._
-import rxscalajs.Observable
 
 import scala.language.implicitConversions
 import outwatch.dom.StringNode

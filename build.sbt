@@ -4,7 +4,7 @@ name := "OutWatch"
 
 normalizedName := "outwatch"
 
-version := "0.11.1-SNAPSHOT"
+version := "0.11.1-monix-SNAPSHOT"
 
 organization := "io.github.outwatch"
 
@@ -14,7 +14,8 @@ crossScalaVersions := Seq("2.11.11", "2.12.4")
 
 
 libraryDependencies ++= Seq(
-  "com.github.lukajcb" %%% "rxscala-js" % "0.15.0",
+  "io.monix"        %%% "monix"       % "2.3.0",
+  "org.scala-js"    %%% "scalajs-dom" % "0.9.3",
   "org.typelevel" %%% "cats-core" % "1.0.0-MF",
   "org.typelevel" %%% "cats-effect" % "0.4",
   "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
@@ -22,9 +23,9 @@ libraryDependencies ++= Seq(
 )
 
 npmDependencies in Compile ++= Seq(
-  "rxjs" -> "5.4.3",
   "snabbdom" -> "0.7.0"
 )
+
 
 scalacOptions ++=
   "-encoding" :: "UTF-8" ::
@@ -58,6 +59,7 @@ scalacOptions ++= {
 }
 
 requiresDOM in Test := true
+
 useYarn := true
 
 publishMavenStyle := true

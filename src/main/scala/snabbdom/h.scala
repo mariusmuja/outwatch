@@ -4,7 +4,7 @@ import org.scalajs.dom._
 import outwatch.dom.Attribute
 
 import scala.scalajs.js
-import scala.scalajs.js.annotation.{JSImport, ScalaJSDefined}
+import scala.scalajs.js.annotation.JSImport
 import scala.scalajs.js.{UndefOr, |}
 
 @js.native
@@ -25,7 +25,6 @@ object h {
 }
 
 
-@ScalaJSDefined
 trait Hooks extends js.Object {
   val insert: js.UndefOr[js.Function1[VNodeProxy, Unit]]
   val destroy: js.UndefOr[js.Function1[VNodeProxy, Unit]]
@@ -48,7 +47,7 @@ object Hooks {
   }
 }
 
-@ScalaJSDefined
+
 trait DataObject extends js.Object {
   val attrs: js.Dictionary[String | Boolean]
   val props: js.Dictionary[String]
@@ -116,7 +115,6 @@ object DataObject {
       import scala.scalajs.js.JSConverters._
 
       val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
-
       val newAttrs = (obj.attrs ++ attrs).toJSDictionary
       val newProps = (obj.props ++ props).toJSDictionary
       val newStyle = (obj.style ++ style).toJSDictionary
