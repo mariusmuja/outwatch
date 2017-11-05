@@ -20,10 +20,11 @@ object LocalStorageReader {
 
 object LocalStorageWriter {
   def apply(key: String): Sink[String] = {
-    Sink.create[String](data => IO {
-      localStorage.setItem(key, data)
-      Continue
-    }
+    Sink.create[String](
+      data => IO {
+        localStorage.setItem(key, data)
+        Continue
+      }
     )
   }
 }
