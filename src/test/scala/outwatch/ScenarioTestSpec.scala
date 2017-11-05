@@ -27,7 +27,7 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
   }
 
 
-  private def eval[T](expr: => T): Future[T] = {
+  private def waitForDispatch[T](expr: => T): Future[T] = {
     Task(expr)
       .delayExecution(FiniteDuration(10, TimeUnit.MILLISECONDS))
       .runAsync
@@ -39,22 +39,18 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
       plusOne = handlePlus.map(_ => 1)
 
       handleMinus <- createMouseHandler()
-      minusOne = handleMinus.map{_ =>
-        println("Hanlde minus")
-        -1}
+      minusOne = handleMinus.map(_ => -1)
 
       count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
-    } yield (handlePlus, handleMinus, count))
-      .flatMap { case (handlePlus, handleMinus, count) =>
-
+    } yield {
+      div(
         div(
-          div(
-            button(id := "plus", "+", click --> handlePlus),
-            button(id := "minus", "-", click --> handleMinus),
-            span(id := "counter", child <-- count)
-          )
+          button(id := "plus", "+", click --> handlePlus),
+          button(id := "minus", "-", click --> handleMinus),
+          span(id := "counter", child <-- count)
         )
-      }
+      )
+    }).flatMap(identity)
 
     val root = document.createElement("div")
     document.body.appendChild(root)
@@ -67,13 +63,11 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     document.getElementById("counter").innerHTML shouldBe 0.toString
 
     document.getElementById("minus").dispatchEvent(event)
-
-    eval(document.getElementById("counter").innerHTML shouldBe (-1).toString)
-
+    waitForDispatch(document.getElementById("counter").innerHTML shouldBe (-1).toString)
 
     for (i <- 0 to 10) {
       document.getElementById("plus").dispatchEvent(event)
-      eval(document.getElementById("counter").innerHTML shouldBe i.toString)
+      waitForDispatch(document.getElementById("counter").innerHTML shouldBe i.toString)
     }
 
   }
@@ -227,33 +221,31 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    eval(list.childElementCount shouldBe 1)
+    waitForDispatch(list.childElementCount shouldBe 1)
 
     val todo2 = "wash dishes"
     inputElement.value = todo2
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    eval(list.childElementCount shouldBe 2)
+    waitForDispatch(list.childElementCount shouldBe 2)
 
     val todo3 = "clean windows"
     inputElement.value = todo3
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    eval(list.childElementCount shouldBe 3)
+    for {
+      _ <- waitForDispatch(list.childElementCount shouldBe 3)
+      _ <- waitForDispatch(document.getElementById(todo2)).map(_.dispatchEvent(clickEvt))
+      _ <- waitForDispatch(list.childElementCount shouldBe 2)
+      _ <- waitForDispatch(document.getElementById(todo3)).map(_.dispatchEvent(clickEvt))
+      _ <- waitForDispatch(list.childElementCount shouldBe 1)
+      _ <- waitForDispatch(document.getElementById(todo)).map(_.dispatchEvent(clickEvt))
+      _ <- waitForDispatch(list.childElementCount shouldBe 0)
+    } yield ()
 
-    document.getElementById(todo2).dispatchEvent(clickEvt)
 
-    eval(list.childElementCount shouldBe 2)
-
-    document.getElementById(todo3).dispatchEvent(clickEvt)
-
-    eval(list.childElementCount shouldBe 1)
-
-    document.getElementById(todo).dispatchEvent(clickEvt)
-
-    eval(list.childElementCount shouldBe 0)
 
   }
 }

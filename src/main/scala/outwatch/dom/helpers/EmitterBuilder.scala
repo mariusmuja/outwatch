@@ -5,7 +5,6 @@ import monix.reactive.{Observable, Observer}
 import org.scalajs.dom._
 import outwatch.Sink
 import outwatch.dom.{BoolEventEmitter, NumberEventEmitter, StringEventEmitter, _}
-import monix.execution.Scheduler.Implicits.global
 
 final case class GenericMappedEmitterBuilder[T,E](constructor: Observer[E] => Emitter, mapping: E => T){
   def -->[U >: T](sink: Sink[U]): IO[Emitter] = {
