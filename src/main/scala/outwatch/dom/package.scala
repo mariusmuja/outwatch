@@ -7,6 +7,12 @@ import scala.language.implicitConversions
 
 package object dom extends Attributes with Tags with Handlers {
 
+  type Observable[+A] = monix.reactive.Observable[A]
+  val Observable = monix.reactive.Observable
+
+  type Sink[-A] = outwatch.Sink[A]
+  val Sink = outwatch.Sink
+
   type VNode = IO[VNode_]
   type VDomModifier = IO[VDomModifier_]
 

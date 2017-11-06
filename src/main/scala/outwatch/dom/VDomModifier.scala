@@ -1,7 +1,7 @@
 package outwatch.dom
 
 import cats.effect.IO
-import monix.reactive.{Observable, Observer}
+import monix.reactive.Observer
 import org.scalajs.dom._
 import outwatch.dom.helpers.DomUtils
 
