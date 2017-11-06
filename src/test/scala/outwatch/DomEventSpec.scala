@@ -1,12 +1,15 @@
 package outwatch
 
+import monix.eval.Task
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
 import org.scalajs.dom.raw.{HTMLInputElement, MouseEvent}
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{AsyncFlatSpec, BeforeAndAfterEach, Matchers}
 import org.scalatest.prop.PropertyChecks
 
-class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks {
+class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach with PropertyChecks {
+
+  override implicit val executionContext = monix.execution.Scheduler.Implicits.global
 
   override def beforeEach(): Unit = {
     val root = document.createElement("div")
@@ -37,7 +40,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
-    document.getElementById("btn").getAttribute("disabled") shouldBe ""
+    Task(document.getElementById("btn").getAttribute("disabled") shouldBe "").runAsync
   }
 
   it should "be converted to a generic emitter correctly" in {
@@ -51,7 +54,6 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
         span(id := "child", child <-- observable)
       )
 
-
     vtree.flatMap(vtree => OutWatch.render("#app", vtree)).unsafeRunSync()
 
     document.getElementById("child").innerHTML shouldBe ""
@@ -60,14 +62,13 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
-    document.getElementById("child").innerHTML shouldBe message
+    (for {
+      _ <- Task(document.getElementById("child").innerHTML shouldBe message)
+      //dispatch another event
+      _ = document.getElementById("click").dispatchEvent(event)
 
-    //dispatch another event
-    document.getElementById("click").dispatchEvent(event)
-
-    document.getElementById("child").innerHTML shouldBe message
-
-
+      assertion <- Task(document.getElementById("child").innerHTML shouldBe message)
+    } yield assertion).runAsync
   }
 
   it should "be converted to a generic stream emitter correctly" in {
@@ -93,19 +94,19 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
-    document.getElementById("child").innerHTML shouldBe firstMessage
+    (for {
+      _ <- Task(document.getElementById("child").innerHTML shouldBe firstMessage)
 
-    //dispatch another event
-    document.getElementById("click").dispatchEvent(event)
+      //dispatch another event
+      _ = document.getElementById("click").dispatchEvent(event)
+      _ <- Task(document.getElementById("child").innerHTML shouldBe firstMessage)
 
-    document.getElementById("child").innerHTML shouldBe firstMessage
+      secondMessage = "Second"
+      _ = messages.observer.onNext(secondMessage)
+      _ = document.getElementById("click").dispatchEvent(event)
+      assertion <- Task(document.getElementById("child").innerHTML shouldBe secondMessage)
 
-    val secondMessage = "Second"
-    messages.observer.onNext(secondMessage)
-
-    document.getElementById("click").dispatchEvent(event)
-
-    document.getElementById("child").innerHTML shouldBe secondMessage
+    } yield assertion).runAsync
   }
 
   it should "be able to set the value of a text field" in {
