@@ -26,7 +26,7 @@ final case class Store[State, Action](initialState: State,
 
     next.foreach(_.unsafeRunAsync {
       case Left(e) => sink.observer.onError(e)
-      case Right(r) => sink.observer.onNext(r)
+      case Right(r) => sink.observer.onNext(r).asInstanceOf[Unit]
     })
 
     newState
