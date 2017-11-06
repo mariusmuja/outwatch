@@ -6,6 +6,7 @@ import org.scalajs.dom._
 import org.scalajs.dom.raw.{HTMLInputElement, MouseEvent}
 import org.scalatest.{AsyncFlatSpec, BeforeAndAfterEach, Matchers}
 import org.scalatest.prop.PropertyChecks
+import io.monadless.monix.MonadlessTask._
 
 class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach with PropertyChecks {
 
@@ -60,15 +61,17 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
 
     val event = document.createEvent("Events")
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
-    document.getElementById("click").dispatchEvent(event)
 
-    (for {
-      _ <- Task(document.getElementById("child").innerHTML shouldBe message)
-      //dispatch another event
-      _ = document.getElementById("click").dispatchEvent(event)
 
-      assertion <- Task(document.getElementById("child").innerHTML shouldBe message)
-    } yield assertion).runAsync
+    lift {
+      document.getElementById("click").dispatchEvent(event)
+      unlift(Task(document.getElementById("child").innerHTML shouldBe message))
+
+      //      //dispatch another event
+      document.getElementById("click").dispatchEvent(event)
+      unlift(Task(document.getElementById("child").innerHTML shouldBe message))
+
+    }.runAsync
   }
 
   it should "be converted to a generic stream emitter correctly" in {
@@ -94,19 +97,18 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
-    (for {
-      _ <- Task(document.getElementById("child").innerHTML shouldBe firstMessage)
+    lift {
+      unlift(Task(document.getElementById("child").innerHTML shouldBe firstMessage))
 
       //dispatch another event
-      _ = document.getElementById("click").dispatchEvent(event)
-      _ <- Task(document.getElementById("child").innerHTML shouldBe firstMessage)
+      document.getElementById("click").dispatchEvent(event)
+      unlift(Task(document.getElementById("child").innerHTML shouldBe firstMessage))
 
-      secondMessage = "Second"
-      _ = messages.observer.onNext(secondMessage)
-      _ = document.getElementById("click").dispatchEvent(event)
-      assertion <- Task(document.getElementById("child").innerHTML shouldBe secondMessage)
-
-    } yield assertion).runAsync
+      val secondMessage = "Second"
+      messages.observer.onNext(secondMessage)
+      document.getElementById("click").dispatchEvent(event)
+      unlift(Task(document.getElementById("child").innerHTML shouldBe secondMessage))
+    }.runAsync
   }
 
   it should "be able to set the value of a text field" in {

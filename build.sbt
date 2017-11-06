@@ -19,7 +19,8 @@ libraryDependencies ++= Seq(
   "org.typelevel" %%% "cats-core" % "1.0.0-MF",
   "org.typelevel" %%% "cats-effect" % "0.4",
   "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
-  "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test
+  "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
+  "io.monadless" %%% "monadless-monix" % "0.0.13" % Test
 )
 
 npmDependencies in Compile ++= Seq(
