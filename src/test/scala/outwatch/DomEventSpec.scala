@@ -25,7 +25,7 @@ class DomEventSpec extends UnitSpec with BeforeAndAfterEach with PropertyChecks 
     val vtree = createMouseHandler().flatMap { observable =>
 
       val buttonDisabled = observable.mapTo(true).startWith(false)
-      
+
       div(id := "click", click --> observable,
         button(id := "btn", disabled <-- buttonDisabled)
       )
