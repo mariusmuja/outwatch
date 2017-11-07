@@ -1,15 +1,20 @@
 package outwatch
 
 import monix.eval.Task
-import monix.execution.Scheduler.Implicits.global
 import monix.reactive.Observable
 import org.scalajs.dom._
 import org.scalajs.dom.raw.HTMLInputElement
-import org.scalatest.BeforeAndAfterEach
+import org.scalatest.{AsyncFlatSpec, BeforeAndAfterEach, Matchers}
 import outwatch.dom._
 import outwatch.dom.helpers.DomUtils
+import io.monadless.monix.MonadlessTask._
 
-class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
+import scala.concurrent.duration.FiniteDuration
+
+class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach {
+
+  override implicit val executionContext = monix.execution.Scheduler.Implicits.global
+
   override def afterEach(): Unit = {
     document.body.innerHTML = ""
   }
@@ -50,22 +55,24 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
 
     document.getElementById("counter").innerHTML shouldBe 0.toString
 
-    val testMinus = for {
-      _ <- Task(document.getElementById("minus").dispatchEvent(event))
-      assertion <- Task(document.getElementById("counter").innerHTML shouldBe (-1).toString)
-    } yield assertion
+    lift {
 
-    testMinus.runAsync
+      unlift(Task(document.getElementById("minus").dispatchEvent(event)))
+      unlift(Task(document.getElementById("counter").innerHTML shouldBe (-1).toString))
 
-    def testPlus = Task.sequence(for (i <- 0 to 10) yield {
-      for {
-        _ <- Task(document.getElementById("plus").dispatchEvent(event))
-        assertion <- Task(document.getElementById("counter").innerHTML shouldBe i.toString)
-      } yield assertion
-    })
+      unlift {
+        Task.sequence(
+          for (i <- 0 to 10) yield {
+            lift {
+              unlift(Task(document.getElementById("plus").dispatchEvent(event)))
+              unlift(Task(document.getElementById("counter").innerHTML shouldBe i.toString))
+            }
+          }
+        )
+      }
 
-    testPlus.runAsync
-
+      true shouldBe true
+    }.runAsync
   }
 
   "A simple name application" should "work as intended" in {
@@ -90,17 +97,19 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
     evt.initEvent("input", false, true)
     val name = "Luka"
 
-    document.getElementById("input").asInstanceOf[HTMLInputElement].value = name
-    document.getElementById("input").dispatchEvent(evt)
+    lift {
+      document.getElementById("input").asInstanceOf[HTMLInputElement].value = name
+      document.getElementById("input").dispatchEvent(evt)
 
-    document.getElementById("greeting").innerHTML shouldBe greetStart + name
+      unlift(Task(document.getElementById("greeting").innerHTML shouldBe greetStart + name))
 
-    val name2 = "Peter"
+      val name2 = "Peter"
 
-    document.getElementById("input").asInstanceOf[HTMLInputElement].value = name2
-    document.getElementById("input").dispatchEvent(evt)
+      document.getElementById("input").asInstanceOf[HTMLInputElement].value = name2
+      document.getElementById("input").dispatchEvent(evt)
 
-    document.getElementById("greeting").innerHTML shouldBe greetStart + name2
+      unlift(Task(document.getElementById("greeting").innerHTML shouldBe greetStart + name2))
+    }.runAsync
   }
 
   "A component" should "be referential transparent" in {
@@ -212,37 +221,37 @@ class ScenarioTestSpec extends UnitSpec with BeforeAndAfterEach {
 
     list.childElementCount shouldBe 0
 
-    val todo = "fold laundry"
-    inputElement.value = todo
-    inputElement.dispatchEvent(inputEvt)
-    submitButton.dispatchEvent(clickEvt)
+    lift {
+      val todo = "fold laundry"
+      inputElement.value = todo
+      inputElement.dispatchEvent(inputEvt)
+      submitButton.dispatchEvent(clickEvt)
 
-    Task(list.childElementCount shouldBe 1).runAsync
+      unlift(Task(list.childElementCount shouldBe 1).executeWithFork)
 
-    val todo2 = "wash dishes"
-    inputElement.value = todo2
-    inputElement.dispatchEvent(inputEvt)
-    submitButton.dispatchEvent(clickEvt)
+      val todo2 = "wash dishes"
+      inputElement.value = todo2
+      inputElement.dispatchEvent(inputEvt)
+      submitButton.dispatchEvent(clickEvt)
 
-    Task(list.childElementCount shouldBe 2).runAsync
+      unlift(Task(list.childElementCount shouldBe 2).executeWithFork)
 
-    val todo3 = "clean windows"
-    inputElement.value = todo3
-    inputElement.dispatchEvent(inputEvt)
-    submitButton.dispatchEvent(clickEvt)
+      val todo3 = "clean windows"
+      inputElement.value = todo3
+      inputElement.dispatchEvent(inputEvt)
+      submitButton.dispatchEvent(clickEvt)
 
-    val test = for {
-      _ <- Task(list.childElementCount shouldBe 3)
-      _ <- Task(document.getElementById(todo2).dispatchEvent(clickEvt))
-      _ <- Task(list.childElementCount shouldBe 2)
-      _ <- Task(document.getElementById(todo3).dispatchEvent(clickEvt))
-      _ <- Task(list.childElementCount shouldBe 1)
-      _ <- Task(document.getElementById(todo).dispatchEvent(clickEvt))
-      _ <- Task(list.childElementCount shouldBe 0)
-    } yield ()
+      unlift(Task(list.childElementCount shouldBe 3).executeWithFork)
 
-    test.runAsync
+      unlift(Task(document.getElementById(todo2).dispatchEvent(clickEvt)))
+      unlift(Task(list.childElementCount shouldBe 2))
 
+      unlift(Task(document.getElementById(todo3).dispatchEvent(clickEvt)))
+      unlift(Task(list.childElementCount shouldBe 1))
+
+      unlift(Task(document.getElementById(todo).dispatchEvent(clickEvt)))
+      unlift(Task(list.childElementCount shouldBe 0))
+    }.runAsync
 
 
   }

@@ -95,9 +95,9 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
 
     val event = document.createEvent("Events")
     event.initEvent("click", canBubbleArg = true, cancelableArg = false)
-    document.getElementById("click").dispatchEvent(event)
 
     lift {
+      document.getElementById("click").dispatchEvent(event)
       unlift(Task(document.getElementById("child").innerHTML shouldBe firstMessage))
 
       //dispatch another event
@@ -256,10 +256,9 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
     val inputEvt = document.createEvent("HTMLEvents")
     inputEvt.initEvent("input", false, true)
 
-
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    document.getElementById("num").innerHTML shouldBe number.toString
+    Task(document.getElementById("num").innerHTML shouldBe number.toString).runAsync
   }
 
   it should "be able to toggle attributes with a boolean observer" in {
@@ -280,10 +279,9 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
     val inputEvt = document.createEvent("HTMLEvents")
     inputEvt.initEvent("click", true, false)
 
-
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    document.getElementById("toggled").classList.contains(someClass) shouldBe true
+    Task(document.getElementById("toggled").classList.contains(someClass) shouldBe true).runAsync
   }
 
 }
