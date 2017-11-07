@@ -9,7 +9,6 @@ import outwatch.dom._
 import outwatch.dom.helpers.DomUtils
 import io.monadless.monix.MonadlessTask._
 
-import scala.concurrent.duration.FiniteDuration
 
 class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach {
 
@@ -27,7 +26,7 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
   }
 
   "A simple counter application" should "work as intended" in {
-    val node = (for {
+    val node = for {
       handlePlus <- createMouseHandler()
       plusOne = handlePlus.map(_ => 1)
 
@@ -35,15 +34,17 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
       minusOne = handleMinus.map(_ => -1)
 
       count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
-    } yield {
-      div(
+
+      div <- div(
+
         div(
           button(id := "plus", "+", click --> handlePlus),
           button(id := "minus", "-", click --> handleMinus),
           span(id := "counter", child <-- count)
         )
       )
-    }).flatMap(identity)
+
+    } yield div
 
     val root = document.createElement("div")
     document.body.appendChild(root)
@@ -78,19 +79,19 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
   "A simple name application" should "work as intended" in {
     val greetStart = "Hello ,"
 
-    val node = for {
-      nameHandler <- createStringHandler()
-    } yield div(
+    val node = createStringHandler().flatMap { nameHandler =>
+      div(
         label("Name:"),
         input(id := "input", inputType := "text", inputString --> nameHandler),
         hr(),
-        h1(id :="greeting", greetStart, child <-- nameHandler)
+        h1(id := "greeting", greetStart, child <-- nameHandler)
       )
+    }
 
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    node.flatMap(node => DomUtils.render(root, node)).unsafeRunSync()
+    DomUtils.render(root, node).unsafeRunSync()
 
 
     val evt = document.createEvent("HTMLEvents")
@@ -169,11 +170,13 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
         .withLatestFrom(textFieldStream)((_, input) => input)
 
       _ <- (outputStream <-- confirm)
-    } yield div(
+
+      div <- div(
         label(labelText),
         input(id:= "input", inputType := "text", inputString --> textFieldStream, keyup --> keyStream),
         button(id := "submit", click --> clickStream, disabled <-- buttonDisabled, "Submit")
       )
+    } yield div
 
 
 
@@ -198,16 +201,18 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
       state = Observable.merge(adds, deletes)
         .scan(Vector[String]())((state, modify) => modify(state))
         .map(_.map(n => TodoComponent(n, deleteHandler)))
-      textFieldComponent <- TextFieldComponent("Todo: ", inputHandler)
-    } yield div(
+      textFieldComponent = TextFieldComponent("Todo: ", inputHandler)
+
+      div <- div(
         textFieldComponent,
         ul(id:= "list", children <-- state)
       )
+    } yield div
 
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    vtree.flatMap(vtree => DomUtils.render(root, vtree)).unsafeRunSync()
+    DomUtils.render(root, vtree).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     inputEvt.initEvent("input", false, true)

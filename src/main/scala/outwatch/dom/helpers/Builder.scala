@@ -36,7 +36,6 @@ object ChildrenStreamReceiverBuilder {
   }
 }
 
-
 final class AttributeBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T] {
   @inline protected def assign(value: T) = Attribute(attributeName, value.toString)
 }

@@ -17,39 +17,8 @@ import monix.execution.Scheduler.Implicits.global
 
 object DomUtils {
 
-  private case class Changeables(attributeStreamReceivers: Seq[AttributeStreamReceiver],
-                                 childrenStreamReceivers: Seq[ChildrenStreamReceiver],
-                                 childStreamReceivers: Seq[ChildStreamReceiver]) {
-    lazy val observable: Observable[(Seq[Attribute], Seq[VNode])] = {
-      val childReceivers: Observable[Seq[VNode]] = Observable.combineLatestList(
-        childStreamReceivers.map(_.childStream) : _*
-      )
 
-      val childrenReceivers = childrenStreamReceivers.lastOption.map(_.childrenStream)
-
-      // only use last encountered observable per attribute
-      val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatestList(
-        attributeStreamReceivers
-          .groupBy(_.attribute)
-          .values
-          .map(_.last.attributeStream)(breakOut) : _*
-      )
-
-      val allChildReceivers = childrenReceivers.getOrElse(childReceivers)
-
-      attributeReceivers.startWith(Seq(Seq())).combineLatest(
-        allChildReceivers.startWith(Seq(Seq()))
-      ).dropWhile { case (a, c) => a.isEmpty && c.isEmpty }
-    }
-
-    lazy val nonEmpty: Boolean = {
-      attributeStreamReceivers.nonEmpty || childrenStreamReceivers.nonEmpty || childStreamReceivers.nonEmpty
-    }
-
-    lazy val valueStreamExists: Boolean = attributeStreamReceivers.exists(_.attribute == "value")
-  }
-
-  private def createDataObject(changeables: Changeables,
+  private def createDataObject(changeables: SeparatedReceivers,
                                properties: Seq[Property],
                                eventHandlers: js.Dictionary[js.Function1[Event, Unit]]): DataObject = {
 
@@ -73,7 +42,7 @@ object DomUtils {
     DataObject.create(attrs, props, style, handlers, insertHook, deleteHook, updateHook, key)
   }
 
-  private def seq[A, B](f1: (A, B) => Unit,f2: (A, B) => Unit): (A, B) => Unit = (a: A, b: B) => {
+  private def seq[A, B](f1: (A, B) => Unit, f2: (A, B) => Unit): (A, B) => Unit = (a: A, b: B) => {
     f1(a, b)
     f2(a, b)
   }
@@ -87,7 +56,7 @@ object DomUtils {
     }
   }
 
-  private def createReceiverDataObject(changeables: Changeables,
+  private def createReceiverDataObject(changeables: SeparatedReceivers,
                                        properties: Seq[Property],
                                        eventHandlers: js.Dictionary[js.Function1[Event, Unit]]) = {
 
@@ -114,14 +83,14 @@ object DomUtils {
   }
 
 
-  private def createInsertHook(changables: Changeables,
+  private def createInsertHook(changables: SeparatedReceivers,
                                subscriptionRef: STRef[Cancelable],
                                hooks: Seq[InsertHook]) = (proxy: VNodeProxy) => {
 
     def toProxy(changable: (Seq[Attribute], Seq[VNode])): VNodeProxy = changable match {
       case (attributes, nodes) =>
         val updatedObj = proxy.data.withUpdatedAttributes(attributes)
-        h(proxy.sel, updatedObj, proxy.children ++ (nodes.map(_.unsafeRunSync().asProxy)(breakOut):js.Array[VNodeProxy]))
+        h(proxy.sel, updatedObj, proxy.children ++ (nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy]))
     }
 
     val subscription = changables.observable
@@ -164,17 +133,45 @@ object DomUtils {
     case (EmptyVDomModifier, sf) => sf
   }
 
-
   private[outwatch] final case class SeparatedReceivers(
-    childStream: List[ChildStreamReceiver] = Nil,
-    childrenStream: List[ChildrenStreamReceiver] = Nil,
-    attributeStream: List[AttributeStreamReceiver] = Nil
-  )
+    childStreamReceivers: List[ChildStreamReceiver] = Nil,
+    childrenStreamReceivers: List[ChildrenStreamReceiver] = Nil,
+    attributeStreamReceivers: List[AttributeStreamReceiver] = Nil
+  ) {
+    lazy val observable: Observable[(Seq[Attribute], Seq[VNode])] = {
+      val childReceivers: Observable[Seq[VNode]] = Observable.combineLatestList(
+        childStreamReceivers.map(_.childStream) : _*
+      )
+
+      val childrenReceivers = childrenStreamReceivers.lastOption.map(_.childrenStream)
+
+      // only use last encountered observable per attribute
+      val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatestList(
+        attributeStreamReceivers
+          .groupBy(_.attribute)
+          .values
+          .map(_.last.attributeStream)(breakOut) : _*
+      )
+
+      val allChildReceivers = childrenReceivers.getOrElse(childReceivers)
+
+      attributeReceivers.startWith(Seq(Seq())).combineLatest(
+        allChildReceivers.startWith(Seq(Seq()))
+      ).dropWhile { case (a, c) => a.isEmpty && c.isEmpty }
+    }
+
+    lazy val nonEmpty: Boolean = {
+      attributeStreamReceivers.nonEmpty || childrenStreamReceivers.nonEmpty || childStreamReceivers.nonEmpty
+    }
+
+    lazy val valueStreamExists: Boolean = attributeStreamReceivers.exists(_.attribute == "value")
+  }
+
   private[outwatch] def separateReceivers(receivers: Seq[Receiver]): SeparatedReceivers = {
     receivers.foldRight(SeparatedReceivers()) {
-      case (cr: ChildStreamReceiver, sr) => sr.copy(childStream = cr :: sr.childStream)
-      case (cs: ChildrenStreamReceiver, sr) => sr.copy(childrenStream = cs :: sr.childrenStream)
-      case (ar: AttributeStreamReceiver, sr) => sr.copy(attributeStream = ar :: sr.attributeStream)
+      case (cr: ChildStreamReceiver, sr) => sr.copy(childStreamReceivers = cr :: sr.childStreamReceivers)
+      case (cs: ChildrenStreamReceiver, sr) => sr.copy(childrenStreamReceivers = cs :: sr.childrenStreamReceivers)
+      case (ar: AttributeStreamReceiver, sr) => sr.copy(attributeStreamReceivers = ar :: sr.attributeStreamReceivers)
     }
   }
 
@@ -198,9 +195,7 @@ object DomUtils {
   private[outwatch] def extractChildrenAndDataObject(args: Seq[VDomModifier_]): (Seq[VNode_], DataObject) = {
     val SeparatedModifiers(emitters, receivers, properties, children) = separateModifiers(args)
 
-    val SeparatedReceivers(childReceivers, childrenReceivers, attributeReceivers) = separateReceivers(receivers)
-
-    val changeables = Changeables(attributeReceivers, childrenReceivers, childReceivers)
+    val changeables = separateReceivers(receivers)
 
     val eventHandlers = VDomProxy.emittersToSnabbDom(emitters)
 

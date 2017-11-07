@@ -26,15 +26,16 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
   "EventStreams" should "emit and receive events correctly" in {
     import outwatch.dom._
 
-    val vtree = for {
-      observable <- createMouseHandler()
-      buttonDisabled = observable.map(_ => true).startWith(Seq(false))
-    } yield div(id :="click", click --> observable,
+    val vtree = createMouseHandler().flatMap { observable =>
+
+      val buttonDisabled = observable.map(_ => true).startWith(Seq(false))
+
+      div(id := "click", click --> observable,
         button(id := "btn", disabled <-- buttonDisabled)
       )
+    }
 
-
-    vtree.flatMap(vtree => OutWatch.render("#app", vtree)).unsafeRunSync()
+    OutWatch.render("#app", vtree).unsafeRunSync()
     document.getElementById("btn").hasAttribute("disabled") shouldBe false
 
     val event = document.createEvent("Events")
@@ -49,13 +50,13 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
 
     val message = "ad"
 
-    val vtree = for {
-      observable <- createStringHandler()
-    } yield div(id := "click", click(message) --> observable,
+    val vtree = createStringHandler().flatMap { observable =>
+      div(id := "click", click(message) --> observable,
         span(id := "child", child <-- observable)
       )
+    }
 
-    vtree.flatMap(vtree => OutWatch.render("#app", vtree)).unsafeRunSync()
+    OutWatch.render("#app", vtree).unsafeRunSync()
 
     document.getElementById("child").innerHTML shouldBe ""
 
@@ -79,14 +80,13 @@ class DomEventSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEach w
 
     val messages = createStringHandler().unsafeRunSync()
 
-    val vtree = for {
-      stream <- createStringHandler()
-    } yield div(id :="click", click(messages) --> stream,
+    val vtree = createStringHandler().flatMap { stream =>
+      div(id := "click", click(messages) --> stream,
         span(id := "child", child <-- stream)
       )
+    }
 
-
-    vtree.flatMap(vtree => OutWatch.render("#app", vtree)).unsafeRunSync()
+    OutWatch.render("#app", vtree).unsafeRunSync()
 
     document.getElementById("child").innerHTML shouldBe ""
 
