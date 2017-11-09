@@ -3,11 +3,10 @@ package outwatch
 import cats.effect.IO
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
+import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.raw.{HTMLElement, HTMLInputElement}
-import org.scalajs.dom.{Element, Event, KeyboardEvent, document}
 import org.scalatest.BeforeAndAfterEach
-import outwatch.dom.StringNode
-import outwatch.dom._
+import outwatch.dom.{StringNode, _}
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, h}
 
@@ -60,7 +59,7 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyVDomModifier,
-      EventEmitter("click", PublishSubject[Event]),
+      Emitter("click", _ => ()),
       new StringNode("Test"),
       div().unsafeRunSync(),
       AttributeStreamReceiver("hidden",Observable())
@@ -78,12 +77,12 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyVDomModifier,
-      EventEmitter[Event]("click",PublishSubject[Event]),
-      EventEmitter[InputEvent]("input", PublishSubject[InputEvent]),
+      Emitter("click", _ => ()),
+      Emitter("input",  _ => ()),
       AttributeStreamReceiver("hidden",Observable()),
       AttributeStreamReceiver("disabled",Observable()),
       ChildrenStreamReceiver(Observable()),
-      EventEmitter[KeyboardEvent]("keyup", PublishSubject[KeyboardEvent])
+      Emitter("keyup",  _ => ())
     )
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
@@ -103,13 +102,13 @@ class OutWatchDomSpec extends UnitSpec with BeforeAndAfterEach {
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyVDomModifier,
-      EventEmitter[Event]("click",PublishSubject[Event]),
-      EventEmitter[InputEvent]("input", PublishSubject[InputEvent]),
+      Emitter("click", _ => ()),
+      Emitter("input", _ => ()),
       UpdateHook(PublishSubject[(Element, Element)]),
       AttributeStreamReceiver("hidden",Observable()),
       AttributeStreamReceiver("disabled",Observable()),
       ChildrenStreamReceiver(Observable()),
-      EventEmitter[KeyboardEvent]("keyup", PublishSubject[KeyboardEvent]),
+      Emitter("keyup", _ => ()),
       InsertHook(PublishSubject[Element])
     )
 

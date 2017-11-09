@@ -1,16 +1,10 @@
 package snabbdom
 
-import monix.execution.Ack
-import monix.reactive.Observer
 import org.scalajs.dom._
-import org.scalajs.dom.raw.HTMLInputElement
+import outwatch.dom.{Attr, Prop, _}
 
-import scala.scalajs.js.|
-import outwatch.dom._
-import outwatch.dom.{Attr, Prop}
-
-import scala.concurrent.Future
 import scala.scalajs.js
+import scala.scalajs.js.|
 
 object VDomProxy {
 
@@ -46,15 +40,6 @@ object VDomProxy {
   }
 
   private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[Event, Unit] = {
-    (e: Event) => emitters.map(emitterToFunction).foreach(_.apply(e))
+    (event: Event) => emitters.foreach(_.trigger(event))
   }
-
-  private def emitterToFunction(emitter: Emitter): Event => Future[Ack] = emitter match {
-    case se: StringEventEmitter => (e: Event) => se.sink.onNext(e.target.asInstanceOf[HTMLInputElement].value)
-    case be: BoolEventEmitter => (e: Event) => be.sink.onNext(e.target.asInstanceOf[HTMLInputElement].checked)
-    case ne: NumberEventEmitter => (e: Event) => ne.sink.onNext(e.target.asInstanceOf[HTMLInputElement].valueAsNumber)
-    case ee: EventEmitter[_] => (e: Event) => ee.sink.asInstanceOf[Observer[Event]].onNext(e)
-  }
-
-
 }

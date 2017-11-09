@@ -11,27 +11,11 @@ import outwatch.dom.StringNode
 trait ValueBuilder[T] extends Any {
   protected def attributeName: String
   protected def assign(value: T): outwatch.dom.Attribute
-  def :=(value: T) = IO.pure(assign(value))
+
+  def :=(value: T): IO[Attribute] = IO.pure(assign(value))
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
-  def <--(valueStream: Observable[T]) = {
+  def <--(valueStream: Observable[T]): IO[AttributeStreamReceiver] = {
     IO.pure(AttributeStreamReceiver(attributeName, valueStream.map(assign)))
-  }
-}
-
-object ChildStreamReceiverBuilder {
-  def <--[T <: Any](valueStream: Observable[T]): IO[ChildStreamReceiver] = {
-    IO.pure(ChildStreamReceiver(valueStream.map(anyToVNode)))
-  }
-
-  private val anyToVNode: Any => VNode = {
-    case vn: IO[_] => vn.asInstanceOf[VNode]
-    case any => IO.pure(StringNode(any.toString))
-  }
-}
-
-object ChildrenStreamReceiverBuilder {
-  def <--(childrenStream: Observable[Seq[VNode]]) = {
-    IO.pure(ChildrenStreamReceiver(childrenStream))
   }
 }
 
@@ -66,3 +50,22 @@ object BoolAttributeBuilder {
 object KeyBuilder {
   def :=(key: String) = IO.pure(Key(key))
 }
+
+object ChildStreamReceiverBuilder {
+  def <--[T <: Any](valueStream: Observable[T]): IO[ChildStreamReceiver] = {
+    IO.pure(ChildStreamReceiver(valueStream.map(anyToVNode)))
+  }
+
+  private val anyToVNode: Any => VNode = {
+    case vn: IO[_] => vn.asInstanceOf[VNode]
+    case any => IO.pure(StringNode(any.toString))
+  }
+}
+
+object ChildrenStreamReceiverBuilder {
+  def <--(childrenStream: Observable[Seq[VNode]]) = {
+    IO.pure(ChildrenStreamReceiver(childrenStream))
+  }
+}
+
+

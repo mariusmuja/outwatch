@@ -13,14 +13,8 @@ import collection.breakOut
 
 sealed trait VDomModifier_ extends Any
 
-sealed trait Emitter extends VDomModifier_ {
-  val eventType: String
-}
+case class Emitter(eventType: String, trigger: Event => Unit) extends VDomModifier_
 
-final case class EventEmitter[E <: Event](eventType: String, sink: Observer[E]) extends Emitter
-final case class StringEventEmitter(eventType: String, sink: Observer[String]) extends Emitter
-final case class BoolEventEmitter(eventType: String, sink: Observer[Boolean]) extends Emitter
-final case class NumberEventEmitter(eventType: String, sink: Observer[Double]) extends Emitter
 
 sealed trait Property extends VDomModifier_
 
@@ -32,14 +26,18 @@ object Attribute {
   def apply(title: String, value: String | Boolean) = Attr(title, value)
 }
 
+
 final case class Attr(title: String, value: String | Boolean) extends Attribute
 final case class Prop(title: String, value: String) extends Attribute
 final case class Style(title: String, value: String) extends Attribute
 
-final case class InsertHook(sink: Observer[Element]) extends Property
-final case class DestroyHook(sink: Observer[Element]) extends Property
-final case class UpdateHook(sink: Observer[(Element, Element)]) extends Property
 final case class Key(value: String) extends Property
+
+sealed trait Hook extends Property
+final case class InsertHook(observer: Observer[Element]) extends Hook
+final case class DestroyHook(observer: Observer[Element]) extends Hook
+final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook
+
 
 sealed trait Receiver extends VDomModifier_
 final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Receiver
