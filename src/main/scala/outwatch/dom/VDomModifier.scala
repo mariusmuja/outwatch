@@ -16,6 +16,7 @@ sealed trait VDomModifier_ extends Any
 sealed trait Emitter extends VDomModifier_ {
   val eventType: String
 }
+
 final case class EventEmitter[E <: Event](eventType: String, sink: Observer[E]) extends Emitter
 final case class StringEventEmitter(eventType: String, sink: Observer[String]) extends Emitter
 final case class BoolEventEmitter(eventType: String, sink: Observer[Boolean]) extends Emitter

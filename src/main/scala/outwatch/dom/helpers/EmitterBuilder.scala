@@ -2,6 +2,7 @@ package outwatch.dom.helpers
 
 import cats.effect.IO
 import monix.reactive.{Observable, Observer}
+
 import org.scalajs.dom._
 import outwatch.Sink
 import outwatch.dom.{BoolEventEmitter, NumberEventEmitter, StringEventEmitter, _}

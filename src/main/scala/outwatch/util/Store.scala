@@ -1,8 +1,8 @@
 package outwatch.util
 
 import cats.effect.IO
-import monix.execution.{Ack, Cancelable, Scheduler}
-import monix.reactive.Observable
+import monix.execution.Scheduler.Implicits.global
+import monix.execution.{Ack, Cancelable}
 import outwatch.Sink
 import outwatch.dom._
 import outwatch.dom.helpers.STRef
@@ -14,7 +14,7 @@ import scala.language.implicitConversions
 final case class Store[State, Action](initialState: State,
                                            reducer: (State, Action) => (State, Option[IO[Action]]),
                                            handler: Observable[Action] with Sink[Action]
-                                     )(implicit scheduler: Scheduler) {
+                                     ){
   val sink: Sink[Action] = handler
   val source: Observable[State] = handler
     .scan(initialState)(fold)
@@ -42,15 +42,14 @@ object Store {
 
   private val storeRef = STRef.empty
 
-  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode)
-                           (implicit scheduler: Scheduler): IO[Unit] = for {
+  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode): IO[Unit] = for {
     handler <- createHandler[A]()
     store <- IO(Store(initialState, reducer, handler))
     _ <- storeRef.asInstanceOf[STRef[Store[S, A]]].put(store)
     _ <- OutWatch.render(selector, root)
   } yield ()
 
-  def getStore[S, A]: IO[Store[S, A]] = 
+  def getStore[S, A]: IO[Store[S, A]] =
     storeRef.asInstanceOf[STRef[Store[S, A]]].getOrThrow(NoStoreException)
 
   private object NoStoreException extends

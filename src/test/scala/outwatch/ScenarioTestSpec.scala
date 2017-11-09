@@ -36,14 +36,12 @@ class ScenarioTestSpec extends AsyncFlatSpec with Matchers with BeforeAndAfterEa
       count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
 
       div <- div(
-
         div(
           button(id := "plus", "+", click --> handlePlus),
           button(id := "minus", "-", click --> handleMinus),
           span(id := "counter", child <-- count)
         )
       )
-
     } yield div
 
     val root = document.createElement("div")

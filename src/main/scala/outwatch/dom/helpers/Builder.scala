@@ -1,7 +1,6 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
-import monix.reactive.Observable
 
 import scala.language.dynamics
 import outwatch.dom._

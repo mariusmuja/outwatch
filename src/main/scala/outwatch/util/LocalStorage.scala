@@ -3,10 +3,10 @@ package outwatch.util
 import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
-import monix.reactive.Observable
 import monix.reactive.OverflowStrategy.Unbounded
 import outwatch.Sink
 import org.scalajs.dom.window.localStorage
+import outwatch.dom.Observable
 
 
 object LocalStorageReader {

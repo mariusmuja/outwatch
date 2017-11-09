@@ -3,7 +3,6 @@ package outwatch.dom.helpers
 import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
-import monix.reactive.Observable
 import org.scalajs.dom._
 import org.scalajs.dom.raw.HTMLInputElement
 import outwatch.dom._
