@@ -18,9 +18,7 @@ libraryDependencies ++= Seq(
   "org.scala-js"    %%% "scalajs-dom" % "0.9.3",
   "org.typelevel" %%% "cats-core" % "1.0.0-RC1",
   "org.typelevel" %%% "cats-effect" % "0.5",
-  "org.scalatest" %%% "scalatest" % "3.0.4" % Test,
-  "org.scalacheck" %%% "scalacheck" % "1.13.5" % Test,
-  "io.monadless" %%% "monadless-monix" % "0.0.13" % Test
+  "io.monix" %%% "minitest" % "2.0.0" % Test
 )
 
 npmDependencies in Compile ++= Seq(
@@ -58,6 +56,8 @@ scalacOptions ++= {
       Nil
   }
 }
+
+testFrameworks += new TestFramework("minitest.runner.Framework")
 
 requiresDOM in Test := true
 

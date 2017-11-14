@@ -1,5 +1,6 @@
 package outwatch
 
+import minitest.SimpleTestSuite
 import snabbdom.{DataObject, h, patch}
 
 import scalajs.js
@@ -7,8 +8,9 @@ import scalajs.js.|
 import org.scalajs.dom.document
 import org.scalajs.dom.raw.HTMLInputElement
 
-class SnabbdomSpec extends UnitSpec {
-  "The Snabbdom Facade" should "correctly patch the DOM" in {
+object SnabbdomSpec extends SimpleTestSuite {
+
+  test("The Snabbdom Facade should correctly patch the DOM") {
     val message = "Hello World"
     val vNode = h("span#msg", DataObject(js.Dictionary(), js.Dictionary()), message)
 
@@ -17,17 +19,17 @@ class SnabbdomSpec extends UnitSpec {
 
     patch(node, vNode)
 
-    document.getElementById("msg").innerHTML shouldBe message
+    assertEquals(document.getElementById("msg").innerHTML, message)
 
     val newMessage = "Hello Snabbdom!"
     val newNode = h("div#new", DataObject(js.Dictionary(), js.Dictionary()), newMessage)
 
     patch(vNode, newNode)
 
-    document.getElementById("new").innerHTML shouldBe newMessage
+    assertEquals(document.getElementById("new").innerHTML, newMessage)
   }
 
-  it should "correctly patch nodes with keys" in {
+  test("The Snabbdom Facade should correctly patch nodes with keys") {
     import outwatch.dom._
 
     val clicks = createHandler[Int](1).unsafeRunSync()
@@ -58,10 +60,10 @@ class SnabbdomSpec extends UnitSpec {
     inputElement().dispatchEvent(inputEvt)
     btn.dispatchEvent(clickEvt)
 
-    inputElement().value shouldBe ""
+    assertEquals(inputElement().value, "")
   }
 
-  it should "correctly handle boolean attributes" in {
+  test("The Snabbdom Facade should correctly handle boolean attributes") {
     val message = "Hello World"
     val attributes = js.Dictionary[String | Boolean]("bool1" -> true, "bool0" -> false, "string1" -> "true", "string0" -> "false")
     val vNode = h("span#msg", DataObject(attributes, js.Dictionary()), message)
@@ -72,6 +74,6 @@ class SnabbdomSpec extends UnitSpec {
     patch(node, vNode)
 
     val expected = s"""<span id="msg" bool1="" string1="true" string0="false">$message</span>"""
-    document.getElementById("msg").outerHTML shouldBe expected
+    assertEquals(document.getElementById("msg").outerHTML, expected)
   }
 }

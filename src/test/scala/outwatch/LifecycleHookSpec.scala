@@ -1,28 +1,28 @@
 package outwatch
 
 import cats.effect.IO
+import minitest.TestSuite
 import monix.execution.Ack.Continue
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
-import org.scalatest.BeforeAndAfterEach
 import outwatch.dom._
 
 
-class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
+object LifecycleHookSpec extends TestSuite[Unit] {
 
-  override def beforeEach(): Unit = {
+  def setup(): Unit = {
     val root = document.createElement("div")
     root.id = "app"
     document.body.appendChild(root)
     ()
   }
 
-  override def afterEach(): Unit = {
+  def tearDown(env: Unit): Unit = {
     document.body.innerHTML = ""
   }
 
-  "Insertion hooks" should "be called correctly" in {
+  test("Insertion hooks should be called correctly") { _ =>
 
     var switch = false
     val sink = Sink.create((_: Element) => IO {
@@ -32,15 +32,14 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
 
     val node = div(insert --> sink)
 
-    switch shouldBe false
+    assertEquals(switch, false)
 
     OutWatch.render("#app", node).unsafeRunSync()
 
-    switch shouldBe true
-
+    assertEquals(switch, true)
   }
 
-  it should "be called correctly on merged nodes" in {
+  test("Insertion hooks should be called correctly on merged nodes") { _ =>
     var switch = false
     val sink = Sink.create((_: Element) => IO{
       switch = true
@@ -54,17 +53,16 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
 
     val node = div(insert --> sink)(insert --> sink2)
 
-    switch shouldBe false
-    switch2 shouldBe false
+    assertEquals(switch, false)
+    assertEquals(switch2, false)
 
     OutWatch.render("#app", node).unsafeRunSync()
 
-    switch shouldBe true
-    switch2 shouldBe true
-
+    assertEquals(switch, true)
+    assertEquals(switch2, true)
   }
 
-  "Destruction hooks" should "be called correctly on merged nodes" in {
+  test("Destruction hooks should be called correctly on merged nodes") { _ =>
 
     var switch = false
     val sink = Sink.create((_: Element) => IO{
@@ -79,17 +77,16 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
 
     val node = div(child <-- Observable(span(destroy --> sink)(destroy --> sink2), "Hasdasd"))
 
-    switch shouldBe false
-    switch2 shouldBe false
+    assertEquals(switch, false)
+    assertEquals(switch2, false)
 
     OutWatch.render("#app", node).unsafeRunSync()
 
-    switch shouldBe true
-    switch2 shouldBe true
-
+    assertEquals(switch, true)
+    assertEquals(switch2, true)
   }
 
-  it should "be called correctly" in {
+  test("Destruction hooks should be called correctly") { _ =>
 
     var switch = false
     val sink = Sink.create((_: Element) => IO {
@@ -99,15 +96,15 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
 
     val node = div(child <-- Observable(span(destroy --> sink), "Hasdasd"))
 
-    switch shouldBe false
+    assertEquals(switch, false)
 
     OutWatch.render("#app", node).unsafeRunSync()
 
-    switch shouldBe true
+    assertEquals(switch, true)
 
   }
 
-  "Update hooks" should "be called correctly on merged nodes" in {
+  test("Update hooks should be called correctly on merged nodes") { _ =>
     var switch1 = false
     val sink1 = Sink.create((_: (Element, Element)) => IO{
       switch1 = true
@@ -123,16 +120,16 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
     val node = div(child <-- message, update --> sink1)(update --> sink2)
 
     OutWatch.render("#app", node).unsafeRunSync()
-    switch1 shouldBe false
-    switch2 shouldBe false
+    assertEquals(switch1, false)
+    assertEquals(switch2, false)
 
     message.onNext("wursi")
-    switch1 shouldBe true
-    switch2 shouldBe true
+    assertEquals(switch1, true)
+    assertEquals(switch2, true)
   }
 
 
-  it should "be called correctly" in {
+  test("Update hooks should be called correctly") { _ =>
 
     var switch = false
     val sink = Sink.create((_: (Element, Element)) => IO {
@@ -142,12 +139,11 @@ class LifecycleHookSpec extends UnitSpec with BeforeAndAfterEach {
 
     val node = div(child <-- Observable(span(update --> sink, "Hello"), span(update --> sink, "Hey")))
 
-    switch shouldBe false
+    assertEquals(switch, false)
 
     OutWatch.render("#app", node).unsafeRunSync()
 
-    switch shouldBe true
-
+    assertEquals(switch, true)
   }
 
 }
