@@ -13,8 +13,9 @@ import collection.breakOut
 
 sealed trait VDomModifier_ extends Any
 
-case class Emitter(eventType: String, trigger: Event => Unit) extends VDomModifier_
+case class CompositeModifier(modifiers: Seq[VDomModifier]) extends VDomModifier_
 
+case class Emitter(eventType: String, trigger: Event => Unit) extends VDomModifier_
 
 sealed trait Property extends VDomModifier_
 
@@ -37,6 +38,7 @@ sealed trait Hook extends Property
 final case class InsertHook(observer: Observer[Element]) extends Hook
 final case class DestroyHook(observer: Observer[Element]) extends Hook
 final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook
+final case class PostpatchHook(observer: Observer[(Element, Element)]) extends Hook
 
 
 sealed trait Receiver extends VDomModifier_

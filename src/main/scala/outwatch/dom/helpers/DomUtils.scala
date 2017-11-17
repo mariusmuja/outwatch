@@ -4,7 +4,7 @@ import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import org.scalajs.dom._
-import org.scalajs.dom.raw.HTMLInputElement
+//import org.scalajs.dom.raw.HTMLInputElement
 import outwatch.dom._
 import snabbdom._
 
@@ -30,62 +30,61 @@ object DomUtils {
 
   private def createSimpleDataObject(properties: Seq[Property], handlers: js.Dictionary[js.Function1[Event, Unit]]) = {
 
-    val SeparatedProperties(insert, delete, update, attributes, keys) = separateProperties(properties)
+    val SeparatedProperties(insert, destroy, update, postpatch, attributes, keys) = separateProperties(properties)
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
 
-    val insertHook = (p: VNodeProxy) => p.elm.foreach(e => insert.foreach(_.observer.onNext(e)))
-    val deleteHook = (p: VNodeProxy) => p.elm.foreach(e => delete.foreach(_.observer.onNext(e)))
+    val insertHook = createInsertHook(insert)
     val updateHook = createUpdateHook(update)
+    val postpatchHook = createPostpatchHook(postpatch)
+    val destroyHook = createDestroyHook(destroy)
+
     val key = keys.lastOption.map(_.value).orUndefined
 
-    DataObject.create(attrs, props, style, handlers, insertHook, deleteHook, updateHook, key)
+    DataObject.create(attrs, props, style, handlers, insertHook, destroyHook, updateHook, postpatchHook, key)
   }
-
-  private def seq[A, B](f1: (A, B) => Unit, f2: (A, B) => Unit): (A, B) => Unit = (a: A, b: B) => {
-    f1(a, b)
-    f2(a, b)
-  }
-
-  private val valueSyncHook: (VNodeProxy, VNodeProxy) => Unit = (_, node) => {
-    node.elm.foreach { elm =>
-      val input = elm.asInstanceOf[HTMLInputElement]
-      if (input.value != input.getAttribute("value")) {
-        input.value = input.getAttribute("value")
-      }
-    }
-  }
+//
+//  private def seq[A, B](f1: (A, B) => Unit, f2: (A, B) => Unit): (A, B) => Unit = (a: A, b: B) => {
+//    f1(a, b)
+//    f2(a, b)
+//  }
+//
+//  private val valueSyncHook: (VNodeProxy, VNodeProxy) => Unit = (_, node) => {
+//    node.elm.foreach { elm =>
+//      val input = elm.asInstanceOf[HTMLInputElement]
+//      if (input.value != input.getAttribute("value")) {
+//        input.value = input.getAttribute("value")
+//      }
+//    }
+//  }
 
   private def createReceiverDataObject(changeables: SeparatedReceivers,
                                        properties: Seq[Property],
                                        eventHandlers: js.Dictionary[js.Function1[Event, Unit]]) = {
 
-    val SeparatedProperties(insert, destroy, update, attributes, keys) = separateProperties(properties)
-
+    val SeparatedProperties(insert, destroy, update, postpatch, attributes, keys) = separateProperties(properties)
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
     val subscriptionRef = STRef.empty[Cancelable]
+
     val insertHook = createInsertHook(changeables, subscriptionRef, insert)
-    val deleteHook = createDestroyHook(subscriptionRef, destroy)
     val updateHook = createUpdateHook(update)
+//    val updateHookHelper = if (changeables.valueStreamExists) {
+//      seq(valueSyncHook, updateHook)
+//    } else {
+//      updateHook
+//    }
+    val postpatchHook = createPostpatchHook(postpatch)
+    val destroyHook = createDestroyHook(subscriptionRef, destroy)
+
     val key = keys.lastOption.map(_.value).getOrElse(changeables.hashCode.toString)
 
-    val updateHookHelper = if (changeables.valueStreamExists) {
-      seq(updateHook, valueSyncHook)
-    } else {
-      updateHook
-    }
-
-    DataObject.create(attrs, props, style, eventHandlers, insertHook, deleteHook, updateHookHelper, key)
+    DataObject.create(attrs, props, style, eventHandlers, insertHook, destroyHook, updateHook, postpatchHook, key)
   }
 
-  private def createUpdateHook(hooks: Seq[UpdateHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
-    for {
-      o <- old.elm
-      c <- cur.elm
-    } {
-      hooks.foreach(_.observer.onNext((o,c)))
-    }
-  }
+  /* Hooks */
 
+  @inline private def createInsertHook(hooks: Seq[InsertHook]) = (p: VNodeProxy) => {
+    p.elm.foreach(e => hooks.foreach(_.observer.onNext(e)))
+  }
 
   private def createInsertHook(changables: SeparatedReceivers,
                                subscriptionRef: STRef[Cancelable],
@@ -112,10 +111,22 @@ object DomUtils {
     proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
   }
 
+  @inline private def createUpdateHook(hooks: Seq[UpdateHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
+    for(o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o,c)))
+  }
+
+  @inline private def createPostpatchHook(hooks: Seq[PostpatchHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
+    for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
+  }
+
   private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]) = (proxy: VNodeProxy) => {
     proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
     subscription.update { s => s.cancel(); s }.unsafeRunSync()
     ()
+  }
+
+  @inline private def createDestroyHook(hooks: Seq[DestroyHook]) = (p: VNodeProxy) => {
+    p.elm.foreach(e => hooks.foreach(_.observer.onNext(e)))
   }
 
 
@@ -134,6 +145,15 @@ object DomUtils {
     case (rc: Receiver, sf) => sf.copy(receivers = rc :: sf.receivers)
     case (pr: Property, sf) => sf.copy(properties = pr :: sf.properties)
     case (vn: VNode_, sf) => sf.copy(vNodes = vn :: sf.vNodes)
+    case (vn: CompositeModifier, sf) =>
+      val modifiers = vn.modifiers.map(_.unsafeRunSync())
+      val sm = separateModifiers(modifiers)
+      sf.copy(
+        emitters = sf.emitters ++ sm.emitters,
+        receivers = sf.receivers ++ sm.receivers,
+        properties = sf.properties ++ sm.properties,
+        vNodes = sf.vNodes ++ sm.vNodes,
+      )
     case (EmptyVDomModifier, sf) => sf
   }
 
@@ -183,6 +203,7 @@ object DomUtils {
     insertHooks: List[InsertHook] = Nil,
     destroyHooks: List[DestroyHook] = Nil,
     updateHooks: List[UpdateHook] = Nil,
+    postpatchHooks: List[PostpatchHook] = Nil,
     attributeHooks: List[Attribute] = Nil,
     keys: List[Key] = Nil
   )
@@ -191,6 +212,7 @@ object DomUtils {
       case (ih: InsertHook, sp) => sp.copy(insertHooks = ih :: sp.insertHooks)
       case (dh: DestroyHook, sp) => sp.copy(destroyHooks = dh :: sp.destroyHooks)
       case (uh: UpdateHook, sp) => sp.copy(updateHooks = uh :: sp.updateHooks)
+      case (pph: PostpatchHook, sp) => sp.copy(postpatchHooks = pph :: sp.postpatchHooks)
       case (at: Attribute, sp)  => sp.copy(attributeHooks = at :: sp.attributeHooks)
       case (key: Key, sp) => sp.copy(keys = key :: sp.keys)
     }

@@ -20,6 +20,8 @@ package object dom extends Attributes with Tags with Handlers {
 
   implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse IO.pure(EmptyVDomModifier)
 
+  implicit def seqModifier(modifiers: Seq[VDomModifier]): VDomModifier = IO.pure(CompositeModifier(modifiers))
+
   implicit class ioVTreeMerge(vnode: VNode) {
     def apply(args: VDomModifier*): VNode = {
       vnode.flatMap(vnode_ => vnode_(args:_*))

@@ -4,7 +4,7 @@ import cats.effect.IO
 import monix.reactive.Observable
 import org.scalajs.dom._
 import outwatch.Sink
-import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, UpdateHook}
+import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, PostpatchHook, UpdateHook}
 
 
 trait EmitterBuilder[E <: Event, O] extends Any {
@@ -74,4 +74,8 @@ object DestroyHookBuilder extends HookBuilder[Element, DestroyHook] {
 
 object UpdateHookBuilder extends HookBuilder[(Element, Element), UpdateHook] {
   def hook(sink: Sink[(Element, Element)]) = UpdateHook(sink.observer)
+}
+
+object PostpatchHookBuilder extends HookBuilder[(Element, Element), PostpatchHook] {
+  def hook(sink: Sink[(Element, Element)]) = PostpatchHook(sink.observer)
 }
