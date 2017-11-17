@@ -29,20 +29,24 @@ trait Hooks extends js.Object {
   val insert: js.UndefOr[js.Function1[VNodeProxy, Unit]]
   val destroy: js.UndefOr[js.Function1[VNodeProxy, Unit]]
   val update: js.UndefOr[js.Function2[VNodeProxy, VNodeProxy, Unit]]
+  val postpatch: js.UndefOr[js.Function2[VNodeProxy, VNodeProxy, Unit]]
 }
 
 object Hooks {
   def apply(insert: js.UndefOr[js.Function1[VNodeProxy, Unit]] = js.undefined,
-            destroy: js.UndefOr[js.Function1[VNodeProxy, Unit]] = js.undefined,
-            update: js.UndefOr[js.Function2[VNodeProxy, VNodeProxy, Unit]] = js.undefined
-           ): Hooks = {
+    destroy: js.UndefOr[js.Function1[VNodeProxy, Unit]] = js.undefined,
+    update: js.UndefOr[js.Function2[VNodeProxy, VNodeProxy, Unit]] = js.undefined,
+    postpatch: js.UndefOr[js.Function2[VNodeProxy, VNodeProxy, Unit]] = js.undefined
+  ): Hooks = {
     val _insert = insert
     val _destroy = destroy
     val _update = update
+    val _postpatch = postpatch
     new Hooks {
       val insert = _insert
       val destroy = _destroy
       val update = _update
+      val postpatch = _postpatch
     }
   }
 }
@@ -96,6 +100,7 @@ object DataObject {
              insert: js.Function1[VNodeProxy, Unit],
              destroy: js.Function1[VNodeProxy, Unit],
              update: js.Function2[VNodeProxy, VNodeProxy, Unit],
+             postpatch: js.Function2[VNodeProxy, VNodeProxy, Unit],
              key: js.UndefOr[String | Int]
             ): DataObject = {
 
@@ -104,7 +109,7 @@ object DataObject {
       props = props,
       style = style,
       on = on,
-      hook = Hooks(insert = insert, destroy = destroy, update = update),
+      hook = Hooks(insert = insert, destroy = destroy, update = update, postpatch = postpatch),
       key = key
     )
   }

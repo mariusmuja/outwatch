@@ -1853,6 +1853,9 @@ trait OutWatchLifeCycleAttributes {
   /** Lifecycle hook for component updates. */
   lazy val update   = UpdateHookBuilder
 
+  /** Lifecycle hook for component postpatch. */
+  lazy val postpatch   = PostpatchHookBuilder
+
   /** Lifecycle hook for component destruction. */
   lazy val destroy  = DestroyHookBuilder
 }
