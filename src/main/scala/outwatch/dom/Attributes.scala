@@ -31,6 +31,7 @@ trait Attributes
   with MouseEventAttributes
   with OutWatchChildAttributes
   with SnabbdomKeyAttributes
+  with Properties
   with OutWatchLifeCycleAttributes
   with TableAttributes
   with TouchEventAttributes
@@ -836,7 +837,7 @@ trait InputAttributes {
     *
     * MDN
     */
-  lazy val value          = new AttributeBuilder[Any]("value")
+  lazy val valueAttr          = new AttributeBuilder[Any]("value")
 
   /** Indicates how the control wraps text. Possible values are:
     *   hard: The browser automatically inserts line breaks (CR+LF) so that each
@@ -1864,7 +1865,14 @@ trait OutWatchLifeCycleAttributes {
 trait SnabbdomKeyAttributes {
   lazy val key = KeyBuilder
 
+
+}
+
+trait Properties {
+
   def prop(name: String) = new PropertyBuilder[Any](name)
+
+  lazy val value = prop("value")
 }
 
 trait SharedEventAttributes {

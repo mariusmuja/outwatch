@@ -4,7 +4,6 @@ import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import org.scalajs.dom._
-//import org.scalajs.dom.raw.HTMLInputElement
 import outwatch.dom._
 import snabbdom._
 
@@ -42,20 +41,6 @@ object DomUtils {
 
     DataObject.create(attrs, props, style, handlers, insertHook, destroyHook, updateHook, postpatchHook, key)
   }
-//
-//  private def seq[A, B](f1: (A, B) => Unit, f2: (A, B) => Unit): (A, B) => Unit = (a: A, b: B) => {
-//    f1(a, b)
-//    f2(a, b)
-//  }
-//
-//  private val valueSyncHook: (VNodeProxy, VNodeProxy) => Unit = (_, node) => {
-//    node.elm.foreach { elm =>
-//      val input = elm.asInstanceOf[HTMLInputElement]
-//      if (input.value != input.getAttribute("value")) {
-//        input.value = input.getAttribute("value")
-//      }
-//    }
-//  }
 
   private def createReceiverDataObject(changeables: SeparatedReceivers,
                                        properties: Seq[Property],
@@ -67,11 +52,6 @@ object DomUtils {
 
     val insertHook = createInsertHook(changeables, subscriptionRef, insert)
     val updateHook = createUpdateHook(update)
-//    val updateHookHelper = if (changeables.valueStreamExists) {
-//      seq(valueSyncHook, updateHook)
-//    } else {
-//      updateHook
-//    }
     val postpatchHook = createPostpatchHook(postpatch)
     val destroyHook = createDestroyHook(subscriptionRef, destroy)
 
