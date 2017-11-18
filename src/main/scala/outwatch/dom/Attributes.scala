@@ -583,7 +583,7 @@ trait InputAttributes {
     *
     * MDN
     */
-  lazy val checked        = new BoolAttributeBuilder("checked")
+  lazy val checkedAttr        = new BoolAttributeBuilder("checked")
 
   /** The visible width of the text control, in average character widths. If it
     * is specified, it must be a positive integer. If it is not specified, the
@@ -1873,6 +1873,8 @@ trait Properties {
   def prop(name: String) = new PropertyBuilder[Any](name)
 
   lazy val value = prop("value")
+
+  lazy val checked        = new BoolPropertyBuilder("checked")
 }
 
 trait SharedEventAttributes {
