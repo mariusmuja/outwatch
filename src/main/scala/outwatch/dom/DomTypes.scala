@@ -14,6 +14,49 @@ import cats.effect.IO
 import org.scalajs.dom
 import helpers._
 
+private[outwatch] object DomTypesBuilder {
+  type GenericVNode[T] = VNode_
+
+  trait VNodeBuilder extends TagBuilder[GenericVNode, VNode_] {
+    // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
+    override def tag[Ref <: VNode_](tagName: String, void: Boolean): VNode_ =
+      VTree(tagName, Seq.empty)
+  }
+
+  object CodecBuilder {
+    type Attribute[T, _] = AttributeBuilder[T]
+    type Property[T, _] = PropertyBuilder[T]
+
+    def encodeProperty[V](codec: Codec[V, _]): V => String =
+      // codec.encode may encode to null values
+      (codec.encode _) andThen (v => if (v != null) v.toString else null)
+
+    def encodeAttribute[V](codec: Codec[V, String]): V => Attribute.Value = codec match {
+      //The BooleanAsAttrPresenceCodec does not play well with snabbdom. it
+      //encodes true as "" and false as null, whereas snabbdom needs true/false
+      //of type boolean (not string) for toggling the presence of the attribute.
+      case _: BooleanAsAttrPresenceCodec.type => identity
+      case _ => codec.encode _
+    }
+  }
+
+  abstract class ObservableEventPropBuilder(target: dom.EventTarget) extends EventPropBuilder[Observable, dom.Event] {
+    override def eventProp[V <: dom.Event](key: String): Observable[V] = Observable.create { obs =>
+      target.addEventListener(key, obs.next _)
+    }
+  }
+
+  trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
+
+    implicit def StyleIsBuilder[T](style: keys.Style[T]): StyleBuilder[T] = new StyleBuilder[T](style.cssName)
+
+    override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
+    override protected def buildIntStyleSetter(style: keys.Style[Int],value: Int): IO[Style] = style := value
+    override protected def buildStringStyleSetter(style: keys.Style[_],value: String): IO[Style] = new StyleBuilder[Any](style.cssName) := value
+  }
+}
+import DomTypesBuilder._
+
 trait DomTypes
   extends DomTags
   with DomAttrs
@@ -21,17 +64,6 @@ trait DomTypes
   with DomProps
   with DomEvents
   with DomStyles
-
-private[outwatch] object typehelper {
-  type GenericVNode[T] = VNode_
-}
-import typehelper._
-
-trait VNodeBuilder extends TagBuilder[GenericVNode, VNode_] {
-  // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-  override def tag[Ref <: VNode_](tagName: String, void: Boolean): VNode_ =
-    VTree(tagName, Seq.empty)
-}
 
 trait DomTags
   extends GroupingTags[GenericVNode, VNode_]
@@ -48,23 +80,6 @@ trait DomTagsExtra
   with MiscTags[GenericVNode, VNode_]
   with VNodeBuilder
 object DomTagsExtra extends DomTagsExtra
-
-object CodecBuilder {
-  type Attribute[T, _] = AttributeBuilder[T]
-  type Property[T, _] = PropertyBuilder[T]
-
-  def encodeProperty[V](codec: Codec[V, _]): V => String =
-    // codec.encode may encode to null values
-    (codec.encode _) andThen (v => if (v != null) v.toString else null)
-
-  def encodeAttribute[V](codec: Codec[V, String]): V => Attribute.Value = codec match {
-    //The BooleanAsAttrPresenceCodec does not play well with snabbdom. it
-    //encodes true as "" and false as null, whereas snabbdom needs true/false
-    //of type boolean (not string) for toggling the presence of the attribute.
-    case _: BooleanAsAttrPresenceCodec.type => identity
-    case _ => codec.encode _
-  }
-}
 
 trait DomAttrs
   extends Attrs[AttributeBuilder]
@@ -108,27 +123,12 @@ trait DomEvents
 }
 object DomEvents extends DomEvents
 
-abstract class ObservableEventPropBuilder(target: dom.EventTarget) extends EventPropBuilder[Observable, dom.Event] {
-  override def eventProp[V <: dom.Event](key: String): Observable[V] = Observable.create { obs =>
-    target.addEventListener(key, obs.next _)
-  }
-}
-
 object DomWindowEvents
   extends ObservableEventPropBuilder(dom.window)
   with WindowEventProps[Observable]
 object DomDocumentEvents
   extends ObservableEventPropBuilder(dom.document)
   with DocumentEventProps[Observable]
-
-trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
-
-  implicit def StyleIsBuilder[T](style: keys.Style[T]): StyleBuilder[T] = new StyleBuilder[T](style.cssName)
-
-  override def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
-  override def buildIntStyleSetter(style: keys.Style[Int],value: Int): IO[Style] = style := value
-  override def buildStringStyleSetter(style: keys.Style[_],value: String): IO[Style] = new StyleBuilder[Any](style.cssName) := value
-}
 
 trait DomStyles
   extends Styles[IO[Style]]
