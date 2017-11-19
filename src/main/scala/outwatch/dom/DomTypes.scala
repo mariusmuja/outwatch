@@ -9,6 +9,7 @@ import com.raquo.domtypes.generic.defs.props._
 import com.raquo.domtypes.generic.defs.styles._
 import com.raquo.domtypes.generic.defs.sameRefTags._
 import com.raquo.domtypes.jsdom.defs.eventProps._
+import rxscalajs.Observable
 import cats.effect.IO
 import org.scalajs.dom
 import helpers._
@@ -99,17 +100,26 @@ trait DomProps
 object DomProps extends DomProps
 
 trait DomEvents
-  extends MouseEventProps[SimpleEmitterBuilder]
-  with FormEventProps[SimpleEmitterBuilder]
-  with KeyboardEventProps[SimpleEmitterBuilder]
-  with ClipboardEventProps[SimpleEmitterBuilder]
-  with ErrorEventProps[SimpleEmitterBuilder]
+  extends HTMLElementEventProps[SimpleEmitterBuilder]
   with EventPropBuilder[SimpleEmitterBuilder, dom.Event] {
 
   override def eventProp[V <: dom.Event](key: String): SimpleEmitterBuilder[V] =
     EmitterBuilder[V](key)
 }
 object DomEvents extends DomEvents
+
+abstract class ObservableEventPropBuilder(target: dom.EventTarget) extends EventPropBuilder[Observable, dom.Event] {
+  override def eventProp[V <: dom.Event](key: String): Observable[V] = Observable.create { obs =>
+    target.addEventListener(key, obs.next _)
+  }
+}
+
+object DomWindowEvents
+  extends ObservableEventPropBuilder(dom.window)
+  with WindowEventProps[Observable]
+object DomDocumentEvents
+  extends ObservableEventPropBuilder(dom.document)
+  with DocumentEventProps[Observable]
 
 trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
 
