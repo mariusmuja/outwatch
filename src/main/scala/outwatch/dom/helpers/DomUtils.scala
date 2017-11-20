@@ -129,10 +129,10 @@ object DomUtils {
       val modifiers = vn.modifiers.map(_.unsafeRunSync())
       val sm = separateModifiers(modifiers)
       sf.copy(
-        emitters = sf.emitters ++ sm.emitters,
-        receivers = sf.receivers ++ sm.receivers,
-        properties = sf.properties ++ sm.properties,
-        vNodes = sf.vNodes ++ sm.vNodes,
+        emitters = sm.emitters ++ sf.emitters,
+        receivers = sm.receivers ++ sf.receivers,
+        properties = sm.properties ++ sf.properties,
+        vNodes = sm.vNodes ++ sf.vNodes,
       )
     case (EmptyVDomModifier, sf) => sf
   }
