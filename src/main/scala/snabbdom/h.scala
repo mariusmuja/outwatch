@@ -54,7 +54,7 @@ object Hooks {
 
 trait DataObject extends js.Object {
   val attrs: js.Dictionary[String | Boolean]
-  val props: js.Dictionary[String]
+  val props: js.Dictionary[String | Boolean]
   val style: js.Dictionary[String]
   val on: js.Dictionary[js.Function1[Event, Unit]]
   val hook: Hooks
@@ -69,7 +69,7 @@ object DataObject {
 
 
   def apply(attrs: js.Dictionary[String | Boolean],
-            props: js.Dictionary[String],
+            props: js.Dictionary[String | Boolean],
             style: js.Dictionary[String],
             on: js.Dictionary[js.Function1[Event, Unit]],
             hook: Hooks,
@@ -85,7 +85,7 @@ object DataObject {
 
     new DataObject {
       val attrs: js.Dictionary[String | Boolean] = _attrs
-      val props: js.Dictionary[String] = _props
+      val props: js.Dictionary[String | Boolean] = _props
       val style: js.Dictionary[String] = _style
       val on: js.Dictionary[js.Function1[Event, Unit]] = _on
       val hook: Hooks = _hook
@@ -94,7 +94,7 @@ object DataObject {
   }
 
   def create(attrs: js.Dictionary[String | Boolean],
-             props: js.Dictionary[String],
+             props: js.Dictionary[String | Boolean],
              style: js.Dictionary[String],
              on: js.Dictionary[js.Function1[Event, Unit]],
              insert: js.Function1[VNodeProxy, Unit],

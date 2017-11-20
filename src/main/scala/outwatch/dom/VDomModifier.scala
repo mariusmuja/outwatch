@@ -29,7 +29,7 @@ object Attribute {
 
 
 final case class Attr(title: String, value: String | Boolean) extends Attribute
-final case class Prop(title: String, value: String) extends Attribute
+final case class Prop(title: String, value: String | Boolean) extends Attribute
 final case class Style(title: String, value: String) extends Attribute
 
 final case class Key(value: String) extends Property
