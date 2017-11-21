@@ -40,7 +40,6 @@ final case class DestroyHook(observer: Observer[Element]) extends Hook
 final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook
 final case class PostpatchHook(observer: Observer[(Element, Element)]) extends Hook
 
-
 sealed trait Receiver extends VDomModifier_
 final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Receiver
 final case class ChildStreamReceiver(childStream: Observable[VNode]) extends Receiver

@@ -5,7 +5,10 @@ import cats.effect.IO
 import scala.language.implicitConversions
 
 
-package object dom extends Attributes with Tags with Handlers {
+package object dom extends Attributes with Tags with HandlerFactories {
+
+  type VNode = IO[VNode_]
+  type VDomModifier = IO[VDomModifier_]
 
   type Observable[+A] = monix.reactive.Observable[A]
   val Observable = monix.reactive.Observable
@@ -13,8 +16,11 @@ package object dom extends Attributes with Tags with Handlers {
   type Sink[-A] = outwatch.Sink[A]
   val Sink = outwatch.Sink
 
-  type VNode = IO[VNode_]
-  type VDomModifier = IO[VDomModifier_]
+  type Pipe[-I, +O] = outwatch.Pipe[I, O]
+  val Pipe = outwatch.Pipe
+
+  type Handler[T] = outwatch.Handler[T]
+  val Handler = outwatch.Handler
 
   implicit def stringNode(string: String): VDomModifier = IO.pure(StringNode(string))
 

@@ -6,7 +6,9 @@ import snabbdom.{DataObject, h, patch}
 import scalajs.js
 import scalajs.js.|
 import org.scalajs.dom.document
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.html
+
+import Deprecated.IgnoreWarnings.initEvent
 
 object SnabbdomSpec extends SimpleTestSuite {
 
@@ -32,7 +34,7 @@ object SnabbdomSpec extends SimpleTestSuite {
   test("The Snabbdom Facade should correctly patch nodes with keys") {
     import outwatch.dom._
 
-    val clicks = createHandler[Int](1).unsafeRunSync()
+    val clicks = Handler.create[Int](1).unsafeRunSync()
     val nodes = clicks.map { i =>
       div(
         dom.key := s"key-$i",
@@ -48,12 +50,12 @@ object SnabbdomSpec extends SimpleTestSuite {
     OutWatch.render("#app", div(child <-- nodes)).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    inputEvt.initEvent("input", false, true)
+    initEvent(inputEvt)("input", false, true)
 
     val clickEvt = document.createEvent("Events")
-    clickEvt.initEvent("click", true, true)
+    initEvent(clickEvt)("click", true, true)
 
-    def inputElement() = document.getElementById("input").asInstanceOf[HTMLInputElement]
+    def inputElement() = document.getElementById("input").asInstanceOf[html.Input]
     val btn = document.getElementById("btn")
 
     inputElement().value = "Something"

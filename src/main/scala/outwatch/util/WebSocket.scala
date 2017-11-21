@@ -4,7 +4,7 @@ import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy.Unbounded
-import org.scalajs.dom.raw.{CloseEvent, ErrorEvent, MessageEvent}
+import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent}
 import outwatch.Sink
 
 import scala.language.implicitConversions

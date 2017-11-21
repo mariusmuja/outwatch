@@ -1,10 +1,11 @@
 package outwatch.dom.helpers
 
-import org.scalajs.dom.raw.{Event, HTMLInputElement}
+import org.scalajs.dom.Event
+import org.scalajs.dom.html
 
 
 class InputEvent() extends Event {
   override def target = {
-    super.target.asInstanceOf[HTMLInputElement]
+    super.target.asInstanceOf[html.Input]
   }
 }

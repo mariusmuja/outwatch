@@ -4,8 +4,8 @@ import cats.effect.IO
 import minitest.TestSuite
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom.{Element, document}
-import org.scalajs.dom.raw.{HTMLElement, HTMLInputElement}
+import org.scalajs.dom.{document, Element}
+import org.scalajs.dom.html
 import outwatch.dom.{StringNode, _}
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, h}
@@ -188,7 +188,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   test("VTrees should be replaced if they contain changeables") { _ =>
 
     def page(num: Int): VNode = {
-      val pageNum = createHandler[Int](num).unsafeRunSync()
+      val pageNum = Handler.create[Int](num).unsafeRunSync()
 
       div( id := "page",
         num match {
@@ -303,7 +303,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     DomUtils.render(node, vtree).unsafeRunSync()
 
-    val field = document.getElementById("input").asInstanceOf[HTMLInputElement]
+    val field = document.getElementById("input").asInstanceOf[html.Input]
 
     assertEquals(field.value, "")
 
@@ -431,13 +431,13 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     DomUtils.render(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
-    assertEquals(node.children(0).asInstanceOf[HTMLElement].style.color, "red")
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
 
     messages.onNext("blue") // should be ignored
-    assertEquals(node.children(0).asInstanceOf[HTMLElement].style.color, "red")
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
 
     otherMessages.onNext("green")
-    assertEquals(node.children(0).asInstanceOf[HTMLElement].style.color, "green")
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
   }
 
 }

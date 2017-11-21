@@ -1,16 +1,15 @@
 package outwatch
 
+import minitest.TestSuite
+import monix.eval.Task
 import monix.reactive.Observable
-import org.scalajs.dom._
-import org.scalajs.dom.raw.HTMLInputElement
+import org.scalajs.dom.{html, _}
 import outwatch.dom._
 import outwatch.dom.helpers.DomUtils
-import minitest.TestSuite
-import minitest.api.{AssertionException, Asserts, SourceLocation}
-import monix.eval.Task
 
 import scala.concurrent.duration.FiniteDuration
 
+import Deprecated.IgnoreWarnings.initEvent
 
 object ScenarioTestSpec extends TestSuite[Unit] {
 
@@ -29,10 +28,10 @@ object ScenarioTestSpec extends TestSuite[Unit] {
 
   testAsync("A simple counter application should work as intended") { _ =>
     val node = for {
-      handlePlus <- createMouseHandler()
+      handlePlus <- Handler.mouseEvents
       plusOne = handlePlus.map(_ => 1)
 
-      handleMinus <- createMouseHandler()
+      handleMinus <- Handler.mouseEvents
       minusOne = handleMinus.map(_ => -1)
 
       count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
@@ -52,7 +51,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     DomUtils.render(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
+    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
 
     assertEquals(document.getElementById("counter").innerHTML, 0.toString)
 
@@ -81,7 +80,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
   test("A simple name application should work as intended") { _ =>
     val greetStart = "Hello ,"
 
-    val node = createStringHandler().flatMap { nameHandler =>
+    val node = Handler.create[String].flatMap { nameHandler =>
       div(
         label("Name:"),
         input(id := "input", inputType := "text", inputString --> nameHandler),
@@ -97,17 +96,17 @@ object ScenarioTestSpec extends TestSuite[Unit] {
 
 
     val evt = document.createEvent("HTMLEvents")
-    evt.initEvent("input", false, true)
+    initEvent(evt)("input", false, true)
     val name = "Luka"
 
-    document.getElementById("input").asInstanceOf[HTMLInputElement].value = name
+    document.getElementById("input").asInstanceOf[html.Input].value = name
     document.getElementById("input").dispatchEvent(evt)
 
     assertEquals(document.getElementById("greeting").innerHTML, greetStart + name)
 
     val name2 = "Peter"
 
-    document.getElementById("input").asInstanceOf[HTMLInputElement].value = name2
+    document.getElementById("input").asInstanceOf[html.Input].value = name2
     document.getElementById("input").dispatchEvent(evt)
 
     assertEquals(document.getElementById("greeting").innerHTML, greetStart + name2)
@@ -116,7 +115,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
   test("A component should be referential transparent") { _ =>
 
     def component() = {
-      createStringHandler().flatMap { handler =>
+      Handler.create[String].flatMap { handler =>
         div(
           button(click("clicked") --> handler),
           div(`class` := "label", child <-- handler)
@@ -125,7 +124,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     }
 
     val clickEvt = document.createEvent("Events")
-    clickEvt.initEvent("click", true, true)
+    initEvent(clickEvt)("click", true, true)
 
     val comp = component()
 
@@ -158,9 +157,9 @@ object ScenarioTestSpec extends TestSuite[Unit] {
 
     def TextFieldComponent(labelText: String, outputStream: Sink[String]) = for {
 
-      textFieldStream <- createStringHandler()
-      clickStream <- createMouseHandler()
-      keyStream <- createKeyboardHandler()
+      textFieldStream <- Handler.create[String]
+      clickStream <- Handler.mouseEvents
+      keyStream <- Handler.keyboardEvents
 
       buttonDisabled = textFieldStream
         .map(_.length < 2)
@@ -192,8 +191,8 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     }
 
     val vtree = for {
-      inputHandler <- createStringHandler()
-      deleteHandler <- createStringHandler()
+      inputHandler <- Handler.create[String]
+      deleteHandler <- Handler.create[String]
 
       adds = inputHandler
         .map(addToList)
@@ -218,12 +217,12 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     DomUtils.render(root, vtree).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    inputEvt.initEvent("input", false, true)
+    initEvent(inputEvt)("input", false, true)
 
     val clickEvt = document.createEvent("Events")
-    clickEvt.initEvent("click", true, true)
+    initEvent(clickEvt)("click", true, true)
 
-    val inputElement = document.getElementById("input").asInstanceOf[HTMLInputElement]
+    val inputElement = document.getElementById("input").asInstanceOf[html.Input]
     val submitButton = document.getElementById("submit")
     val list = document.getElementById("list")
 
