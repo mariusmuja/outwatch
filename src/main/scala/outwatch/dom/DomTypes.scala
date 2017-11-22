@@ -9,7 +9,6 @@ import com.raquo.domtypes.generic.defs.props._
 import com.raquo.domtypes.generic.defs.styles._
 import com.raquo.domtypes.generic.defs.sameRefTags._
 import com.raquo.domtypes.jsdom.defs.eventProps._
-import rxscalajs.Observable
 import cats.effect.IO
 import org.scalajs.dom
 import helpers._
@@ -81,6 +80,7 @@ trait DomTagsExtra
   with VNodeBuilder
 object DomTagsExtra extends DomTagsExtra
 
+
 trait DomAttrs
   extends Attrs[AttributeBuilder]
   with AttrBuilder[AttributeBuilder] {
@@ -92,6 +92,7 @@ object DomAttrs extends DomAttrs
 
 trait DomReflectedAttrs
   extends ReflectedAttrs[CodecBuilder.Attribute]
+  with DomAttrsCompat[CodecBuilder.Attribute]
   with ReflectedAttrBuilder[CodecBuilder.Attribute] {
 
   override protected def reflectedAttr[V, DomPropV](

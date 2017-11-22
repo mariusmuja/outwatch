@@ -13,6 +13,8 @@ trait OutwatchAttributes
   with TypedInputEventProps
   with AttributeHelpers
 
+object OutwatchAttributes extends OutwatchAttributes
+
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributes {
   /** A special attribute that takes a stream of single child nodes. */
