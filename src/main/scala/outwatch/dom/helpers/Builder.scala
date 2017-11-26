@@ -51,7 +51,7 @@ object KeyBuilder {
 }
 
 object ChildStreamReceiverBuilder {
-  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] = IO {
+  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[_ >: T]): IO[ChildStreamReceiver] = IO {
     ChildStreamReceiver(valueStream.map(r.render))
   }
 }
