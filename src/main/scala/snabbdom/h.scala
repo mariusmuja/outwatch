@@ -140,7 +140,7 @@ object patch {
     SnabbdomClass.default,
     SnabbdomEventListeners.default,
     SnabbdomAttributes.default,
-    SnabbdomProps.default,
+    SnabbdomCustomProps.default,
     SnabbdomStyle.default
   ))
 
@@ -187,10 +187,41 @@ object SnabbdomAttributes extends js.Object{
   val default: js.Any = js.native
 }
 
-@js.native
-@JSImport("snabbdom/modules/props", JSImport.Namespace, globalFallback = "snabbdom_props")
-object SnabbdomProps extends js.Object{
-  val default: js.Any = js.native
+// @js.native
+// @JSImport("snabbdom/modules/props", JSImport.Namespace, globalFallback = "snabbdom_props")
+// object SnabbdomProps extends js.Object{
+//   val default: js.Any = js.native
+// }
+
+object SnabbdomCustomProps {
+
+  private val emptyObject:js.Dictionary[Any] = js.Dictionary.empty[Any]
+
+  def updateProps(oldVnode: VNodeProxy, vnode: VNodeProxy): Unit = {
+    val oldPropsOpt = oldVnode.data.props
+    val propsOpt = vnode.data.props
+    val elm = vnode.elm.get.asInstanceOf[js.Dictionary[Any]] //TODO?
+
+    if (oldPropsOpt == js.undefined && propsOpt == js.undefined) return
+    if (oldPropsOpt == propsOpt) return
+    val oldProps = if (oldPropsOpt == js.undefined) emptyObject else oldPropsOpt
+    val props = if (propsOpt == js.undefined) emptyObject else propsOpt
+
+    for (key <- oldProps.keys if !props.isDefinedAt(key)) {
+      elm -= key
+    }
+    for ((key, cur) <- props) {
+      val old = elm.get(key)
+      if (old.fold(true)(_ != cur)) {
+        elm += key -> cur
+      }
+    }
+  }
+
+  val default: js.Any = js.Dynamic.literal (
+    create = (updateProps _) : js.Function2[VNodeProxy, VNodeProxy, Unit],
+    update = (updateProps _) : js.Function2[VNodeProxy, VNodeProxy, Unit]
+  )
 }
 
 @js.native
