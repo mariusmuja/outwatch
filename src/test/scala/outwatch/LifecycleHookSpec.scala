@@ -75,7 +75,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span(destroy --> sink)(destroy --> sink2), "Hasdasd"))
+    val node = div(child <-- Observable[VNode](span(destroy --> sink)(destroy --> sink2), "Hasdasd"))
 
     assertEquals(switch, false)
     assertEquals(switch2, false)
@@ -94,7 +94,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span(destroy --> sink), "Hasdasd"))
+    val node = div(child <-- Observable[VNode](span(destroy --> sink), "Hasdasd"))
 
     assertEquals(switch, false)
 

@@ -2,9 +2,10 @@ package outwatch
 
 import cats.effect.IO
 import minitest.TestSuite
+import monix.execution.Ack.Continue
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom.{document, Element}
+import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html
 import outwatch.dom.{StringNode, _}
 import outwatch.dom.helpers._
@@ -13,7 +14,7 @@ import snabbdom.{DataObject, h}
 import scala.collection.immutable.Seq
 import scala.language.reflectiveCalls
 import scala.scalajs.js
-import scala.scalajs.js.{JSON, |}
+import scala.scalajs.js.JSON
 
 object OutWatchDomSpec extends TestSuite[Unit]{
 
@@ -65,15 +66,24 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       Emitter("click", _ => ()),
       new StringNode("Test"),
       div().unsafeRunSync(),
-      AttributeStreamReceiver("hidden",Observable())
+      AttributeStreamReceiver("hidden",Observable()),
+      CompositeVDomModifier(
+        Seq(
+          div(),
+          Attributes.`class` := "blue",
+          Attributes.onClick(1) --> Sink.create[Int](_ => IO.pure(Continue)),
+          Attributes.hidden <-- Observable(false)
+        )
+      )
     )
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, vNodes) = DomUtils.separateModifiers(modifiers)
 
-    assertEquals(emitters.length, 1)
-    assertEquals(receivers.length, 1)
-    assertEquals(vNodes.length, 2)
-    assertEquals(properties.length, 1)
+    assertEquals(emitters.length, 2)
+    assertEquals(receivers.length, 2)
+    assertEquals(vNodes.length, 3)
+    assertEquals(properties.length, 2)
+
   }
 
   test("VDomModifiers should be separated correctly with children") { _ =>
@@ -247,17 +257,18 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   test("The HTML DSL should construct VTrees with boolean attributes") { _ =>
     import outwatch.dom._
 
-    def boolBuilder(name: String) = new BoolAttributeBuilder(name)
-    def anyBuilder(name: String) = new AttributeBuilder[Boolean](name)
+    def boolBuilder(name: String) = new AttributeBuilder[Boolean](name, identity)
+    def stringBuilder(name: String) = new AttributeBuilder[Boolean](name, _.toString)
     val vtree = div(
-      IO.pure(boolBuilder("a")),
+      boolBuilder("a"),
       boolBuilder("b") := true,
       boolBuilder("c") := false,
-      anyBuilder("d") := true,
-      anyBuilder("e") := false
+      stringBuilder("d"),
+      stringBuilder("e") := true,
+      stringBuilder("f") := false
     )
 
-    val attrs = js.Dictionary[String | Boolean]("a" -> true, "b" -> true, "c" -> false, "d" -> "true", "e" -> "false")
+    val attrs = js.Dictionary[dom.Attr.Value]("a" -> true, "b" -> true, "c" -> false, "d" -> "true", "e" -> "true", "f" -> "false")
     val expected = h("div", DataObject(attrs, js.Dictionary()), js.Array[Any]())
 
     assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(expected))
@@ -405,26 +416,27 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   test("The HTML DSL should update merged node attributes correctly") { _ =>
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
-    val vNode = div(data <-- messages)(data <-- otherMessages)
+    val vNode = div(data.noise <-- messages)(data.noise <-- otherMessages)
+
 
     val node = document.createElement("div")
     document.body.appendChild(node)
     DomUtils.render(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
-    assertEquals(node.children(0).getAttribute("data"), "otherMessage")
+    assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
 
     messages.onNext("message") // should be ignored
-    assertEquals(node.children(0).getAttribute("data"), "otherMessage")
+    assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
 
     otherMessages.onNext("genus")
-    assertEquals(node.children(0).getAttribute("data"), "genus")
+    assertEquals(node.children(0).getAttribute("data-noise"), "genus")
   }
 
-  test("The HTML DSL should update merged node styles correctly") { _ =>
+  test("The HTML DSL should update merged node styles written with style() correctly") { _ =>
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
-    val vNode = div(stl("color") <-- messages)(stl("color") <-- otherMessages)
+    val vNode = div(style("color") <-- messages)(style("color") <-- otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
@@ -440,4 +452,22 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
   }
 
+  test("The HTML DSL should update merged node styles correctly") { _ =>
+    val messages = PublishSubject[String]
+    val otherMessages = PublishSubject[String]
+    val vNode = div(color <-- messages)(color <-- otherMessages)
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    DomUtils.render(node, vNode).unsafeRunSync()
+
+    otherMessages.onNext("red")
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+
+    messages.onNext("blue") // should be ignored
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+
+    otherMessages.onNext("green")
+    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
+  }
 }

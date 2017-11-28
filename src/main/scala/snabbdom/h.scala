@@ -53,8 +53,10 @@ object Hooks {
 
 
 trait DataObject extends js.Object {
-  val attrs: js.Dictionary[String | Boolean]
-  val props: js.Dictionary[String | Boolean]
+  import DataObject._
+
+  val attrs: js.Dictionary[AttrValue]
+  val props: js.Dictionary[PropValue]
   val style: js.Dictionary[String]
   val on: js.Dictionary[js.Function1[Event, Unit]]
   val hook: Hooks
@@ -63,13 +65,16 @@ trait DataObject extends js.Object {
 
 object DataObject {
 
-  def apply(attrs: js.Dictionary[String | Boolean],
+  type PropValue = Any
+  type AttrValue = String | Boolean
+
+  def apply(attrs: js.Dictionary[AttrValue],
             on: js.Dictionary[js.Function1[Event, Unit]]
            ): DataObject = apply(attrs, js.Dictionary.empty, js.Dictionary.empty, on, Hooks(), js.undefined)
 
 
-  def apply(attrs: js.Dictionary[String | Boolean],
-            props: js.Dictionary[String | Boolean],
+  def apply(attrs: js.Dictionary[AttrValue],
+            props: js.Dictionary[PropValue],
             style: js.Dictionary[String],
             on: js.Dictionary[js.Function1[Event, Unit]],
             hook: Hooks,
@@ -84,8 +89,8 @@ object DataObject {
     val _key = key
 
     new DataObject {
-      val attrs: js.Dictionary[String | Boolean] = _attrs
-      val props: js.Dictionary[String | Boolean] = _props
+      val attrs: js.Dictionary[AttrValue] = _attrs
+      val props: js.Dictionary[PropValue] = _props
       val style: js.Dictionary[String] = _style
       val on: js.Dictionary[js.Function1[Event, Unit]] = _on
       val hook: Hooks = _hook
@@ -93,8 +98,8 @@ object DataObject {
     }
   }
 
-  def create(attrs: js.Dictionary[String | Boolean],
-             props: js.Dictionary[String | Boolean],
+  def create(attrs: js.Dictionary[AttrValue],
+             props: js.Dictionary[PropValue],
              style: js.Dictionary[String],
              on: js.Dictionary[js.Function1[Event, Unit]],
              insert: js.Function1[VNodeProxy, Unit],

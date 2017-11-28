@@ -5,8 +5,11 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
 import org.scalajs.dom.html
 import outwatch.dom._
-
 import Deprecated.IgnoreWarnings.initEvent
+import monix.eval.Task
+import monix.execution.Ack.Continue
+
+import scala.concurrent.duration.FiniteDuration
 
 object DomEventSpec extends TestSuite[Unit] {
 
@@ -28,8 +31,8 @@ object DomEventSpec extends TestSuite[Unit] {
     val vtree = Handler.mouseEvents.flatMap { observable =>
 
       val buttonDisabled = observable.map(_ => true).startWith(Seq(false))
-
-      div(id := "click", click --> observable,
+      
+      div(id := "click", onClick --> observable,
         button(id := "btn", disabled <-- buttonDisabled)
       )
     }
@@ -49,7 +52,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val message = "ad"
 
     val vtree = Handler.create[String].flatMap { observable =>
-      div(id := "click", click(message) --> observable,
+      div(id := "click", onClick(message) --> observable,
         span(id := "child", child <-- observable)
       )
     }
@@ -74,7 +77,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val messages = Handler.create[String].unsafeRunSync()
 
     val vtree = Handler.create[String].flatMap { stream =>
-      div(id := "click", click(messages) --> stream,
+      div(id := "click", onClick(messages) --> stream,
         span(id := "child", child <-- stream)
       )
     }
@@ -185,7 +188,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val messages = ("Hello", "World")
 
     val node = div(
-      button(id := "click", click(messages._1) --> first, click(messages._2) --> second),
+      button(id := "click", onClick(messages._1) --> first, onClick(messages._2) --> second),
       span(id:="first",child <-- first),
       span(id:="second",child <-- second)
     )
@@ -209,7 +212,7 @@ object DomEventSpec extends TestSuite[Unit] {
 
     val node = Handler.create[(MouseEvent, Int)].flatMap { stream =>
       div(
-        button(id := "click", click.map(toTuple) --> stream),
+        button(id := "click", onClick.map(toTuple) --> stream),
         span(id := "num", child <-- stream.map(_._2))
       )
     }
@@ -236,7 +239,7 @@ object DomEventSpec extends TestSuite[Unit] {
       val state = stream.scan(List.empty[Int])((l, s) => l :+ s)
 
       div(
-        button(id := "click", click.transform(transformer) --> stream),
+        button(id := "click", onClick.transform(transformer) --> stream),
         span(id := "num", children <-- state.map(nums => nums.map(num => span(num.toString))))
 
       )
@@ -258,10 +261,9 @@ object DomEventSpec extends TestSuite[Unit] {
 
     val number = 42
     val node = Handler.create[Int].flatMap { stream =>
-
       div(
-        button(id := "input", inputString(number) --> stream),
-        span(id := "num", child <-- stream)
+        button(id := "input", onInputString(number) --> stream),
+        span(id:="num",child <-- stream)
       )
     }
 
@@ -282,7 +284,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val someClass = "some-class"
     val node = Handler.create[Boolean].flatMap { stream =>
       div(
-        button(id := "input", tpe := "checkbox", click(true) --> stream),
+        button(id := "input", tpe := "checkbox", onClick(true) --> stream),
         span(id := "toggled", stream ?= (className := someClass))
       )
     }
@@ -306,8 +308,8 @@ object DomEventSpec extends TestSuite[Unit] {
 
       Handler.create[String].flatMap { stream =>
         div(
-          input(id := "input", tpe := "text", inputString --> stream),
-          button(id := "submit", click(stream) --> submit),
+          input(id := "input", tpe := "text", onInputString --> stream),
+          button(id := "submit", onClick(stream) --> submit),
           ul( id := "items",
             children <-- state.map(items => items.map(it => li(it)))
           )
@@ -339,4 +341,73 @@ object DomEventSpec extends TestSuite[Unit] {
 
     assertEquals(document.getElementById("items").childNodes.length, 1)
   }
+
+
+  test("Boolean Props should be handled corectly") { _ =>
+
+    val node = Handler.create[Boolean].flatMap { checkValue =>
+      div(
+        input(id := "checkbox", `type` := "Checkbox", checked <-- checkValue),
+        button(id := "on_button", onClick(true) --> checkValue, "On"),
+        button(id := "off_button", onClick(false) --> checkValue, "Off")
+      )
+    }
+
+    OutWatch.render("#app", node).unsafeRunSync()
+
+    val checkbox = document.getElementById("checkbox").asInstanceOf[html.Input]
+    val onButton = document.getElementById("on_button")
+    val offButton = document.getElementById("off_button")
+
+    assertEquals(checkbox.checked, false)
+
+    val clickEvt = document.createEvent("Events")
+    initEvent(clickEvt)("click", true, true)
+
+    onButton.dispatchEvent(clickEvt)
+
+    assertEquals(checkbox.checked, true)
+
+    offButton.dispatchEvent(clickEvt)
+
+    assertEquals(checkbox.checked, false)
+  }
+
+  private val delay = FiniteDuration(20,"ms")
+
+  testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") { _ =>
+    import outwatch.dom._
+
+    var docClicked = false
+    var winClicked = false
+    WindowEvents.onClick.subscribe { ev =>
+      winClicked = true
+      Continue
+    }
+    DocumentEvents.onClick.subscribe { ev =>
+      docClicked = true
+      Continue
+    }
+
+    val node = div(
+      button(id := "input", tpe := "checkbox")
+    )
+
+    OutWatch.render("#app", node).unsafeRunSync()
+
+    val inputEvt = document.createEvent("HTMLEvents")
+    initEvent(inputEvt)("click", true, false)
+
+    document.getElementById("input").dispatchEvent(inputEvt)
+
+    (for {
+      _ <- Task {
+        assertEquals(winClicked, true)
+      }.delayExecution(delay)
+      _ <- Task {
+        assertEquals(docClicked, true)
+      }.delayExecution(delay)
+    } yield ()).runAsync
+  }
+
 }

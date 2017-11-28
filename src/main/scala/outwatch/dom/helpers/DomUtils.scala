@@ -15,6 +15,38 @@ import monix.execution.Scheduler.Implicits.global
 
 object DomUtils {
 
+  private case class Changeables(attributeStreamReceivers: Seq[AttributeStreamReceiver],
+                                 childrenStreamReceivers: Seq[ChildrenStreamReceiver],
+                                 childStreamReceivers: Seq[ChildStreamReceiver]) {
+    lazy val observable: Observable[(Seq[Attribute], Seq[VNode])] = {
+      val childReceivers: Observable[Seq[VNode]] = Observable.combineLatestList(
+        childStreamReceivers.map(_.childStream) : _*
+      )
+
+      val childrenReceivers = childrenStreamReceivers.lastOption.map(_.childrenStream)
+
+      // only use last encountered observable per attribute
+      val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatestList(
+        attributeStreamReceivers
+          .groupBy(_.attribute)
+          .values
+          .map(_.last.attributeStream)(breakOut) : _*
+      )
+
+      val allChildReceivers = childrenReceivers.getOrElse(childReceivers)
+
+      attributeReceivers.startWith(Seq(Seq()))
+        .combineLatest(
+          allChildReceivers.startWith(Seq(Seq()))
+        )
+        .dropWhile { case (a, c) => a.isEmpty && c.isEmpty }
+    }
+
+    lazy val nonEmpty: Boolean = {
+      attributeStreamReceivers.nonEmpty || childrenStreamReceivers.nonEmpty || childStreamReceivers.nonEmpty
+    }
+  }
+
 
   private def createDataObject(changeables: SeparatedReceivers,
                                properties: Seq[Property],
@@ -125,14 +157,14 @@ object DomUtils {
     case (rc: Receiver, sf) => sf.copy(receivers = rc :: sf.receivers)
     case (pr: Property, sf) => sf.copy(properties = pr :: sf.properties)
     case (vn: VNode_, sf) => sf.copy(vNodes = vn :: sf.vNodes)
-    case (vn: CompositeModifier, sf) =>
+    case (vn: CompositeVDomModifier, sf) =>
       val modifiers = vn.modifiers.map(_.unsafeRunSync())
       val sm = separateModifiers(modifiers)
       sf.copy(
         emitters = sm.emitters ++ sf.emitters,
         receivers = sm.receivers ++ sf.receivers,
         properties = sm.properties ++ sf.properties,
-        vNodes = sm.vNodes ++ sf.vNodes,
+        vNodes = sm.vNodes ++ sf.vNodes
       )
     case (EmptyVDomModifier, sf) => sf
   }

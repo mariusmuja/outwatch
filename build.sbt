@@ -16,6 +16,7 @@ crossScalaVersions := Seq("2.11.11", "2.12.4")
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "2.3.0",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.3",
+  "com.raquo" %%% "domtypes" % "0.4.1",
   "org.typelevel" %%% "cats-core" % "1.0.0-RC1",
   "org.typelevel" %%% "cats-effect" % "0.5",
   "io.monix" %%% "minitest" % "2.0.0" % Test

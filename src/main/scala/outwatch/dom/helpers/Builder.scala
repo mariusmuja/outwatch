@@ -6,50 +6,44 @@ import scala.language.dynamics
 import outwatch.dom._
 
 import scala.language.implicitConversions
-import outwatch.dom.StringNode
 
-trait ValueBuilder[T] extends Any {
+trait ValueBuilder[T, SELF <: Attribute] extends Any {
   protected def attributeName: String
-  protected def assign(value: T): outwatch.dom.Attribute
+  protected def assign(value: T): SELF
 
-  def :=(value: T): IO[Attribute] = IO.pure(assign(value))
+  def :=(value: T): IO[SELF] = IO.pure(assign(value))
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
   def <--(valueStream: Observable[T]): IO[AttributeStreamReceiver] = {
     IO.pure(AttributeStreamReceiver(attributeName, valueStream.map(assign)))
   }
 }
 
-final class AttributeBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T] {
-  @inline protected def assign(value: T) = Attribute(attributeName, value.toString)
+final class AttributeBuilder[T](val attributeName: String, encode: T => Attr.Value) extends ValueBuilder[T, Attr] {
+  @inline protected def assign(value: T) = Attr(attributeName, encode(value))
 }
 
-final class PropertyBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T] {
-  @inline protected def assign(value: T) = Prop(attributeName, value.toString)
+object AttributeBuilder {
+  implicit def toAttribute(builder: AttributeBuilder[Boolean]): IO[Attribute] = IO.pure(builder assign true)
 }
 
-
-final class BoolPropertyBuilder(val attributeName: String) extends AnyVal with ValueBuilder[Boolean] {
-  @inline protected def assign(value: Boolean) = Prop(attributeName, value)
+final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Value) extends ValueBuilder[T, Prop] {
+  @inline protected def assign(value: T) = Prop(attributeName, encode(value))
 }
 
-final class StyleBuilder(val attributeName: String) extends AnyVal with ValueBuilder[String] {
-  @inline protected def assign(value: String) = Style(attributeName, value)
+object PropertyBuilder {
+  implicit def toProperty(builder: PropertyBuilder[Boolean]): IO[Property] = IO.pure(builder assign true)
 }
 
-final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic with ValueBuilder[T] {
-  protected lazy val attributeName: String = parts.reverse.mkString("-")
+final class StyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, Style] {
+  @inline protected def assign(value: T) = Style(attributeName, value.toString)
+}
+
+final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic with ValueBuilder[T, Attr] {
+  lazy val attributeName: String = parts.reverse.mkString("-")
 
   def selectDynamic(s: String) = new DynamicAttributeBuilder[T](s :: parts)
 
-  @inline protected def assign(value: T) = Attribute(attributeName, value.toString)
-}
-
-final class BoolAttributeBuilder(val attributeName: String) extends AnyVal with ValueBuilder[Boolean] {
-  @inline protected def assign(value: Boolean) = Attribute(attributeName, value)
-}
-
-object BoolAttributeBuilder {
-  implicit def toAttribute(builder: BoolAttributeBuilder): Attribute = builder assign true
+  @inline protected def assign(value: T) = Attr(attributeName, value.toString)
 }
 
 object KeyBuilder {
@@ -57,13 +51,8 @@ object KeyBuilder {
 }
 
 object ChildStreamReceiverBuilder {
-  def <--[T <: Any](valueStream: Observable[T]): IO[ChildStreamReceiver] = {
-    IO.pure(ChildStreamReceiver(valueStream.map(anyToVNode)))
-  }
-
-  private val anyToVNode: Any => VNode = {
-    case vn: IO[_] => vn.asInstanceOf[VNode]
-    case any => IO.pure(StringNode(any.toString))
+  def <--[T](valueStream: Observable[T])(implicit conv: T => VNode): IO[ChildStreamReceiver] = {
+    IO.pure(ChildStreamReceiver(valueStream.map(conv)))
   }
 }
 
@@ -72,5 +61,3 @@ object ChildrenStreamReceiverBuilder {
     IO.pure(ChildrenStreamReceiver(childrenStream))
   }
 }
-
-

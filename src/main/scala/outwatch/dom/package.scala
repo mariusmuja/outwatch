@@ -22,17 +22,15 @@ package object dom extends Attributes with Tags with HandlerFactories {
   type Handler[T] = outwatch.Handler[T]
   val Handler = outwatch.Handler
 
-  implicit def stringNode(string: String): VDomModifier = IO.pure(StringNode(string))
+ implicit def renderVNode[T](value: T)(implicit vnr: VNodeRender[T]): VNode = vnr.render(value)
 
   implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse IO.pure(EmptyVDomModifier)
 
-  implicit def seqModifier(modifiers: Seq[VDomModifier]): VDomModifier = IO.pure(CompositeModifier(modifiers))
+  implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = IO.pure(CompositeVDomModifier(modifiers))
 
   implicit class ioVTreeMerge(vnode: VNode) {
     def apply(args: VDomModifier*): VNode = {
       vnode.flatMap(vnode_ => vnode_(args:_*))
     }
   }
-
-  def stl(property:String) = new helpers.StyleBuilder(property)
 }
