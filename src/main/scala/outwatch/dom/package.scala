@@ -22,7 +22,9 @@ package object dom extends Attributes with Tags with HandlerFactories {
   type Handler[T] = outwatch.Handler[T]
   val Handler = outwatch.Handler
 
- implicit def renderVNode[T](value: T)(implicit vnr: VNodeRender[T]): VNode = vnr.render(value)
+  val EmptyVNode = IO.pure(VTree("", Seq.empty))
+
+  implicit def renderVNode[T](value: T)(implicit vnr: VNodeRender[T]): VNode = vnr.render(value)
 
   implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse IO.pure(EmptyVDomModifier)
 
@@ -30,7 +32,8 @@ package object dom extends Attributes with Tags with HandlerFactories {
 
   implicit class ioVTreeMerge(vnode: VNode) {
     def apply(args: VDomModifier*): VNode = {
-      vnode.flatMap(vnode_ => vnode_(args:_*))
+      vnode.flatMap(vnode_ => vnode_(args: _*))
     }
   }
+
 }
