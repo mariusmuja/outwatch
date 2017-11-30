@@ -94,6 +94,4 @@ pomExtra :=
   </developers>
 
 
-scalaJSUseMainModuleInitializer := true
-
 pomIncludeRepository := { _ => false }
