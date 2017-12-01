@@ -60,13 +60,14 @@ trait DataObject extends js.Object {
   val style: js.Dictionary[String]
   val on: js.Dictionary[js.Function1[Event, Unit]]
   val hook: Hooks
-  val key: js.UndefOr[String | Int]
+  val key: js.UndefOr[KeyValue]
 }
 
 object DataObject {
 
   type PropValue = Any
   type AttrValue = String | Boolean
+  type KeyValue = String | Int
 
   def apply(attrs: js.Dictionary[AttrValue],
             on: js.Dictionary[js.Function1[Event, Unit]]
@@ -78,7 +79,7 @@ object DataObject {
             style: js.Dictionary[String],
             on: js.Dictionary[js.Function1[Event, Unit]],
             hook: Hooks,
-            key: js.UndefOr[String | Int]
+            key: js.UndefOr[KeyValue]
            ): DataObject = {
 
     val _attrs = attrs
@@ -94,7 +95,7 @@ object DataObject {
       val style: js.Dictionary[String] = _style
       val on: js.Dictionary[js.Function1[Event, Unit]] = _on
       val hook: Hooks = _hook
-      val key: UndefOr[String | Int] = _key
+      val key: UndefOr[KeyValue] = _key
     }
   }
 
@@ -106,7 +107,7 @@ object DataObject {
              destroy: js.Function1[VNodeProxy, Unit],
              update: js.Function2[VNodeProxy, VNodeProxy, Unit],
              postpatch: js.Function2[VNodeProxy, VNodeProxy, Unit],
-             key: js.UndefOr[String | Int]
+             key: js.UndefOr[KeyValue]
             ): DataObject = {
 
     DataObject(
