@@ -24,21 +24,6 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     document.body.innerHTML = ""
   }
 
-  test("Receivers should be separated correctly") { _ =>
-    val receivers = Seq(
-      AttributeStreamReceiver("hidden",Observable()),
-      AttributeStreamReceiver("disabled",Observable()),
-      ChildStreamReceiver(Observable()),
-      ChildrenStreamReceiver(Observable())
-    )
-
-    val DomUtils.SeparatedReceivers(child$, children$, attribute$) = DomUtils.separateReceivers(receivers)
-
-    assertEquals(child$.length, 1)
-    assertEquals(children$.length, 1)
-    assertEquals(attribute$.length, 2)
-  }
-
   test("Properties should be separated correctly") { _ =>
     val properties = Seq(
       Attribute("hidden", "true"),
@@ -100,14 +85,10 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
 
-    val DomUtils.SeparatedReceivers(child$, children$, attribute$) = DomUtils.separateReceivers(receivers)
-
     assertEquals(emitters.length, 3)
-    assertEquals(child$.length, 0)
-    assertEquals(children$.length, 1)
+    assertEquals(receivers.length, 2)
     assertEquals(properties.length, 1)
-    assertEquals(attribute$.length, 2)
-    assertEquals(children.length, 0)
+    assertEquals(children.length, 1)
   }
 
   test("VDomModifiers should be separated correctly with children and properties") { _ =>
@@ -127,20 +108,16 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
 
-    val DomUtils.SeparatedReceivers(child$, children$, attribute$) = DomUtils.separateReceivers(receivers)
-
     val DomUtils.SeparatedProperties(inserts, deletes, updates, postpatch, attributes, keys) = DomUtils.separateProperties(properties)
 
     assertEquals(emitters.length, 3)
-    assertEquals(child$.length, 0)
-    assertEquals(children$.length, 1)
     assertEquals(inserts.length, 1)
     assertEquals(deletes.length, 0)
     assertEquals(updates.length, 1)
     assertEquals(postpatch.length, 1)
     assertEquals(attributes.length, 1)
-    assertEquals(attribute$.length, 2)
-    assertEquals(children.length, 0)
+    assertEquals(receivers.length, 2)
+    assertEquals(children.length, 1)
     assertEquals(keys.length, 0)
 
   }
@@ -329,6 +306,69 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   }
 
+  test("The HTML DSL render child nodes in correct order") { _ =>
+    val messagesA = PublishSubject[String]
+    val messagesB = PublishSubject[String]
+    val vNode = div(
+      span("A"),
+      child <-- messagesA.map(span(_)),
+      span("B"),
+      child <-- messagesB.map(span(_))
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    DomUtils.render(node, vNode).unsafeRunSync()
+
+    messagesA.onNext("1")
+    messagesB.onNext("2")
+
+    assertEquals(node.innerHTML, "<div><span>A</span><span>1</span><span>B</span><span>2</span></div>")
+  }
+
+  test("The HTML DSL should render child string-nodes in correct order") { _ =>
+    val messagesA = PublishSubject[String]
+    val messagesB = PublishSubject[String]
+    val vNode = div(
+      "A",
+      child <-- messagesA,
+      "B",
+      child <-- messagesB
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    DomUtils.render(node, vNode).unsafeRunSync()
+
+    messagesA.onNext("1")
+    messagesB.onNext("2")
+
+    assertEquals(node.innerHTML, "<div>A1B2</div>")
+  }
+
+  test("The HTML DSL should render child string-nodes in correct order, mixed with children") { _ =>
+    val messagesA = PublishSubject[String]
+    val messagesB = PublishSubject[String]
+    val messagesC = PublishSubject[Seq[VNode]]
+    val vNode = div(
+      "A",
+      child <-- messagesA,
+      children <-- messagesC,
+      "B",
+      child <-- messagesB
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    DomUtils.render(node, vNode).unsafeRunSync()
+
+    messagesA.onNext("1")
+    messagesB.onNext("2")
+    messagesC.onNext(Seq(div("5"), div("7")))
+
+    assertEquals(node.innerHTML, "<div>A1<div>5</div><div>7</div>B2</div>")
+  }
+
   test("The HTML DSL should update merged nodes children correctly") { _ =>
     val messages = PublishSubject[Seq[VNode]]
     val otherMessages = PublishSubject[Seq[VNode]]
@@ -342,10 +382,10 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).innerHTML, "<div>otherMessage</div>")
 
     messages.onNext(Seq(div("message")))
-    assertEquals(node.children(0).innerHTML, "<div>otherMessage</div>")
+    assertEquals(node.children(0).innerHTML, "<div>message</div><div>otherMessage</div>")
 
     otherMessages.onNext(Seq(div("genus")))
-    assertEquals(node.children(0).innerHTML, "<div>genus</div>")
+    assertEquals(node.children(0).innerHTML, "<div>message</div><div>genus</div>")
   }
 
   test("The HTML DSL should update merged nodes separate children correctly") { _ =>

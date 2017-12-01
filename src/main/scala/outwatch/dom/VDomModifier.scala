@@ -37,7 +37,10 @@ object Prop {
 
 final case class Style(title: String, value: String) extends Attribute
 
-final case class Key(value: String) extends Property
+final case class Key(value: Key.Value) extends Property
+object Key {
+  type Value = DataObject.KeyValue
+}
 
 sealed trait Hook extends Property
 final case class InsertHook(observer: Observer[Element]) extends Hook
@@ -45,14 +48,16 @@ final case class DestroyHook(observer: Observer[Element]) extends Hook
 final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook
 final case class PostpatchHook(observer: Observer[(Element, Element)]) extends Hook
 
-sealed trait Receiver extends VDomModifier_
-final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Receiver
-final case class ChildStreamReceiver(childStream: Observable[VNode]) extends Receiver
-final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[VNode]]) extends Receiver
+final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends VDomModifier_
 
 case object EmptyVDomModifier extends VDomModifier_
 
-sealed trait VNode_ extends VDomModifier_ {
+sealed trait ChildVNode extends VDomModifier_
+
+final case class ChildStreamReceiver(childStream: Observable[VNode]) extends ChildVNode
+final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[VNode]]) extends ChildVNode
+
+sealed trait VNode_ extends ChildVNode {
   // TODO: have apply() only on VTree?
   def apply(args: VDomModifier*): VNode = ???
   // TODO: rename asProxy to asSnabbdom?
