@@ -16,7 +16,7 @@ crossScalaVersions := Seq("2.11.11", "2.12.4")
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "2.3.0",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.3",
-  "com.raquo" %%% "domtypes" % "0.4.1",
+  "com.raquo" %%% "domtypes" % "0.4.2",
   "org.typelevel" %%% "cats-core" % "1.0.0-RC1",
   "org.typelevel" %%% "cats-effect" % "0.5",
   "io.monix" %%% "minitest" % "2.0.0" % Test
@@ -26,6 +26,11 @@ npmDependencies in Compile ++= Seq(
   "snabbdom" -> "0.7.0"
 )
 
+scalacOptions += {
+  val local = baseDirectory.value.toURI
+  val remote = s"https://raw.githubusercontent.com/mariusmuja/outwatch/${git.gitHeadCommit.value.get}/"
+  s"-P:scalajs:mapSourceURI:$local->$remote"
+}
 
 scalacOptions ++=
   "-encoding" :: "UTF-8" ::
@@ -34,7 +39,6 @@ scalacOptions ++=
   "-explaintypes" ::
   "-feature" ::
   "-language:_" ::
-  "-Xcheckinit" ::
   "-Xfuture" ::
   "-Xlint" ::
   "-Ypartial-unification" ::
@@ -93,7 +97,5 @@ pomExtra :=
     </developer>
   </developers>
 
-
-scalaJSUseMainModuleInitializer := true
 
 pomIncludeRepository := { _ => false }

@@ -67,6 +67,7 @@ trait Tags
   with FormTags[GenericVNode, VNode_]
   with SectionTags[GenericVNode, VNode_]
   with TableTags[GenericVNode, VNode_]
+  with TagsCompat
   with VNodeBuilder
 object Tags extends Tags
 
@@ -83,7 +84,6 @@ trait Attributes
   with Events
   with Styles
   with AttributesCompat
-  with TagsCompat
   with OutwatchAttributes
 object Attributes extends Attributes
 
