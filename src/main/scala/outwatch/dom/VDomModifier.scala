@@ -58,14 +58,14 @@ final case class ChildStreamReceiver(childStream: Observable[VNode]) extends Chi
 final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[VNode]]) extends ChildVNode
 
 sealed trait VNode_ extends ChildVNode {
-  // TODO: have apply() only on VTree?
-  def apply(args: VDomModifier*): VNode = ???
+  def apply(args: VDomModifier*): VNode
   // TODO: rename asProxy to asSnabbdom?
   def asProxy: VNodeProxy
 }
 
 //TODO: extends AnyVal
-private[outwatch] case class StringNode(string: String) extends VNode_ {
+private[outwatch] final case class StringNode(string: String) extends VNode_ {
+  def apply(args: VDomModifier*): VNode = ???
   val asProxy: VNodeProxy = VNodeProxy.fromString(string)
 }
 

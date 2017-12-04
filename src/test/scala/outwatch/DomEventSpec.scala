@@ -135,6 +135,45 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(patched.value, "")
   }
 
+  test("EventStreams should preserve user input after setting defaultValue") { _ =>
+    val defaultValues = PublishSubject[String]
+
+    val vtree = input(id:= "input", outwatch.dom.defaultValue <-- defaultValues)
+    OutWatch.render("#app", vtree).unsafeRunSync()
+
+    val patched = document.getElementById("input").asInstanceOf[html.Input]
+    assertEquals(patched.value, "")
+
+    val value1 = "Hello"
+    defaultValues.onNext(value1)
+    assertEquals(patched.value, value1)
+
+    val userInput = "user input"
+    patched.value = userInput
+
+    defaultValues.onNext("GoodByte")
+    assertEquals(patched.value, userInput)
+  }
+
+  test("EventStreams should set input value to the same value after user change") { _ =>
+    val values = PublishSubject[String]
+
+    val vtree = input(id:= "input", outwatch.dom.value <-- values)
+    OutWatch.render("#app", vtree).unsafeRunSync()
+
+    val patched = document.getElementById("input").asInstanceOf[html.Input]
+    assertEquals(patched.value, "")
+
+    val value1 = "Hello"
+    values.onNext(value1)
+    assertEquals(patched.value, value1)
+
+    patched.value = "user input"
+
+    values.onNext(value1)
+    assertEquals(patched.value, value1)
+  }
+
   test("EventStreams should be bindable to a list of children") { _ =>
 
     val state = PublishSubject[Seq[VNode]]
