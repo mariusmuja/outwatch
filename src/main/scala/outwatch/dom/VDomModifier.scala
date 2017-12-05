@@ -30,6 +30,12 @@ object Attr {
   type Value = DataObject.AttrValue
 }
 
+
+/**
+  * Attributes that accumulates the previous value with it's value using the accum function
+  */
+final case class AccumAttr(title: String, value: Attr.Value, accum: Attr.Value => Attr.Value) extends Attribute
+
 final case class Prop(title: String, value: Prop.Value) extends Attribute
 object Prop {
   type Value = DataObject.PropValue

@@ -20,10 +20,29 @@ trait ValueBuilder[T, SELF <: Attribute] extends Any {
 
 final class AttributeBuilder[T](val attributeName: String, encode: T => Attr.Value) extends ValueBuilder[T, Attr] {
   @inline protected def assign(value: T) = Attr(attributeName, encode(value))
+
+  def accum(reduce: (Attr.Value, Attr.Value) => Attr.Value): AccumAttributeBuilder[T] =
+    new AccumAttributeBuilder(attributeName, encode, reduce)
 }
 
 object AttributeBuilder {
   implicit def toAttribute(builder: AttributeBuilder[Boolean]): IO[Attribute] = IO.pure(builder assign true)
+
+  implicit class defaultAccums(attrb: AttributeBuilder[String]) {
+    def spaceAccum: AccumAttributeBuilder[String] = attrb.accum(_ + " " + _)
+    def commaAccum: AccumAttributeBuilder[String] = attrb.accum(_ + "," + _)
+  }
+}
+
+final class AccumAttributeBuilder[T](
+  val attributeName: String,
+  encode: T => Attr.Value,
+  reduce: (Attr.Value, Attr.Value) => Attr.Value
+) extends ValueBuilder[T, AccumAttr] {
+  @inline protected def assign(value: T): AccumAttr = {
+    val encoded = encode(value)
+    AccumAttr(attributeName, encoded, reduce(_, encoded))
+  }
 }
 
 final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Value) extends ValueBuilder[T, Prop] {

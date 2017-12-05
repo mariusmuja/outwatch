@@ -5,6 +5,22 @@ import outwatch.dom._
 
 object AttributeSpec extends SimpleTestSuite {
 
+
+  test("class attributes should be merged") {
+    val node = input(
+      cls.spaceAccum := "class1",
+      cls.spaceAccum := "class2"
+    ).map(_.asProxy).unsafeRunSync()
+
+    assertEquals(
+      node.data.attrs.toMap,
+      Map(
+        "class" -> "class1 class2"
+      )
+    )
+  }
+
+
   test("data attribute should correctly render only data") {
     val node = input(
       data.geul := "bar",
