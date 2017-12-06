@@ -3,15 +3,16 @@ package outwatch.dom.helpers
 import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Cancelable
+import monix.execution.Scheduler.Implicits.global
+import monix.reactive.subjects.BehaviorSubject
 import org.scalajs.dom._
 import outwatch.dom._
 import snabbdom._
 
-import collection.breakOut
+import scala.collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import monix.execution.Scheduler.Implicits.global
-import monix.reactive.subjects.BehaviorSubject
+
 
 object DomUtils {
 
@@ -28,49 +29,71 @@ object DomUtils {
 
   private def createSimpleDataObject(properties: Seq[Property], handlers: js.Dictionary[js.Function1[Event, Unit]]) = {
 
-    val SeparatedProperties(insert, destroy, update, postpatch, attributes, keys) = separateProperties(properties)
+    val SeparatedProperties(insert, prepatch, update, postpatch, destroy, attributes, keys) = separateProperties(properties)
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
 
-    val insertHook = createInsertHook(insert)
-    val updateHook = createUpdateHook(update)
-    val postpatchHook = createPostpatchHook(postpatch)
-    val destroyHook = createDestroyHook(destroy)
-
+    val insertHook = createHookSingle(insert)
+    val prePatchHook = createHookPairOption(prepatch)
+    val updateHook = createHookPair(update)
+    val postPatchHook = createHookPair(postpatch)
+    val destroyHook = createHookSingle(destroy)
     val key = keys.lastOption.map(_.value).orUndefined
 
-    DataObject.create(attrs, props, style, handlers, insertHook, destroyHook, updateHook, postpatchHook, key)
+    DataObject(attrs, props, style, handlers,
+      Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook),
+      key
+    )
   }
 
   private def createReceiverDataObject(changeables: SeparatedReceivers,
                                        properties: Seq[Property],
                                        eventHandlers: js.Dictionary[js.Function1[Event, Unit]]) = {
 
-    val SeparatedProperties(insert, destroy, update, postpatch, attributes, keys) = separateProperties(properties)
+    val SeparatedProperties(insert, prepatch, update, postpatch, destroy, attributes, keys) = separateProperties(properties)
+
     val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
     val subscriptionRef = STRef.empty[Cancelable]
 
     val insertHook = createInsertHook(changeables, subscriptionRef, insert)
-    val updateHook = createUpdateHook(update)
-    val postpatchHook = createPostpatchHook(postpatch)
+    val prePatchHook = createHookPairOption(prepatch)
+    val updateHook = createHookPair(update)
+    val postPatchHook = createHookPair(postpatch)
     val destroyHook = createDestroyHook(subscriptionRef, destroy)
     val key = keys.lastOption.fold[Key.Value](changeables.hashCode)(_.value)
 
-    DataObject.create(attrs, props, style, eventHandlers, insertHook, destroyHook, updateHook, postpatchHook, key)
+    DataObject(
+      attrs, props, style, eventHandlers,
+      Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook),
+      key
+    )
   }
 
-  /* Hooks */
+  private def createHookSingle(hooks: Seq[HookSingle]): js.UndefOr[Hooks.HookSingleFn] = {
+    Option(hooks).filter(_.nonEmpty).map[Hooks.HookSingleFn](hooks =>
+      (p: VNodeProxy) => for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
+    ).orUndefined
+  }
 
-  @inline private def createInsertHook(hooks: Seq[InsertHook]) = (p: VNodeProxy) => {
-    p.elm.foreach(e => hooks.foreach(_.observer.onNext(e)))
+  private def createHookPair(hooks: Seq[HookPair]): js.UndefOr[Hooks.HookPairFn] = {
+    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
+      (old: VNodeProxy, cur: VNodeProxy) => for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
+    ).orUndefined
+  }
+
+  private def createHookPairOption(hooks: Seq[HookPairOption]): js.UndefOr[Hooks.HookPairFn] = {
+    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
+      (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
+    ).orUndefined
   }
 
   private def createInsertHook(changables: SeparatedReceivers,
                                subscriptionRef: STRef[Cancelable],
-                               hooks: Seq[InsertHook]) = (proxy: VNodeProxy) => {
+                               hooks: Seq[InsertHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
     def toProxy(changable: (Seq[Attribute], Seq[VNode])): VNodeProxy = {
       val (attributes, nodes) = changable
-      h(
+
+      hFunction(
         proxy.sel,
         proxy.data.withUpdatedAttributes(attributes),
         if (nodes.isEmpty) proxy.children else nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy]
@@ -81,10 +104,9 @@ object DomUtils {
       .map(toProxy)
       .startWith(Seq(proxy))
       .bufferSliding(2, 1)
-      .subscribe({ pair =>
-        patch(pair.head, pair.tail.head)
-        Continue
-      }, e => console.error(e.getMessage)
+      .subscribe(
+        { case Seq(old, crt) => patch(old, crt); Continue },
+        error => console.error(error.getMessage)
       )
 
     subscriptionRef.put(subscription).unsafeRunSync()
@@ -92,22 +114,12 @@ object DomUtils {
     proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
   }
 
-  @inline private def createUpdateHook(hooks: Seq[UpdateHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
-    for(o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o,c)))
-  }
 
-  @inline private def createPostpatchHook(hooks: Seq[PostpatchHook]) = (old: VNodeProxy, cur: VNodeProxy) => {
-    for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
-  }
 
-  private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]) = (proxy: VNodeProxy) => {
+  private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
     proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
     subscription.update { s => s.cancel(); s }.unsafeRunSync()
     ()
-  }
-
-  @inline private def createDestroyHook(hooks: Seq[DestroyHook]) = (p: VNodeProxy) => {
-    p.elm.foreach(e => hooks.foreach(_.observer.onNext(e)))
   }
 
 
@@ -141,6 +153,7 @@ object DomUtils {
   private[outwatch] final case class SeparatedReceivers(
     childNodes: List[ChildVNode] = Nil,
     hasNodeStreams: Boolean = false,
+    multipleChildrenStreams: Boolean = false,
     attributeStreamReceivers: List[AttributeStreamReceiver] = Nil
   ) {
 
@@ -150,8 +163,10 @@ object DomUtils {
           case (vn: VNode_, obs) => obs.combineLatestMap(BehaviorSubject(IO.pure(vn)))((nodes, n) => n :: nodes)
           case (csr: ChildStreamReceiver, obs) => obs.combineLatestMap(csr.childStream)((nodes, n) => n :: nodes)
           case (csr: ChildrenStreamReceiver, obs) =>
-            obs.combineLatestMap(csr.childrenStream.startWith(Seq(Seq.empty)))((nodes, n) => n.toList ++ nodes)
-        }
+            obs.combineLatestMap(
+              if (multipleChildrenStreams) csr.childrenStream.startWith(Seq(Seq.empty)) else csr.childrenStream
+            )((nodes, n) => n.toList ++ nodes)
+        }.dropWhile(_.isEmpty)
       } else {
         Observable(Seq.empty)
       }
@@ -176,19 +191,21 @@ object DomUtils {
 
   private[outwatch] final case class SeparatedProperties(
     insertHooks: List[InsertHook] = Nil,
-    destroyHooks: List[DestroyHook] = Nil,
+    prePatchHooks: List[PrePatchHook] = Nil,
     updateHooks: List[UpdateHook] = Nil,
-    postpatchHooks: List[PostpatchHook] = Nil,
+    postPatchHooks: List[PostPatchHook] = Nil,
+    destroyHooks: List[DestroyHook] = Nil,
     attributeHooks: List[Attribute] = Nil,
     keys: List[Key] = Nil
   )
   private[outwatch] def separateProperties(properties: Seq[Property]): SeparatedProperties = {
     properties.foldRight(SeparatedProperties()) {
       case (ih: InsertHook, sp) => sp.copy(insertHooks = ih :: sp.insertHooks)
-      case (dh: DestroyHook, sp) => sp.copy(destroyHooks = dh :: sp.destroyHooks)
+      case (pph: PrePatchHook, sp) => sp.copy(prePatchHooks = pph :: sp.prePatchHooks)
       case (uh: UpdateHook, sp) => sp.copy(updateHooks = uh :: sp.updateHooks)
-      case (pph: PostpatchHook, sp) => sp.copy(postpatchHooks = pph :: sp.postpatchHooks)
-      case (at: Attribute, sp)  => sp.copy(attributeHooks = at :: sp.attributeHooks)
+      case (pph: PostPatchHook, sp) => sp.copy(postPatchHooks = pph :: sp.postPatchHooks)
+      case (dh: DestroyHook, sp) => sp.copy(destroyHooks = dh :: sp.destroyHooks)
+      case (at: Attribute, sp) => sp.copy(attributeHooks = at :: sp.attributeHooks)
       case (key: Key, sp) => sp.copy(keys = key :: sp.keys)
     }
   }
@@ -196,36 +213,33 @@ object DomUtils {
 
   private final case class ChildrenNodes(
     children: List[VNode_] = Nil,
-    hasStreams: Boolean = false
+    hasStreams: Boolean = false,
+    childrenStreams: Int = 0
   )
   private def extractChildren(nodes: Seq[ChildVNode]): ChildrenNodes = nodes.foldRight(ChildrenNodes()) {
     case (vn: VNode_, cn) => cn.copy(children = vn :: cn.children)
     case (_: ChildStreamReceiver, cn) => cn.copy(hasStreams = true)
-    case (_: ChildrenStreamReceiver, cn) => cn.copy(hasStreams = true)
+    case (_: ChildrenStreamReceiver, cn) => cn.copy(hasStreams = true, childrenStreams = cn.childrenStreams + 1)
   }
 
-  private[outwatch] def ensureVNodeKey(vn: VNode_): VNode_ = {
-    val withKey: VNode_ = vn match {
-      case vtree: VTree =>
-        val modifiers = vtree.modifiers
-        val hasKey = modifiers.exists(m => m.unsafeRunSync().isInstanceOf[Key])
-        val newModifiers = if (hasKey) modifiers else IO.pure(Key(vtree.hashCode)) +: modifiers
-        vtree.copy(modifiers = newModifiers)
-      case sn: StringNode => sn
-    }
-    withKey
+
+  private[outwatch] def ensureVNodeKey[N >: VNode_](node: N): N = node match {
+    case vtree: VTree => vtree.ensureKey
+    case other => other
   }
+
 
   private[outwatch] def extractChildrenAndDataObject(args: Seq[VDomModifier_]): (Seq[VNode_], DataObject) = {
     val SeparatedModifiers(emitters, attributeReceivers, properties, nodes) = separateModifiers(args)
 
-    val ChildrenNodes(children, hasChildStreams) = extractChildren(nodes)
+    val ChildrenNodes(children, hasChildStreams, childrenStreams) = extractChildren(nodes)
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
     val childrenWithKey = if (hasChildStreams) children.map(ensureVNodeKey) else children
+    val nodesWithKey = if (hasChildStreams) nodes.map(ensureVNodeKey) else nodes
 
-    val changeables = SeparatedReceivers(nodes, hasChildStreams, attributeReceivers)
+    val changeables = SeparatedReceivers(nodesWithKey, hasChildStreams, childrenStreams > 1, attributeReceivers)
 
     val eventHandlers = VDomProxy.emittersToSnabbDom(emitters)
 

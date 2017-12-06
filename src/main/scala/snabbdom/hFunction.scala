@@ -19,7 +19,7 @@ trait hFunction extends js.Any {
   def apply(nodeType: String, dataObject: DataObject, children: js.Array[VNodeProxy]): VNodeProxy = js.native
 }
 
-object h {
+object hFunction {
   def apply(nodeType: String, dataObject: DataObject, text: String): VNodeProxy = {
     hProvider.default.apply(nodeType, dataObject, text)
   }

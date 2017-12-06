@@ -50,5 +50,4 @@ package object outwatch {
     def transformHandler[S](read: Observable[T] => Observable[S])(write: Observable[S] => Observable[T]): Handler[S] =
       self.transformPipe(write)(read)
   }
-
 }

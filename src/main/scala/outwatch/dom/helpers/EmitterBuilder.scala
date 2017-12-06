@@ -4,7 +4,7 @@ import cats.effect.IO
 import monix.reactive.Observable
 import org.scalajs.dom._
 import outwatch.Sink
-import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, PostpatchHook, UpdateHook}
+import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, PostPatchHook, PrePatchHook, UpdateHook}
 
 
 trait EmitterBuilder[E <: Event, O] extends Any {
@@ -70,14 +70,18 @@ object InsertHookBuilder extends HookBuilder[Element, InsertHook] {
   def hook(sink: Sink[Element]) = InsertHook(sink.observer)
 }
 
-object DestroyHookBuilder extends HookBuilder[Element, DestroyHook] {
-  def hook(sink: Sink[Element]) = DestroyHook(sink.observer)
+object PrePatchHookBuilder extends HookBuilder[(Option[Element], Option[Element]), PrePatchHook] {
+  def hook(sink: Sink[(Option[Element], Option[Element])]) = PrePatchHook(sink.observer)
 }
 
 object UpdateHookBuilder extends HookBuilder[(Element, Element), UpdateHook] {
   def hook(sink: Sink[(Element, Element)]) = UpdateHook(sink.observer)
 }
 
-object PostpatchHookBuilder extends HookBuilder[(Element, Element), PostpatchHook] {
-  def hook(sink: Sink[(Element, Element)]) = PostpatchHook(sink.observer)
+object PostPatchHookBuilder extends HookBuilder[(Element, Element), PostPatchHook] {
+  def hook(sink: Sink[(Element, Element)]) = PostPatchHook(sink.observer)
+}
+
+object DestroyHookBuilder extends HookBuilder[Element, DestroyHook] {
+  def hook(sink: Sink[Element]) = DestroyHook(sink.observer)
 }

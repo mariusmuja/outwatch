@@ -5,7 +5,7 @@ import monix.reactive.Observer
 import org.scalajs.dom._
 import outwatch.dom.helpers.DomUtils
 
-import snabbdom.{DataObject, VNodeProxy, h}
+import snabbdom.{DataObject, VNodeProxy, hFunction}
 
 import scala.scalajs.js
 import collection.breakOut
@@ -48,10 +48,25 @@ object Key {
 }
 
 sealed trait Hook extends Property
-final case class InsertHook(observer: Observer[Element]) extends Hook
-final case class DestroyHook(observer: Observer[Element]) extends Hook
-final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook
-final case class PostpatchHook(observer: Observer[(Element, Element)]) extends Hook
+
+sealed trait HookSingle extends Hook {
+  def observer: Observer[Element]
+}
+
+sealed trait HookPair extends Hook {
+  def observer: Observer[(Element, Element)]
+}
+
+sealed trait HookPairOption extends Hook {
+  def observer: Observer[(Option[Element], Option[Element])]
+}
+
+final case class InsertHook(observer: Observer[Element]) extends HookSingle
+final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])]) extends HookPairOption
+final case class UpdateHook(observer: Observer[(Element, Element)]) extends HookPair
+final case class PostPatchHook(observer: Observer[(Element, Element)]) extends HookPair
+final case class DestroyHook(observer: Observer[Element]) extends HookSingle
+
 
 final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends VDomModifier_
 
@@ -70,8 +85,8 @@ sealed trait VNode_ extends ChildVNode {
 
 //TODO: extends AnyVal
 private[outwatch] final case class StringNode(string: String) extends VNode_ {
-  def apply(args: VDomModifier*): VNode = ???
-  val asProxy: VNodeProxy = VNodeProxy.fromString(string)
+  override def apply(args: VDomModifier*): VNode = ???
+  override val asProxy: VNodeProxy = VNodeProxy.fromString(string)
 }
 
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
@@ -80,7 +95,9 @@ private[outwatch] final case class StringNode(string: String) extends VNode_ {
 private[outwatch] final case class VTree(nodeType: String,
                        modifiers: Seq[VDomModifier]) extends VNode_ {
 
-  def asProxy = {
+  override def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
+
+  override def asProxy = {
     val modifiers_ = modifiers.map(_.unsafeRunSync())
     val (children, attributeObject) = DomUtils.extractChildrenAndDataObject(modifiers_)
     //TODO: use .sequence instead of unsafeRunSync?
@@ -89,10 +106,16 @@ private[outwatch] final case class VTree(nodeType: String,
     // for { childProxies <- children.map(_.value).sequence }
     // yield h(nodeType, attributeObject, childProxies.map(_.apsProxy)(breakOut))
     val childProxies: js.Array[VNodeProxy] = children.map(_.asProxy)(breakOut)
-    h(nodeType, attributeObject, childProxies)
+    hFunction(nodeType, attributeObject, childProxies)
   }
 
-  override def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
+  // ensure a key is present in the VTree modifiers
+  // used to ensure efficient Snabbdom patch operation in the presence of children streams
+  private[outwatch] def ensureKey: VTree = {
+    val hasKey = modifiers.exists(m => m.unsafeRunSync().isInstanceOf[Key])
+    val newModifiers = if (hasKey) modifiers else IO.pure(Key(this.hashCode)) +: modifiers
+    copy(modifiers = newModifiers)
+  }
 }
 
 
