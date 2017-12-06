@@ -39,10 +39,7 @@ final class AccumAttributeBuilder[T](
   encode: T => Attr.Value,
   reduce: (Attr.Value, Attr.Value) => Attr.Value
 ) extends ValueBuilder[T, AccumAttr] {
-  @inline protected def assign(value: T): AccumAttr = {
-    val encoded = encode(value)
-    AccumAttr(attributeName, encoded, reduce(_, encoded))
-  }
+  @inline protected def assign(value: T) = AccumAttr(attributeName, encode(value), reduce)
 }
 
 final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Value) extends ValueBuilder[T, Prop] {

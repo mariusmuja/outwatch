@@ -15,7 +15,7 @@ object VDomProxy {
     val styleDict = js.Dictionary[String]()
 
     attributes.foreach {
-      case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum).getOrElse(a.value)
+      case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
       case a: Attr => attrsDict(a.title) = a.value
       case a: Prop => propsDict(a.title) = a.value
       case a: Style => styleDict(a.title) = a.value
