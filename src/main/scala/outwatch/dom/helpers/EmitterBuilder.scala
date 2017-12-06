@@ -57,6 +57,7 @@ final class SimpleEmitterBuilder[E <: Event] private[helpers](
 
   def -->(sink: Sink[_ >: E]): IO[Emitter] = {
     IO.pure(Emitter(eventType, event => sink.observer.onNext(event.asInstanceOf[E])))
+
   }
 }
 

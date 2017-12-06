@@ -269,8 +269,8 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
     val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )
 
-    val list = PublishSubject[Seq[String]]()
-    val node = div("Hello",  children <-- list.map(_.map(span(_))),
+    val messageList = PublishSubject[Seq[String]]()
+    val node = div("Hello",  children <-- messageList.map(_.map(span(_))),
       insert --> insertSink,
       update --> updateSink
     )
@@ -280,6 +280,50 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     OutWatch.render("#app", node).unsafeRunSync()
 
     assertEquals(hooks.toList, List("insert"))
+  }
+
+  test("Static child nodes should not be destroyed and inserted when child stream emits") { _ =>
+    val hooks = mutable.ArrayBuffer.empty[String]
+    val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
+    val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )
+    val destroySink = Sink.create((_: Element) => IO {hooks += "destroy"; Continue})
+
+    val message = PublishSubject[String]()
+    val node = div(span("Hello", insert --> insertSink, update --> updateSink,destroy --> destroySink),
+      child <-- message.map(span(_))
+    )
+
+    assertEquals(hooks.toList, List())
+
+    OutWatch.render("#app", node).unsafeRunSync()
+
+    message.onNext("next")
+
+    assert(!hooks.contains("destroy"), "Static child node destroyed")
+  }
+
+  test("Static child nodes should be only inserted once when children stream emits") { _ =>
+    val hooks = mutable.ArrayBuffer.empty[String]
+    val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
+    val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )
+    val destroySink = Sink.create((_: Element) => IO {hooks += "destroy"; Continue})
+
+    val messageList = PublishSubject[Seq[String]]()
+    val node = div(children <-- messageList.map(_.map(span(_))),
+      span("Hello", insert --> insertSink, update --> updateSink,destroy --> destroySink)
+    )
+
+    assertEquals(hooks.toList, List())
+
+    OutWatch.render("#app", node).unsafeRunSync()
+
+    messageList.onNext(Seq("one"))
+
+    messageList.onNext(Seq("one", "two"))
+    println(hooks)
+
+    val count = hooks.count(_ == "insert")
+    assert(count == 1, s"Static child node inserted $count times")
   }
 
 }
