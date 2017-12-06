@@ -320,7 +320,6 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     messageList.onNext(Seq("one"))
 
     messageList.onNext(Seq("one", "two"))
-    println(hooks)
 
     val count = hooks.count(_ == "insert")
     assert(count == 1, s"Static child node inserted $count times")

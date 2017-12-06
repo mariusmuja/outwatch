@@ -20,11 +20,11 @@ import scala.language.implicitConversions
 import scala.scalajs.js
 
 private[outwatch] object DomTypesBuilder {
-  type GenericVNode[T] = VNode_
+  type GenericVNode[T] = VTree
 
   trait VNodeBuilder extends TagBuilder[GenericVNode, VNode_] {
     // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-    override def tag[Ref <: VNode_](tagName: String, void: Boolean): VNode_ = VTree(tagName, Seq.empty)
+    override def tag[Ref <: VNode_](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
   }
 
   object CodecBuilder {

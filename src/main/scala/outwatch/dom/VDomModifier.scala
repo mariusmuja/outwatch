@@ -78,14 +78,12 @@ final case class ChildStreamReceiver(childStream: Observable[VNode]) extends Chi
 final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[VNode]]) extends ChildVNode
 
 sealed trait VNode_ extends ChildVNode {
-  def apply(args: VDomModifier*): VNode
   // TODO: rename asProxy to asSnabbdom?
   def asProxy: VNodeProxy
 }
 
 //TODO: extends AnyVal
 private[outwatch] final case class StringNode(string: String) extends VNode_ {
-  override def apply(args: VDomModifier*): VNode = ???
   override val asProxy: VNodeProxy = VNodeProxy.fromString(string)
 }
 
@@ -95,7 +93,7 @@ private[outwatch] final case class StringNode(string: String) extends VNode_ {
 private[outwatch] final case class VTree(nodeType: String,
                        modifiers: Seq[VDomModifier]) extends VNode_ {
 
-  override def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
+  def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
 
   override def asProxy = {
     val modifiers_ = modifiers.map(_.unsafeRunSync())
