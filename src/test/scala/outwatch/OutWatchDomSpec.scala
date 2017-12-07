@@ -35,14 +35,14 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       PostPatchHook(PublishSubject())
     )
 
-    val DomUtils.SeparatedProperties(inserts, prepatch, updates, postpatch, deletes, attributes, keys) = DomUtils.separateProperties(properties)
+    val SeparatedProperties(att, hooks, keys) = properties.foldRight(SeparatedProperties())((p, sp) => sp.add(p))
 
-    assertEquals(inserts.length, 2)
-    assertEquals(prepatch.length, 1)
-    assertEquals(updates.length,1)
-    assertEquals(postpatch.length,1)
-    assertEquals(deletes.length, 1)
-    assertEquals(attributes.length, 1)
+    assertEquals(hooks.insertHooks.length, 2)
+    assertEquals(hooks.prePatchHooks.length, 1)
+    assertEquals(hooks.updateHooks.length,1)
+    assertEquals(hooks.postPatchHooks.length,1)
+    assertEquals(hooks.destroyHooks.length, 1)
+    assertEquals(att.attributes.length, 1)
     assertEquals(keys.length, 0)
   }
 
@@ -50,8 +50,8 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyModifier,
-      Emitter("click", _ => ()),
-      new StringModifier("Test"),
+      Emitter("click", _ => Continue),
+      StringModifier("Test"),
       div().unsafeRunSync(),
       AttributeStreamReceiver("hidden",Observable()),
       CompositeModifier(
@@ -64,12 +64,13 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       )
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, vNodes, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
+    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
+      modifiers.foldRight(SeparatedModifiers())((m, sm) => sm.add(m))
 
-    assertEquals(emitters.length, 2)
+    assertEquals(emitters.emitters.length, 2)
     assertEquals(receivers.length, 2)
-    assertEquals(vNodes.length, 3)
-    assertEquals(properties.length, 2)
+    assertEquals(vNodes.allNodes.length, 3)
+    assertEquals(properties.attributes.attributes.length, 2)
     assertEquals(hasChildVNodes, true)
     assertEquals(stringModifiers.length, 1)
 
@@ -77,22 +78,23 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   test("VDomModifiers should be separated correctly with children") { _ =>
     val modifiers = Seq(
-      Attribute("class","red"),
+      Attribute("class", "red"),
       EmptyModifier,
-      Emitter("click", _ => ()),
-      Emitter("input",  _ => ()),
-      AttributeStreamReceiver("hidden",Observable()),
-      AttributeStreamReceiver("disabled",Observable()),
-      Emitter("keyup",  _ => ()),
+      Emitter("click", _ => Continue),
+      Emitter("input", _ => Continue),
+      AttributeStreamReceiver("hidden", Observable()),
+      AttributeStreamReceiver("disabled", Observable()),
+      Emitter("keyup", _ => Continue),
       StringModifier("text")
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
+    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
+      SeparatedModifiers.create(modifiers)
 
-    assertEquals(emitters.length, 3)
+    assertEquals(emitters.emitters.length, 3)
     assertEquals(receivers.length, 2)
-    assertEquals(properties.length, 1)
-    assertEquals(children.length, 1)
+    assertEquals(properties.attributes.attributes.length, 1)
+    assertEquals(vNodes.allNodes.length, 1)
     assertEquals(hasChildVNodes, false)
     assertEquals(stringModifiers.length, 1)
   }
@@ -101,34 +103,33 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyModifier,
-      Emitter("click", _ => ()),
-      Emitter("input", _ => ()),
+      Emitter("click", _ => Continue),
+      Emitter("input", _ => Continue),
       UpdateHook(PublishSubject()),
       AttributeStreamReceiver("hidden",Observable()),
       AttributeStreamReceiver("disabled",Observable()),
       ChildrenStreamReceiver(Observable()),
-      Emitter("keyup", _ => ()),
+      Emitter("keyup", _ => Continue),
       InsertHook(PublishSubject[Element]),
       PrePatchHook(PublishSubject()),
       PostPatchHook(PublishSubject()),
       StringModifier("text")
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
+    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
+      SeparatedModifiers.create(modifiers)
 
-    val DomUtils.SeparatedProperties(inserts, prepatch, updates, postpatch, deletes, attributes, keys) = DomUtils.separateProperties(properties)
 
-    assertEquals(emitters.map(_.eventType), List("click", "input", "keyup"))
-    assertEquals(emitters.length, 3)
-    assertEquals(inserts.length, 1)
-    assertEquals(prepatch.length, 1)
-    assertEquals(updates.length, 1)
-    assertEquals(postpatch.length, 1)
-    assertEquals(deletes.length, 0)
-    assertEquals(attributes.length, 1)
+    assertEquals(emitters.emitters.map(_.eventType), List("click", "input", "keyup"))
+    assertEquals(properties.hooks.insertHooks.length, 1)
+    assertEquals(properties.hooks.prePatchHooks.length, 1)
+    assertEquals(properties.hooks.updateHooks.length, 1)
+    assertEquals(properties.hooks.postPatchHooks.length, 1)
+    assertEquals(properties.hooks.destroyHooks.length, 0)
+    assertEquals(properties.attributes.attributes.length, 1)
     assertEquals(receivers.length, 2)
-    assertEquals(children.length, 2)
-    assertEquals(keys.length, 0)
+    assertEquals(vNodes.allNodes.length, 2)
+    assertEquals(properties.keys.length, 0)
     assertEquals(hasChildVNodes, true)
     assertEquals(stringModifiers.length, 1)
 
@@ -175,7 +176,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    DomUtils.render(node, vtree).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
 
     val patchedNode = document.getElementById(id)
 
@@ -209,7 +210,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    DomUtils.render(node, vtree).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
 
     pageHandler.onNext(1)
 
@@ -281,7 +282,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    DomUtils.render(node, vtree).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
 
     val patchedNode = document.getElementById("test")
 
@@ -302,7 +303,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    DomUtils.render(node, vtree).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
 
     val field = document.getElementById("input").asInstanceOf[html.Input]
 
@@ -331,7 +332,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -351,7 +352,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -373,7 +374,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -389,7 +390,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     otherMessages.onNext(Seq(div("otherMessage")))
     assertEquals(node.children(0).innerHTML, "<div>otherMessage</div>")
@@ -408,7 +409,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
     assertEquals(node.children(0).innerHTML, "")
@@ -420,14 +421,14 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).innerHTML, "messagegenus")
   }
 
-    test("The HTML DSL should update reused vnodes correctly") { _ =>
+  test("The HTML DSL should update reused vnodes correctly") { _ =>
     val messages = PublishSubject[String]
     val vNode = div(data.ralf := true, child <-- messages)
     val container = div(vNode, vNode)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, container).unsafeRunSync()
+    OutWatch.renderAppendApp(node, container).unsafeRunSync()
 
     messages.onNext("message")
     assertEquals(node.children(0).children(0).innerHTML, "message")
@@ -446,11 +447,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node1 = document.createElement("div")
     document.body.appendChild(node1)
-    DomUtils.render(node1, vNodeTemplate).unsafeRunSync()
+    OutWatch.renderAppendApp(node1, vNodeTemplate).unsafeRunSync()
 
     val node2 = document.createElement("div")
     document.body.appendChild(node2)
-    DomUtils.render(node2, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node2, vNode).unsafeRunSync()
 
     messages.onNext("gurkon")
     otherMessages.onNext("otherMessage")
@@ -474,7 +475,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
     assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
@@ -493,7 +494,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
@@ -512,7 +513,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    DomUtils.render(node, vNode).unsafeRunSync()
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
@@ -522,5 +523,29 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     otherMessages.onNext("green")
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
+  }
+
+  test("The HTML DSL should render composite VNodes properly") { _ =>
+    val items = Seq("one", "two", "three")
+    val vNode = div(items.map(item => span(item)))
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+
+    assertEquals(node.innerHTML, "<div><span>one</span><span>two</span><span>three</span></div>")
+  }
+
+  test("The HTML DSL should render nodes with only attribute receivers properly") { _ =>
+    val classes = PublishSubject[String]
+    val vNode = button( className <-- classes, "Submit")
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+
+    classes.onNext("active")
+
+    assertEquals(node.innerHTML, """<button class="active">Submit</button>""")
   }
 }

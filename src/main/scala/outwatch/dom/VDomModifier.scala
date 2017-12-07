@@ -130,6 +130,9 @@ private[outwatch] final case class VTree(nodeType: String,
   def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
 
   override def asProxy: VNodeProxy = {
+    //TODO: use .sequence instead of unsafeRunSync?
+    // import cats.instances.list._
+    // import cats.syntax.traverse._
     val separatedModifiers = SeparatedModifiers.create(modifiers.map(_.unsafeRunSync()))
     separatedModifiers.toSnabbdom(nodeType)
   }

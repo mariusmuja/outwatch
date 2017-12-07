@@ -5,7 +5,6 @@ import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.{html, _}
 import outwatch.dom._
-import outwatch.dom.helpers.DomUtils
 
 import scala.concurrent.duration.FiniteDuration
 
@@ -48,7 +47,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    DomUtils.render(root, node).unsafeRunSync()
+    OutWatch.renderAppendApp(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -92,7 +91,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    DomUtils.render(root, node).unsafeRunSync()
+    OutWatch.renderAppendApp(root, node).unsafeRunSync()
 
 
     val evt = document.createEvent("HTMLEvents")
@@ -132,10 +131,10 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val component2 = div(comp, comp)
 
     val element1 = document.createElement("div")
-    DomUtils.render(element1, component1).unsafeRunSync()
+    OutWatch.renderAppendApp(element1, component1).unsafeRunSync()
 
     val element2 = document.createElement("div")
-    DomUtils.render(element2, component2).unsafeRunSync()
+    OutWatch.renderAppendApp(element2, component2).unsafeRunSync()
 
     element1.getElementsByTagName("button").item(0).dispatchEvent(clickEvt)
 
@@ -214,7 +213,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    DomUtils.render(root, vtree).unsafeRunSync()
+    OutWatch.renderAppendApp(root, vtree).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)
