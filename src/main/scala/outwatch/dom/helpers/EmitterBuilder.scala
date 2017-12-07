@@ -61,7 +61,7 @@ final class SimpleEmitterBuilder[E <: Event] private[helpers](
   }
 }
 
-trait HookBuilder[E, H <: Hook] {
+trait HookBuilder[E, H <: Hook[_]] {
   def hook(sink: Sink[E]): H
 
   def -->(sink: Sink[E]): IO[H] = IO.pure(hook(sink))

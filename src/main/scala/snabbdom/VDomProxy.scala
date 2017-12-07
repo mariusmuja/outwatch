@@ -1,7 +1,7 @@
 package snabbdom
 
-import org.scalajs.dom._
-import outwatch.dom.{Attr, Prop, _}
+import org.scalajs.dom
+import outwatch.dom.{AccumAttr, Attr, Attribute, Emitter, EmptyAttribute, Prop, Style}
 
 import scala.scalajs.js
 
@@ -26,14 +26,14 @@ object VDomProxy {
   }
 
 
-  def emittersToSnabbDom(eventEmitters: Seq[Emitter]): js.Dictionary[js.Function1[Event,Unit]] = {
+  def emittersToSnabbDom(eventEmitters: Seq[Emitter]): js.Dictionary[js.Function1[dom.Event,Unit]] = {
     eventEmitters
       .groupBy(_.eventType)
       .mapValues(emittersToFunction)
       .toJSDictionary
   }
 
-  private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[Event, Unit] = {
-    (event: Event) => emitters.foreach(_.trigger(event))
+  private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[dom.Event, Unit] = {
+    (event: dom.Event) => emitters.foreach(_.trigger(event))
   }
 }

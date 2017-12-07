@@ -68,19 +68,19 @@ object DomUtils {
     )
   }
 
-  private def createHookSingle(hooks: Seq[HookSingle]): js.UndefOr[Hooks.HookSingleFn] = {
+  private def createHookSingle(hooks: Seq[Hook[Element]]): js.UndefOr[Hooks.HookSingleFn] = {
     Option(hooks).filter(_.nonEmpty).map[Hooks.HookSingleFn](hooks =>
       (p: VNodeProxy) => for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
     ).orUndefined
   }
 
-  private def createHookPair(hooks: Seq[HookPair]): js.UndefOr[Hooks.HookPairFn] = {
+  private def createHookPair(hooks: Seq[Hook[(Element, Element)]]): js.UndefOr[Hooks.HookPairFn] = {
     Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
       (old: VNodeProxy, cur: VNodeProxy) => for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
     ).orUndefined
   }
 
-  private def createHookPairOption(hooks: Seq[HookPairOption]): js.UndefOr[Hooks.HookPairFn] = {
+  private def createHookPairOption(hooks: Seq[Hook[(Option[Element], Option[Element])]]): js.UndefOr[Hooks.HookPairFn] = {
     Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
       (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
     ).orUndefined

@@ -9,12 +9,12 @@ import snabbdom.{DataObject, VNodeProxy, hFunction}
 import scala.scalajs.js
 import collection.breakOut
 
-sealed trait Modifier extends Any
+private[outwatch] sealed trait Modifier extends Any
 
 
 // Modifiers
 
-sealed trait Property extends Modifier
+private[outwatch] sealed trait Property extends Modifier
 
 final case class Emitter(eventType: String, trigger: Event => Unit) extends Modifier
 
@@ -26,17 +26,19 @@ case object EmptyModifier extends Modifier
 
 private[outwatch] final case class StringModifier(string: String) extends Modifier
 
-sealed trait ChildVNode extends Any with Modifier
+private[outwatch] sealed trait ChildVNode extends Any with Modifier
 
 // Properties
 
-final case class Key(value: Key.Value) extends Property
+private[outwatch] final case class Key(value: Key.Value) extends Property
 
 object Key {
   type Value = DataObject.KeyValue
 }
 
-sealed trait Hook extends Property
+sealed trait Hook[T] extends Property {
+  def observer: Observer[T]
+}
 
 sealed trait Attribute extends Property {
   val title: String
@@ -70,32 +72,21 @@ final case class Style(title: String, value: String) extends Attribute
 
 // Hooks
 
-sealed trait HookSingle extends Hook {
-  def observer: Observer[Element]
-}
-
-sealed trait HookPair extends Hook {
-  def observer: Observer[(Element, Element)]
-}
-
-sealed trait HookPairOption extends Hook {
-  def observer: Observer[(Option[Element], Option[Element])]
-}
-
-private[outwatch] final case class InsertHook(observer: Observer[Element]) extends HookSingle
-private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])]) extends HookPairOption
-private[outwatch] final case class UpdateHook(observer: Observer[(Element, Element)]) extends HookPair
-private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends HookPair
-private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends HookSingle
+private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]
+private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])])
+  extends Hook[(Option[Element], Option[Element])]
+private[outwatch] final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
+private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
+private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
 
 // Child Nodes
-sealed trait StaticVNode extends Any with ChildVNode {
+private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
   def asProxy: VNodeProxy
 }
 
-final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends ChildVNode
+private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends ChildVNode
 
-final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends ChildVNode
+private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends ChildVNode
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {
