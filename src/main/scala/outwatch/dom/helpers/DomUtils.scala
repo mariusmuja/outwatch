@@ -16,7 +16,7 @@ import scala.scalajs.js.JSConverters._
 
 object DomUtils {
 
-  private def createDataObject(changeables: SeparatedReceivers, modifiers: SeparatedModifiers): DataObject = {
+  private def createDataObject(changeables: Changeables, modifiers: SeparatedModifiers): DataObject = {
 
     val (attrs, props, style) = modifiers.properties.attributes.toSnabbdom
 
@@ -40,7 +40,7 @@ object DomUtils {
     attributes: Attributes = Attributes(),
     keys: List[Key] = Nil
   ) {
-    def add(p: Property): SeparatedProperties = {
+    def add(p: Property): SeparatedProperties = p match {
       case att: Attribute => copy(attributes = attributes.add(att))
       case hook: Hook[_] => copy(hooks = hooks.add(hook))
       case key: Key => copy(keys = key :: keys)
@@ -51,10 +51,7 @@ object DomUtils {
     attributes: List[Attribute] = Nil
   ) { self =>
 
-    def add(a: Attribute): Attributes = a match {
-      case EmptyAttribute => self
-      case attr => copy(attributes = attr :: attributes)
-    }
+    @inline def add(a: Attribute): Attributes = copy(attributes = a :: attributes)
 
     def toSnabbdom: (js.Dictionary[Attr.Value], js.Dictionary[Prop.Value], js.Dictionary[String]) = {
       val attrsDict = js.Dictionary[Attr.Value]()
@@ -66,9 +63,20 @@ object DomUtils {
         case a: Attr => attrsDict(a.title) = a.value
         case a: Prop => propsDict(a.title) = a.value
         case a: Style => styleDict(a.title) = a.value
+        case EmptyAttribute =>
       }
 
       (attrsDict, propsDict, styleDict)
+    }
+
+    def updateAttributes(obj: DataObject): DataObject = {
+      import scala.scalajs.js.JSConverters._
+
+      val (attrs, props, style) = toSnabbdom
+      val newAttrs = (obj.attrs ++ attrs).toJSDictionary
+      val newProps = (obj.props ++ props).toJSDictionary
+      val newStyle = (obj.style ++ style).toJSDictionary
+      DataObject(attrs = newAttrs, props = newProps, style = newStyle, on = obj.on, hook = obj.hook, key = obj.key)
     }
   }
 
@@ -79,7 +87,7 @@ object DomUtils {
     postPatchHooks: List[PostPatchHook] = Nil,
     destroyHooks: List[DestroyHook] = Nil
   ) {
-    def add(h: Hook[_]): SeparatedHooks = {
+    def add(h: Hook[_]): SeparatedHooks = h match {
       case ih: InsertHook => copy(insertHooks = ih :: insertHooks)
       case pph: PrePatchHook => copy(prePatchHooks = pph :: prePatchHooks)
       case uh: UpdateHook => copy(updateHooks = uh :: updateHooks)
@@ -106,7 +114,7 @@ object DomUtils {
     }
 
 
-    private def createInsertHook(changables: SeparatedReceivers,
+    private def createInsertHook(changables: Changeables,
       subscriptionRef: STRef[Cancelable],
       hooks: Seq[InsertHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
@@ -115,7 +123,7 @@ object DomUtils {
 
         hFunction(
           proxy.sel,
-          proxy.data.withUpdatedAttributes(attributes),
+          Attributes(attributes.toList).updateAttributes(proxy.data),
           if (nodes.isEmpty) proxy.children else nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy]
         )
       }
@@ -142,7 +150,7 @@ object DomUtils {
       ()
     }
 
-    def toSnabbdom(changeables: SeparatedReceivers): Hooks = {
+    def toSnabbdom(changeables: Changeables): Hooks = {
       val (insertHook, destroyHook) = if (changeables.nonEmpty) {
         val subscriptionRef = STRef.empty[Cancelable]
         val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(changeables, subscriptionRef, insertHooks)
@@ -162,17 +170,17 @@ object DomUtils {
     }
   }
 
-  private final case class ChildrenNodes(
-    vNodes: List[ChildVNode] = Nil,
-    children: List[StaticVNode] = Nil,
+  private[outwatch] final case class ChildrenNodes(
+    allNodes: List[ChildVNode] = Nil,
+    staticNodes: List[StaticVNode] = Nil,
     hasStreams: Boolean = false,
     childrenStreams: Int = 0
   ) {
-    def add(cn: ChildVNode): ChildrenNodes = {
-      case sn: StaticVNode => copy(children = sn :: children, vNodes = sn :: vNodes)
-      case csr: ChildStreamReceiver => copy(hasStreams = true, vNodes = csr :: vNodes)
+    def add(cn: ChildVNode): ChildrenNodes = cn match {
+      case sn: StaticVNode => copy(staticNodes = sn :: staticNodes, allNodes = sn :: allNodes)
+      case csr: ChildStreamReceiver => copy(hasStreams = true, allNodes = csr :: allNodes)
       case csr: ChildrenStreamReceiver =>
-        copy(hasStreams = true,  childrenStreams = childrenStreams + 1,  vNodes = csr :: vNodes)
+        copy(hasStreams = true,  childrenStreams = childrenStreams + 1,  allNodes = csr :: allNodes)
     }
   }
 
@@ -197,21 +205,21 @@ object DomUtils {
     properties: SeparatedProperties,
     emitters: Emitters,
     attributeReceivers: List[AttributeStreamReceiver],
-    vNodes: ChildrenNodes,
+    childrenNodes: ChildrenNodes,
     hasChildVNodes : Boolean,
     stringModifiers: List[StringModifier]
   ) { self =>
 
-    def add(m: Modifier): SeparatedModifiers = {
+    def add(m: Modifier): SeparatedModifiers = m match {
       case pr: Property => copy(properties = properties.add(pr))
-      case vn: ChildVNode => copy(vNodes = vNodes.add(vn), hasChildVNodes = true)
+      case vn: ChildVNode => copy(childrenNodes = childrenNodes.add(vn), hasChildVNodes = true)
       case em: Emitter => copy(emitters = emitters.add(em))
       case rc: AttributeStreamReceiver=> copy(attributeReceivers = rc :: attributeReceivers)
       case cm: CompositeModifier =>
         val modifiers = cm.modifiers.map(_.unsafeRunSync())
         modifiers.foldRight(self)((m, sm) => sm.add(m))
       case sm: StringModifier =>
-        copy(vNodes = vNodes.add(StringVNode(sm.string)), stringModifiers = sm :: stringModifiers)
+        copy(childrenNodes = childrenNodes.add(StringVNode(sm.string)), stringModifiers = sm :: stringModifiers)
       case EmptyModifier => self
     }
   }
@@ -221,11 +229,11 @@ object DomUtils {
     ))((m, sm) => sm.add(m))
   }
 
-  private[outwatch] final case class SeparatedReceivers(
-    childNodes: List[ChildVNode] = Nil,
-    hasNodeStreams: Boolean = false,
-    multipleChildrenStreams: Boolean = false,
-    attributeStreamReceivers: List[AttributeStreamReceiver] = Nil
+  private[outwatch] final case class Changeables(
+    childNodes: List[ChildVNode],
+    hasNodeStreams: Boolean,
+    multipleChildrenStreams: Boolean,
+    attributeStreamReceivers: List[AttributeStreamReceiver]
   ) {
 
     lazy val observable: Observable[(Seq[Attribute], Seq[IO[StaticVNode]])] = {
@@ -276,22 +284,22 @@ object DomUtils {
   private[outwatch] def extractChildrenAndDataObject(args: Seq[Modifier]): (Seq[StaticVNode], DataObject, Boolean, Seq[StringModifier]) = {
     val modifiers = separateModifiers(args)
 
-    val hasChildStreams = modifiers.vNodes.hasStreams
-    val children = modifiers.vNodes.children
-    val nodes = modifiers.vNodes.vNodes
-    val childrenStreams = modifiers.vNodes.childrenStreams
+    val hasChildStreams = modifiers.childrenNodes.hasStreams
+    val staticNodes = modifiers.childrenNodes.staticNodes
+    val nodes = modifiers.childrenNodes.allNodes
+    val childrenStreams = modifiers.childrenNodes.childrenStreams
     val attributeReceivers = modifiers.attributeReceivers
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
-    val childrenWithKey = if (hasChildStreams) children.map(ensureVNodeKey) else children
+    val staticNodesWithKey = if (hasChildStreams) staticNodes.map(ensureVNodeKey) else staticNodes
     val nodesWithKey = if (hasChildStreams) nodes.map(ensureVNodeKey) else nodes
 
-    val changeables = SeparatedReceivers(nodesWithKey, hasChildStreams, childrenStreams > 1, attributeReceivers)
+    val changeables = Changeables(nodesWithKey, hasChildStreams, childrenStreams > 1, attributeReceivers)
 
     val dataObject = createDataObject(changeables, modifiers)
 
-    (childrenWithKey, dataObject, modifiers.hasChildVNodes, modifiers.stringModifiers)
+    (staticNodesWithKey, dataObject, modifiers.hasChildVNodes, modifiers.stringModifiers)
   }
 
   def render(element: dom.Element, vNode: VNode): IO[Unit] = for {
