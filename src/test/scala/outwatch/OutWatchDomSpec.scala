@@ -7,9 +7,9 @@ import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html
-import outwatch.dom.{StringNode, _}
+import outwatch.dom._
 import outwatch.dom.helpers._
-import snabbdom.{DataObject, VNodeProxy, hFunction}
+import snabbdom.{DataObject, hFunction}
 
 import scala.collection.immutable.Seq
 import scala.language.reflectiveCalls
@@ -49,12 +49,12 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   test("VDomModifiers should be separated correctly") { _ =>
     val modifiers = Seq(
       Attribute("class", "red"),
-      EmptyVDomModifier,
+      EmptyModifier,
       Emitter("click", _ => ()),
-      new StringNode("Test"),
+      new StringModifier("Test"),
       div().unsafeRunSync(),
       AttributeStreamReceiver("hidden",Observable()),
-      CompositeVDomModifier(
+      CompositeModifier(
         Seq(
           div(),
           Attributes.`class` := "blue",
@@ -64,39 +64,43 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       )
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, vNodes) = DomUtils.separateModifiers(modifiers)
+    val DomUtils.SeparatedModifiers(emitters, receivers, properties, vNodes, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
 
     assertEquals(emitters.length, 2)
     assertEquals(receivers.length, 2)
     assertEquals(vNodes.length, 3)
     assertEquals(properties.length, 2)
+    assertEquals(hasChildVNodes, true)
+    assertEquals(stringModifiers.length, 1)
 
   }
 
   test("VDomModifiers should be separated correctly with children") { _ =>
     val modifiers = Seq(
       Attribute("class","red"),
-      EmptyVDomModifier,
+      EmptyModifier,
       Emitter("click", _ => ()),
       Emitter("input",  _ => ()),
       AttributeStreamReceiver("hidden",Observable()),
       AttributeStreamReceiver("disabled",Observable()),
-      ChildrenStreamReceiver(Observable()),
-      Emitter("keyup",  _ => ())
+      Emitter("keyup",  _ => ()),
+      StringModifier("text")
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
+    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
 
     assertEquals(emitters.length, 3)
     assertEquals(receivers.length, 2)
     assertEquals(properties.length, 1)
     assertEquals(children.length, 1)
+    assertEquals(hasChildVNodes, false)
+    assertEquals(stringModifiers.length, 1)
   }
 
   test("VDomModifiers should be separated correctly with children and properties") { _ =>
     val modifiers = Seq(
       Attribute("class","red"),
-      EmptyVDomModifier,
+      EmptyModifier,
       Emitter("click", _ => ()),
       Emitter("input", _ => ()),
       UpdateHook(PublishSubject()),
@@ -106,10 +110,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       Emitter("keyup", _ => ()),
       InsertHook(PublishSubject[Element]),
       PrePatchHook(PublishSubject()),
-      PostPatchHook(PublishSubject())
+      PostPatchHook(PublishSubject()),
+      StringModifier("text")
     )
 
-    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children) = DomUtils.separateModifiers(modifiers)
+    val DomUtils.SeparatedModifiers(emitters, receivers, properties, children, hasChildVNodes, stringModifiers) = DomUtils.separateModifiers(modifiers)
 
     val DomUtils.SeparatedProperties(inserts, prepatch, updates, postpatch, deletes, attributes, keys) = DomUtils.separateProperties(properties)
 
@@ -122,14 +127,16 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(deletes.length, 0)
     assertEquals(attributes.length, 1)
     assertEquals(receivers.length, 2)
-    assertEquals(children.length, 1)
+    assertEquals(children.length, 2)
     assertEquals(keys.length, 0)
+    assertEquals(hasChildVNodes, true)
+    assertEquals(stringModifiers.length, 1)
 
   }
 
   val fixture = new {
     val proxy = hFunction("div", DataObject(js.Dictionary("class" -> "red", "id" -> "msg"), js.Dictionary()), js.Array(
-      hFunction("span", DataObject(js.Dictionary(), js.Dictionary()), js.Array(VNodeProxy.fromString("Hello")))
+      hFunction("span", DataObject(js.Dictionary(), js.Dictionary()), "Hello")
     ))
   }
 
@@ -252,7 +259,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val attrs = js.Dictionary[dom.Attr.Value]("a" -> true, "b" -> true, "c" -> false, "d" -> "true", "e" -> "true", "f" -> "false")
-    val expected = hFunction("div", DataObject(attrs, js.Dictionary()), js.Array[VNodeProxy]())
+    val expected = hFunction("div", DataObject(attrs, js.Dictionary()))
 
     assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(expected))
 

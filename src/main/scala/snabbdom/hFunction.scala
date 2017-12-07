@@ -15,11 +15,15 @@ object hProvider extends js.Object {
 
 @js.native
 trait hFunction extends js.Any {
+  def apply(nodeType: String, dataObject: DataObject): VNodeProxy = js.native
   def apply(nodeType: String, dataObject: DataObject, text: String): VNodeProxy = js.native
   def apply(nodeType: String, dataObject: DataObject, children: js.Array[VNodeProxy]): VNodeProxy = js.native
 }
 
 object hFunction {
+  def apply(nodeType: String, dataObject: DataObject): VNodeProxy = {
+    hProvider.default.apply(nodeType, dataObject)
+  }
   def apply(nodeType: String, dataObject: DataObject, text: String): VNodeProxy = {
     hProvider.default.apply(nodeType, dataObject, text)
   }
