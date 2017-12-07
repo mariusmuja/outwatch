@@ -28,11 +28,6 @@ final class AttributeBuilder[T](val attributeName: String, encode: T => Attr.Val
 
 object AttributeBuilder {
   implicit def toAttribute(builder: AttributeBuilder[Boolean]): IO[Attribute] = IO.pure(builder assign true)
-
-  implicit class defaultAccums(attrb: AttributeBuilder[String]) {
-    def spaceAccum: AccumAttributeBuilder[String] = attrb.accum(_ + " " + _)
-    def commaAccum: AccumAttributeBuilder[String] = attrb.accum(_ + "," + _)
-  }
 }
 
 final class AccumAttributeBuilder[T](

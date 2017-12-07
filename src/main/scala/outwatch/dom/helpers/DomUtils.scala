@@ -5,7 +5,7 @@ import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import monix.execution.Scheduler.Implicits.global
 import monix.reactive.subjects.BehaviorSubject
-import org.scalajs.dom._
+import org.scalajs.dom
 import outwatch.dom._
 import snabbdom._
 
@@ -16,145 +16,209 @@ import scala.scalajs.js.JSConverters._
 
 object DomUtils {
 
-  private def createDataObject(changeables: SeparatedReceivers,
-                               properties: Seq[Property],
-                               eventHandlers: js.Dictionary[js.Function1[Event, Unit]]): DataObject = {
+  private def createDataObject(changeables: SeparatedReceivers, modifiers: SeparatedModifiers): DataObject = {
 
-    if (changeables.nonEmpty){
-      createReceiverDataObject(changeables, properties, eventHandlers)
+    val (attrs, props, style) = modifiers.properties.attributes.toSnabbdom
+
+    val keyOption = modifiers.properties.keys.lastOption
+    val key = if (changeables.nonEmpty) {
+      keyOption.fold[Key.Value](changeables.hashCode)(_.value) : js.UndefOr[Key.Value]
     } else {
-      createSimpleDataObject(properties, eventHandlers)
+      keyOption.map(_.value).orUndefined
     }
-  }
-
-  private def createSimpleDataObject(properties: Seq[Property], handlers: js.Dictionary[js.Function1[Event, Unit]]) = {
-
-    val SeparatedProperties(insert, prepatch, update, postpatch, destroy, attributes, keys) = separateProperties(properties)
-    val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
-
-    val insertHook = createHookSingle(insert)
-    val prePatchHook = createHookPairOption(prepatch)
-    val updateHook = createHookPair(update)
-    val postPatchHook = createHookPair(postpatch)
-    val destroyHook = createHookSingle(destroy)
-    val key = keys.lastOption.map(_.value).orUndefined
-
-    DataObject(attrs, props, style, handlers,
-      Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook),
-      key
-    )
-  }
-
-  private def createReceiverDataObject(changeables: SeparatedReceivers,
-                                       properties: Seq[Property],
-                                       eventHandlers: js.Dictionary[js.Function1[Event, Unit]]) = {
-
-    val SeparatedProperties(insert, prepatch, update, postpatch, destroy, attributes, keys) = separateProperties(properties)
-
-    val (attrs, props, style) = VDomProxy.attrsToSnabbDom(attributes)
-    val subscriptionRef = STRef.empty[Cancelable]
-
-    val insertHook = createInsertHook(changeables, subscriptionRef, insert)
-    val prePatchHook = createHookPairOption(prepatch)
-    val updateHook = createHookPair(update)
-    val postPatchHook = createHookPair(postpatch)
-    val destroyHook = createDestroyHook(subscriptionRef, destroy)
-    val key = keys.lastOption.fold[Key.Value](changeables.hashCode)(_.value)
 
     DataObject(
-      attrs, props, style, eventHandlers,
-      Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook),
+      attrs, props, style, modifiers.emitters.toSnabbdom,
+      modifiers.properties.hooks.toSnabbdom(changeables),
       key
     )
   }
 
-  private def createHookSingle(hooks: Seq[Hook[Element]]): js.UndefOr[Hooks.HookSingleFn] = {
-    Option(hooks).filter(_.nonEmpty).map[Hooks.HookSingleFn](hooks =>
-      (p: VNodeProxy) => for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
-    ).orUndefined
+
+  private[outwatch] final case class SeparatedProperties(
+    hooks: SeparatedHooks = SeparatedHooks(),
+    attributes: Attributes = Attributes(),
+    keys: List[Key] = Nil
+  ) {
+    def add(p: Property): SeparatedProperties = {
+      case att: Attribute => copy(attributes = attributes.add(att))
+      case hook: Hook[_] => copy(hooks = hooks.add(hook))
+      case key: Key => copy(keys = key :: keys)
+    }
   }
 
-  private def createHookPair(hooks: Seq[Hook[(Element, Element)]]): js.UndefOr[Hooks.HookPairFn] = {
-    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
-      (old: VNodeProxy, cur: VNodeProxy) => for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
-    ).orUndefined
-  }
+  private[outwatch] final case class Attributes(
+    attributes: List[Attribute] = Nil
+  ) { self =>
 
-  private def createHookPairOption(hooks: Seq[Hook[(Option[Element], Option[Element])]]): js.UndefOr[Hooks.HookPairFn] = {
-    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
-      (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
-    ).orUndefined
-  }
-
-  private def createInsertHook(changables: SeparatedReceivers,
-                               subscriptionRef: STRef[Cancelable],
-                               hooks: Seq[InsertHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
-
-    def toProxy(changable: (Seq[Attribute], Seq[IO[StaticVNode]])): VNodeProxy = {
-      val (attributes, nodes) = changable
-
-      hFunction(
-        proxy.sel,
-        proxy.data.withUpdatedAttributes(attributes),
-        if (nodes.isEmpty) proxy.children else nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy]
-      )
+    def add(a: Attribute): Attributes = a match {
+      case EmptyAttribute => self
+      case attr => copy(attributes = attr :: attributes)
     }
 
-    val subscription = changables.observable
-      .map(toProxy)
-      .startWith(Seq(proxy))
-      .bufferSliding(2, 1)
-      .subscribe(
-        { case Seq(old, crt) => patch(old, crt); Continue },
-        error => console.error(error.getMessage)
-      )
+    def toSnabbdom: (js.Dictionary[Attr.Value], js.Dictionary[Prop.Value], js.Dictionary[String]) = {
+      val attrsDict = js.Dictionary[Attr.Value]()
+      val propsDict = js.Dictionary[Prop.Value]()
+      val styleDict = js.Dictionary[String]()
 
-    subscriptionRef.put(subscription).unsafeRunSync()
+      attributes.foreach {
+        case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
+        case a: Attr => attrsDict(a.title) = a.value
+        case a: Prop => propsDict(a.title) = a.value
+        case a: Style => styleDict(a.title) = a.value
+      }
 
-    proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
+      (attrsDict, propsDict, styleDict)
+    }
   }
 
+  private[outwatch] final case class SeparatedHooks(
+    insertHooks: List[InsertHook] = Nil,
+    prePatchHooks: List[PrePatchHook] = Nil,
+    updateHooks: List[UpdateHook] = Nil,
+    postPatchHooks: List[PostPatchHook] = Nil,
+    destroyHooks: List[DestroyHook] = Nil
+  ) {
+    def add(h: Hook[_]): SeparatedHooks = {
+      case ih: InsertHook => copy(insertHooks = ih :: insertHooks)
+      case pph: PrePatchHook => copy(prePatchHooks = pph :: prePatchHooks)
+      case uh: UpdateHook => copy(updateHooks = uh :: updateHooks)
+      case pph: PostPatchHook => copy(postPatchHooks = pph :: postPatchHooks)
+      case dh: DestroyHook => copy(destroyHooks = dh :: destroyHooks)
+    }
+
+    private def createHookSingle(hooks: Seq[Hook[dom.Element]]): js.UndefOr[Hooks.HookSingleFn] = {
+      Option(hooks).filter(_.nonEmpty).map[Hooks.HookSingleFn](hooks =>
+        (p: VNodeProxy) => for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
+      ).orUndefined
+    }
+
+    private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]]): js.UndefOr[Hooks.HookPairFn] = {
+      Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
+        (old: VNodeProxy, cur: VNodeProxy) => for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
+      ).orUndefined
+    }
+
+    private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]): js.UndefOr[Hooks.HookPairFn] = {
+      Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
+        (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
+      ).orUndefined
+    }
 
 
-  private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
-    proxy.elm.foreach((e: Element) => hooks.foreach(_.observer.onNext(e)))
-    subscription.update { s => s.cancel(); s }.unsafeRunSync()
-    ()
+    private def createInsertHook(changables: SeparatedReceivers,
+      subscriptionRef: STRef[Cancelable],
+      hooks: Seq[InsertHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
+
+      def toProxy(changable: (Seq[Attribute], Seq[IO[StaticVNode]])): VNodeProxy = {
+        val (attributes, nodes) = changable
+
+        hFunction(
+          proxy.sel,
+          proxy.data.withUpdatedAttributes(attributes),
+          if (nodes.isEmpty) proxy.children else nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy]
+        )
+      }
+
+      val subscription = changables.observable
+        .map(toProxy)
+        .startWith(Seq(proxy))
+        .bufferSliding(2, 1)
+        .subscribe(
+          { case Seq(old, crt) => patch(old, crt); Continue },
+          error => dom.console.error(error.getMessage)
+        )
+
+      subscriptionRef.put(subscription).unsafeRunSync()
+
+      proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
+    }
+
+
+
+    private def createDestroyHook(subscription: STRef[Cancelable], hooks: Seq[DestroyHook]): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
+      proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
+      subscription.update { s => s.cancel(); s }.unsafeRunSync()
+      ()
+    }
+
+    def toSnabbdom(changeables: SeparatedReceivers): Hooks = {
+      val (insertHook, destroyHook) = if (changeables.nonEmpty) {
+        val subscriptionRef = STRef.empty[Cancelable]
+        val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(changeables, subscriptionRef, insertHooks)
+        val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscriptionRef, destroyHooks)
+        (insertHook, destroyHook)
+      }
+      else {
+        val insertHook = createHookSingle(insertHooks)
+        val destroyHook = createHookSingle(destroyHooks)
+        (insertHook, destroyHook)
+      }
+      val prePatchHook = createHookPairOption(prePatchHooks)
+      val updateHook = createHookPair(updateHooks)
+      val postPatchHook = createHookPair(postPatchHooks)
+
+      Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook)
+    }
   }
 
+  private final case class ChildrenNodes(
+    vNodes: List[ChildVNode] = Nil,
+    children: List[StaticVNode] = Nil,
+    hasStreams: Boolean = false,
+    childrenStreams: Int = 0
+  ) {
+    def add(cn: ChildVNode): ChildrenNodes = {
+      case sn: StaticVNode => copy(children = sn :: children, vNodes = sn :: vNodes)
+      case csr: ChildStreamReceiver => copy(hasStreams = true, vNodes = csr :: vNodes)
+      case csr: ChildrenStreamReceiver =>
+        copy(hasStreams = true,  childrenStreams = childrenStreams + 1,  vNodes = csr :: vNodes)
+    }
+  }
+
+  final case class Emitters(
+    emitters: List[Emitter] = Nil
+  ) {
+    def add(e: Emitter): Emitters = copy(emitters = e :: emitters)
+
+    private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[dom.Event, Unit] = {
+      (event: dom.Event) => emitters.foreach(_.trigger(event))
+    }
+
+    def toSnabbdom: js.Dictionary[js.Function1[dom.Event, Unit]] = {
+      emitters
+        .groupBy(_.eventType)
+        .mapValues(emittersToFunction)
+        .toJSDictionary
+    }
+  }
 
   private[outwatch] final case class SeparatedModifiers(
-    emitters: List[Emitter] = Nil,
-    attributeReceivers: List[AttributeStreamReceiver] = Nil,
-    properties: List[Property] = Nil,
-    vNodes: List[ChildVNode] = Nil,
-    hasChildVNodes : Boolean = false,
-    stringModifiers: List[StringModifier] = Nil
-  )
-  private[outwatch] def separateModifiers(args: Seq[Modifier]): SeparatedModifiers = {
-    args.foldRight(SeparatedModifiers())(separatorFn)
-  }
+    properties: SeparatedProperties,
+    emitters: Emitters,
+    attributeReceivers: List[AttributeStreamReceiver],
+    vNodes: ChildrenNodes,
+    hasChildVNodes : Boolean,
+    stringModifiers: List[StringModifier]
+  ) { self =>
 
-  private[outwatch] def separatorFn(mod: Modifier, res: SeparatedModifiers): SeparatedModifiers = (mod, res) match {
-    case (em: Emitter, sf) => sf.copy(emitters = em :: sf.emitters)
-    case (rc: AttributeStreamReceiver, sf) => sf.copy(attributeReceivers = rc :: sf.attributeReceivers)
-    case (pr: Property, sf) => sf.copy(properties = pr :: sf.properties)
-    case (vn: ChildVNode, sf) =>
-      sf.copy(vNodes = vn :: sf.vNodes, hasChildVNodes = true)
-    case (sm: StringModifier, sf) =>
-      sf.copy(vNodes = StringVNode(sm.string) :: sf.vNodes, stringModifiers = sm :: sf.stringModifiers)
-    case (vn: CompositeModifier, sf) =>
-      val modifiers = vn.modifiers.map(_.unsafeRunSync())
-      val sm = separateModifiers(modifiers)
-      SeparatedModifiers(
-        emitters = sm.emitters ++ sf.emitters,
-        attributeReceivers = sm.attributeReceivers ++ sf.attributeReceivers,
-        properties = sm.properties ++ sf.properties,
-        vNodes = sm.vNodes ++ sf.vNodes,
-        hasChildVNodes = sm.hasChildVNodes || sf.hasChildVNodes,
-        stringModifiers = sm.stringModifiers ++ sf.stringModifiers
-      )
-    case (EmptyModifier, sf) => sf
+    def add(m: Modifier): SeparatedModifiers = {
+      case pr: Property => copy(properties = properties.add(pr))
+      case vn: ChildVNode => copy(vNodes = vNodes.add(vn), hasChildVNodes = true)
+      case em: Emitter => copy(emitters = emitters.add(em))
+      case rc: AttributeStreamReceiver=> copy(attributeReceivers = rc :: attributeReceivers)
+      case cm: CompositeModifier =>
+        val modifiers = cm.modifiers.map(_.unsafeRunSync())
+        modifiers.foldRight(self)((m, sm) => sm.add(m))
+      case sm: StringModifier =>
+        copy(vNodes = vNodes.add(StringVNode(sm.string)), stringModifiers = sm :: stringModifiers)
+      case EmptyModifier => self
+    }
+  }
+  private[outwatch] def separateModifiers(args: Seq[Modifier]): SeparatedModifiers = {
+    args.foldRight(SeparatedModifiers(
+      SeparatedProperties(), Emitters(), Nil, ChildrenNodes(), hasChildVNodes = false, Nil
+    ))((m, sm) => sm.add(m))
   }
 
   private[outwatch] final case class SeparatedReceivers(
@@ -196,39 +260,6 @@ object DomUtils {
     }
   }
 
-  private[outwatch] final case class SeparatedProperties(
-    insertHooks: List[InsertHook] = Nil,
-    prePatchHooks: List[PrePatchHook] = Nil,
-    updateHooks: List[UpdateHook] = Nil,
-    postPatchHooks: List[PostPatchHook] = Nil,
-    destroyHooks: List[DestroyHook] = Nil,
-    attributeHooks: List[Attribute] = Nil,
-    keys: List[Key] = Nil
-  )
-  private[outwatch] def separateProperties(properties: Seq[Property]): SeparatedProperties = {
-    properties.foldRight(SeparatedProperties()) {
-      case (ih: InsertHook, sp) => sp.copy(insertHooks = ih :: sp.insertHooks)
-      case (pph: PrePatchHook, sp) => sp.copy(prePatchHooks = pph :: sp.prePatchHooks)
-      case (uh: UpdateHook, sp) => sp.copy(updateHooks = uh :: sp.updateHooks)
-      case (pph: PostPatchHook, sp) => sp.copy(postPatchHooks = pph :: sp.postPatchHooks)
-      case (dh: DestroyHook, sp) => sp.copy(destroyHooks = dh :: sp.destroyHooks)
-      case (at: Attribute, sp) => sp.copy(attributeHooks = at :: sp.attributeHooks)
-      case (key: Key, sp) => sp.copy(keys = key :: sp.keys)
-    }
-  }
-
-
-  private final case class ChildrenNodes(
-    children: List[StaticVNode] = Nil,
-    hasStreams: Boolean = false,
-    childrenStreams: Int = 0
-  )
-  private def extractChildren(nodes: Seq[ChildVNode]): ChildrenNodes = nodes.foldRight(ChildrenNodes()) {
-    case (vn: StaticVNode, cn) => cn.copy(children = vn :: cn.children)
-    case (_: ChildStreamReceiver, cn) => cn.copy(hasStreams = true)
-    case (_: ChildrenStreamReceiver, cn) => cn.copy(hasStreams = true, childrenStreams = cn.childrenStreams + 1)
-  }
-
   // ensure a key is present in the VTree modifiers
   // used to ensure efficient Snabbdom patch operation in the presence of children streams
   private def ensureVTreeKey(vtree: VTree): VTree = {
@@ -243,9 +274,13 @@ object DomUtils {
   }
 
   private[outwatch] def extractChildrenAndDataObject(args: Seq[Modifier]): (Seq[StaticVNode], DataObject, Boolean, Seq[StringModifier]) = {
-    val SeparatedModifiers(emitters, attributeReceivers, properties, nodes, hasChildVNodes, stringModifiers) = separateModifiers(args)
+    val modifiers = separateModifiers(args)
 
-    val ChildrenNodes(children, hasChildStreams, childrenStreams) = extractChildren(nodes)
+    val hasChildStreams = modifiers.vNodes.hasStreams
+    val children = modifiers.vNodes.children
+    val nodes = modifiers.vNodes.vNodes
+    val childrenStreams = modifiers.vNodes.childrenStreams
+    val attributeReceivers = modifiers.attributeReceivers
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
@@ -254,16 +289,14 @@ object DomUtils {
 
     val changeables = SeparatedReceivers(nodesWithKey, hasChildStreams, childrenStreams > 1, attributeReceivers)
 
-    val eventHandlers = VDomProxy.emittersToSnabbDom(emitters)
+    val dataObject = createDataObject(changeables, modifiers)
 
-    val dataObject = createDataObject(changeables, properties, eventHandlers)
-
-    (childrenWithKey, dataObject, hasChildVNodes, stringModifiers)
+    (childrenWithKey, dataObject, modifiers.hasChildVNodes, modifiers.stringModifiers)
   }
 
-  def render(element: Element, vNode: VNode): IO[Unit] = for {
+  def render(element: dom.Element, vNode: VNode): IO[Unit] = for {
     node <- vNode
-    elem <- IO(document.createElement("app"))
+    elem <- IO(dom.document.createElement("app"))
     _ <- IO(element.appendChild(elem))
     _ <- IO(patch(elem, node.asProxy))
   } yield ()

@@ -1,6 +1,7 @@
 package outwatch.dom
 
 import cats.effect.IO
+import monix.execution.Ack
 import monix.reactive.Observer
 import org.scalajs.dom._
 import outwatch.dom.helpers.DomUtils
@@ -8,37 +9,57 @@ import snabbdom.{DataObject, VNodeProxy, hFunction}
 
 import scala.scalajs.js
 import collection.breakOut
+import scala.concurrent.Future
+
+
+/*
+Modifier
+  Property
+    Attribute
+      Attr
+      AccumAttr
+      Prop
+      Style
+      EmptyAttribute
+    Hook
+      InsertHook
+      PrePatchHook
+      UpdateHook
+      PostPatchHook
+      DestroyHook
+    Key
+  ChildVNode
+    StaticVNode
+      StringVNode
+      VTree
+    ChildStreamReceiver
+    ChildrenStreamReceiver
+  Emitter
+  AttributeStreamReceiver
+  CompositeModifier
+  StringModifier
+  EmptyModifier
+ */
 
 private[outwatch] sealed trait Modifier extends Any
-
 
 // Modifiers
 
 private[outwatch] sealed trait Property extends Modifier
 
-final case class Emitter(eventType: String, trigger: Event => Unit) extends Modifier
+private[outwatch] sealed trait ChildVNode extends Any with Modifier
+
+final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
 
 private[outwatch] final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Modifier
 
 private[outwatch] final case class CompositeModifier(modifiers: Seq[VDomModifier]) extends Modifier
 
-case object EmptyModifier extends Modifier
-
 private[outwatch] final case class StringModifier(string: String) extends Modifier
 
-private[outwatch] sealed trait ChildVNode extends Any with Modifier
+case object EmptyModifier extends Modifier
 
 // Properties
-
-private[outwatch] final case class Key(value: Key.Value) extends Property
-
-object Key {
-  type Value = DataObject.KeyValue
-}
-
-sealed trait Hook[T] extends Property {
-  def observer: Observer[T]
-}
 
 sealed trait Attribute extends Property {
   val title: String
@@ -47,11 +68,17 @@ object Attribute {
   def apply(title: String, value: Attr.Value) = Attr(title, value)
 }
 
-// Attributes
-
-case object EmptyAttribute extends Attribute {
-  val title: String = ""
+sealed trait Hook[T] extends Property {
+  def observer: Observer[T]
 }
+
+private[outwatch] final case class Key(value: Key.Value) extends Property
+object Key {
+  type Value = DataObject.KeyValue
+}
+
+
+// Attributes
 
 final case class Attr(title: String, value: Attr.Value) extends Attribute
 object Attr {
@@ -70,6 +97,9 @@ object Prop {
 
 final case class Style(title: String, value: String) extends Attribute
 
+case object EmptyAttribute extends Attribute {
+  val title: String = ""
+}
 // Hooks
 
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]

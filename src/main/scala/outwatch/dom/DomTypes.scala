@@ -100,6 +100,8 @@ trait ReflectedAttrs
   extends reflectedAttrs.ReflectedAttrs[CodecBuilder.Attribute]
   with ReflectedAttrBuilder[CodecBuilder.Attribute] {
 
+  def classAccum: AccumAttributeBuilder[String] = className.accum(_ + " " + _)
+
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,
     propKey: String,

@@ -8,8 +8,8 @@ object AttributeSpec extends SimpleTestSuite {
 
   test("class attributes should be merged") {
     val node = input(
-      cls.spaceAccum := "class1",
-      cls.spaceAccum := "class2"
+      classAccum := "class1",
+      classAccum := "class2"
     ).map(_.asProxy).unsafeRunSync()
 
     assertEquals(
