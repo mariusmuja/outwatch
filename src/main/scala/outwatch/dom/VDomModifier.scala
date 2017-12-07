@@ -4,11 +4,9 @@ import cats.effect.IO
 import monix.execution.Ack
 import monix.reactive.Observer
 import org.scalajs.dom._
-import outwatch.dom.helpers.DomUtils
-import snabbdom.{DataObject, VNodeProxy, hFunction}
+import outwatch.dom.helpers.SeparatedModifiers
+import snabbdom.{DataObject, VNodeProxy}
 
-import scala.scalajs.js
-import collection.breakOut
 import scala.concurrent.Future
 
 
@@ -132,23 +130,8 @@ private[outwatch] final case class VTree(nodeType: String,
   def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
 
   override def asProxy: VNodeProxy = {
-    val modifiers_ = modifiers.map(_.unsafeRunSync())
-    val (children, attributeObject, hasChildVNodes, textChildren) = DomUtils.extractChildrenAndDataObject(modifiers_)
-    //TODO: use .sequence instead of unsafeRunSync?
-    // import cats.instances.list._
-    // import cats.syntax.traverse._
-    // for { childProxies <- children.map(_.value).sequence }
-    // yield hFunction(nodeType, attributeObject, childProxies.map(_.apsProxy)(breakOut))
-    if (hasChildVNodes) { // children.nonEmpty doesn't work, children will always include StringModifiers as StringNodes
-      val childProxies: js.Array[VNodeProxy] = children.map(_.asProxy)(breakOut)
-      hFunction(nodeType, attributeObject, childProxies)
-    }
-    else if (textChildren.nonEmpty) {
-      hFunction(nodeType, attributeObject, textChildren.map(_.string).mkString)
-    }
-    else {
-      hFunction(nodeType, attributeObject)
-    }
+    val separatedModifiers = SeparatedModifiers.create(modifiers.map(_.unsafeRunSync()))
+    separatedModifiers.toSnabbdom(nodeType)
   }
 }
 
