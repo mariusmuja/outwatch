@@ -548,4 +548,18 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     assertEquals(node.innerHTML, """<button class="active">Submit</button>""")
   }
+
+
+  test("The HTML DSL should work with custom tags") { _ =>
+
+    val vNode = div(tag("main")())
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    OutWatch.render(node, vNode).unsafeRunSync()
+
+    assertEquals(node.innerHTML, "<main></main>")  
+  }
+
 }

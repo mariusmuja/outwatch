@@ -69,6 +69,7 @@ trait Tags
   with TableTags[GenericVNode, VTree]
   with TagsCompat
   with VNodeBuilder
+  with TagHelpers
 object Tags extends Tags
 
 trait TagsExtra

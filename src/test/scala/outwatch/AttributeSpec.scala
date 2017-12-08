@@ -20,7 +20,6 @@ object AttributeSpec extends SimpleTestSuite {
     )
   }
 
-
   test("data attribute should correctly render only data") {
     val node = input(
       data.geul := "bar",
@@ -57,7 +56,7 @@ object AttributeSpec extends SimpleTestSuite {
 
 
   test("attr/prop/style should correctly render type") {
-    val node = input(
+    val node = tag("input")(
       attr("foo") := "foo",
       attr[Boolean]("boo", identity) := true,
       attr[Boolean]("yoo", x => if (x) "yes" else "no") := true,
