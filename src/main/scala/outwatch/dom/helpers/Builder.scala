@@ -38,6 +38,14 @@ final class AccumAttributeBuilder[T](
   @inline protected def assign(value: T) = AccumAttr(attributeName, encode(value), reduce)
 }
 
+
+final class ClassToggleBuilder(
+  val attributeName: String
+) extends ValueBuilder[(String, Boolean), ClassToggle] {
+  @inline protected def assign(value: (String, Boolean)) = ClassToggle(value._1, value._2)
+}
+
+
 final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Value) extends ValueBuilder[T, Prop] {
   @inline protected def assign(value: T) = Prop(attributeName, encode(value))
 }

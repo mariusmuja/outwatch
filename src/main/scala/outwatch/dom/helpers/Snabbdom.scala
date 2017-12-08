@@ -5,7 +5,7 @@ import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import monix.execution.Scheduler.Implicits.global
 import org.scalajs.dom
-import outwatch.dom.{AccumAttr, Attr, Attribute, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
+import outwatch.dom.{AccumAttr, Attr, Attribute, ClassToggle, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
 import snabbdom._
 
 import scala.scalajs.js.JSConverters._
@@ -14,20 +14,24 @@ import scala.scalajs.js
 
 private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
-  def toSnabbdom: (js.Dictionary[Attr.Value], js.Dictionary[Prop.Value], js.Dictionary[String]) = {
+  type jsDict[T] = js.Dictionary[T]
+
+  def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[String], jsDict[Boolean]) = {
     val attrsDict = js.Dictionary[Attr.Value]()
     val propsDict = js.Dictionary[Prop.Value]()
     val styleDict = js.Dictionary[String]()
+    val classToggleDict = js.Dictionary[Boolean]()
 
     attributes.foreach {
       case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
       case a: Attr => attrsDict(a.title) = a.value
-      case a: Prop => propsDict(a.title) = a.value
-      case a: Style => styleDict(a.title) = a.value
+      case p: Prop => propsDict(p.title) = p.value
+      case s: Style => styleDict(s.title) = s.value
+      case s: ClassToggle => classToggleDict(s.title) = s.toggle
       case EmptyAttribute =>
     }
 
-    (attrsDict, propsDict, styleDict)
+    (attrsDict, propsDict, styleDict, classToggleDict)
   }
 
   private def merge[T](first: js.Dictionary[T], second: js.Dictionary[T]) = {
@@ -39,11 +43,12 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
   def updateDataObject(obj: DataObject): DataObject = {
 
-    val (attrs, props, style) = toSnabbdom
+    val (attrs, props, style, classToggle) = toSnabbdom
     DataObject(
       attrs = merge(obj.attrs, attrs),
       props = merge(obj.props, props),
       style = merge(obj.style, style),
+      `class` = merge(obj.`class`, classToggle),
       on = obj.on, hook = obj.hook, key = obj.key
     )
   }
@@ -159,9 +164,9 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
       keyOption.map(_.value).orUndefined
     }
 
-    val (attrs, props, style) = properties.attributes.toSnabbdom
+    val (attrs, props, style, classToggle) = properties.attributes.toSnabbdom
     DataObject(
-      attrs, props, style, emitters.toSnabbdom,
+      attrs, props, style, classToggle, emitters.toSnabbdom,
       properties.hooks.toSnabbdom(changeables),
       key
     )
@@ -177,7 +182,8 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     val changeables = Changeables(nodes, childrenNodes.hasStreams, childrenNodes.childrenStreams > 1, attributeReceivers)
     val dataObject = createDataObject(changeables)
 
-    if (hasChildVNodes) { // children.nonEmpty doesn't work, children will always include StringModifiers as StringNodes
+
+    if (hasChildVNodes) { // staticNodes.nonEmpty doesn't work, children will always include StringModifiers as StringNodes
       val childProxies: js.Array[VNodeProxy] = staticNodes.map(_.asProxy)(breakOut)
       hFunction(nodeType, dataObject, childProxies)
     }

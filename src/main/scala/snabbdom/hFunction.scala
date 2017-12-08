@@ -73,6 +73,7 @@ trait DataObject extends js.Object {
   val attrs: js.Dictionary[AttrValue]
   val props: js.Dictionary[PropValue]
   val style: js.Dictionary[String]
+  val `class`: js.Dictionary[Boolean]
   val on: js.Dictionary[js.Function1[Event, Unit]]
   val hook: Hooks
   val key: js.UndefOr[KeyValue]
@@ -87,12 +88,13 @@ object DataObject {
   def apply(attrs: js.Dictionary[AttrValue],
             on: js.Dictionary[js.Function1[Event, Unit]],
             hooks : Hooks = Hooks()
-           ): DataObject = apply(attrs, js.Dictionary.empty, js.Dictionary.empty, on, hooks, js.undefined)
+           ): DataObject = apply(attrs, js.Dictionary.empty, js.Dictionary.empty, js.Dictionary.empty, on, hooks, js.undefined)
 
 
   def apply(attrs: js.Dictionary[AttrValue],
             props: js.Dictionary[PropValue],
             style: js.Dictionary[String],
+            `class`: js.Dictionary[Boolean],
             on: js.Dictionary[js.Function1[Event, Unit]],
             hook: Hooks,
             key: js.UndefOr[KeyValue]
@@ -101,6 +103,7 @@ object DataObject {
     val _attrs = attrs
     val _props = props
     val _style = style
+    val _class = `class`
     val _on = on
     val _hook = hook
     val _key = key
@@ -109,6 +112,7 @@ object DataObject {
       val attrs: js.Dictionary[AttrValue] = _attrs
       val props: js.Dictionary[PropValue] = _props
       val style: js.Dictionary[String] = _style
+      val `class`: js.Dictionary[Boolean] = _class
       val on: js.Dictionary[js.Function1[Event, Unit]] = _on
       val hook: Hooks = _hook
       val key: UndefOr[KeyValue] = _key

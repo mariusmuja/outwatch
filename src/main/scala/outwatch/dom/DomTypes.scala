@@ -103,6 +103,9 @@ trait ReflectedAttrs
 
   def classAccum: AccumAttributeBuilder[String] = className.accum(_ + " " + _)
 
+  // the name here doesnt' matter, should be different then any other attribute/prop though
+  def classToggle: ClassToggleBuilder = new ClassToggleBuilder("classToggle")
+
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,
     propKey: String,

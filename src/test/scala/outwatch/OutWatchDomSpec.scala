@@ -559,7 +559,23 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     OutWatch.render(node, vNode).unsafeRunSync()
 
-    assertEquals(node.innerHTML, "<main></main>")  
+    assertEquals(node.innerHTML, "<main></main>")
+  }
+
+  test("class attributes should be merged") { _ =>
+    val vNode = button(
+      classToggle := ("class1" -> true),
+      classToggle := ("class2" -> true),
+      "Submit"
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+
+    assertEquals(node.innerHTML, """<button class="class1 class2">Submit</button>""")
+
   }
 
 }

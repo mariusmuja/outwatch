@@ -75,7 +75,6 @@ object Key {
   type Value = DataObject.KeyValue
 }
 
-
 // Attributes
 
 final case class Attr(title: String, value: Attr.Value) extends Attribute
@@ -87,6 +86,8 @@ object Attr {
   * Attribute that accumulates the previous value in the same VNode with it's value
   */
 final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attribute
+
+final case class ClassToggle(title: String, toggle: Boolean) extends Attribute
 
 final case class Prop(title: String, value: Prop.Value) extends Attribute
 object Prop {
@@ -127,7 +128,7 @@ private[outwatch] final case class StringVNode(string: String) extends AnyVal wi
 private[outwatch] final case class VTree(nodeType: String,
                        modifiers: Seq[VDomModifier]) extends StaticVNode {
 
-  def apply(args: VDomModifier*) = IO.pure(VTree(nodeType, modifiers ++ args))
+  def apply(args: VDomModifier*): VNode = IO.pure(VTree(nodeType, modifiers ++ args))
 
   override def asProxy: VNodeProxy = {
     //TODO: use .sequence instead of unsafeRunSync?
