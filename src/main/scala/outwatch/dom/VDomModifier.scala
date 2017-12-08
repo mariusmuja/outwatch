@@ -134,7 +134,7 @@ private[outwatch] final case class VTree(nodeType: String,
     //TODO: use .sequence instead of unsafeRunSync?
     // import cats.instances.list._
     // import cats.syntax.traverse._
-    val separatedModifiers = SeparatedModifiers.create(modifiers.map(_.unsafeRunSync()))
+    val separatedModifiers = SeparatedModifiers.separate(modifiers.map(_.unsafeRunSync()))
     separatedModifiers.toSnabbdom(nodeType)
   }
 }

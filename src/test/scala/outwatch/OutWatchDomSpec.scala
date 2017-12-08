@@ -89,7 +89,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
-      SeparatedModifiers.create(modifiers)
+      SeparatedModifiers.separate(modifiers)
 
     assertEquals(emitters.emitters.length, 3)
     assertEquals(receivers.length, 2)
@@ -117,7 +117,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
-      SeparatedModifiers.create(modifiers)
+      SeparatedModifiers.separate(modifiers)
 
 
     assertEquals(emitters.emitters.map(_.eventType), List("click", "input", "keyup"))

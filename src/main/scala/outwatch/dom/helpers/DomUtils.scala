@@ -106,7 +106,7 @@ private[outwatch] final case class SeparatedModifiers(
 }
 
 object SeparatedModifiers {
-  private[outwatch] def create(modifiers: Seq[Modifier]): SeparatedModifiers = {
+  private[outwatch] def separate(modifiers: Seq[Modifier]): SeparatedModifiers = {
     modifiers.foldRight(SeparatedModifiers())((m, sm) => sm.add(m))
   }
 }
