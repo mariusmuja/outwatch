@@ -47,7 +47,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    OutWatch.renderAppendApp(root, node).unsafeRunSync()
+    OutWatch.renderInto(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -91,7 +91,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    OutWatch.renderAppendApp(root, node).unsafeRunSync()
+    OutWatch.renderInto(root, node).unsafeRunSync()
 
 
     val evt = document.createEvent("HTMLEvents")
@@ -131,10 +131,10 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val component2 = div(comp, comp)
 
     val element1 = document.createElement("div")
-    OutWatch.renderAppendApp(element1, component1).unsafeRunSync()
+    OutWatch.renderInto(element1, component1).unsafeRunSync()
 
     val element2 = document.createElement("div")
-    OutWatch.renderAppendApp(element2, component2).unsafeRunSync()
+    OutWatch.renderInto(element2, component2).unsafeRunSync()
 
     element1.getElementsByTagName("button").item(0).dispatchEvent(clickEvt)
 
@@ -213,7 +213,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     val root = document.createElement("div")
     document.body.appendChild(root)
 
-    OutWatch.renderAppendApp(root, vtree).unsafeRunSync()
+    OutWatch.renderInto(root, vtree).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)

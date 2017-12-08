@@ -8,7 +8,7 @@ import snabbdom.patch
 
 object OutWatch {
 
-  def renderAppendApp(element: dom.Element, vNode: VNode): IO[Unit] = for {
+  def renderInto(element: dom.Element, vNode: VNode): IO[Unit] = for {
     node <- vNode
     _ <- IO {
       val elem = dom.document.createElement("app")
@@ -23,7 +23,7 @@ object OutWatch {
   } yield ()
 
   def render(querySelector: String, vNode: VNode): IO[Unit] =
-    renderAppendApp(document.querySelector(querySelector), vNode)
+    renderInto(document.querySelector(querySelector), vNode)
 
   def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), querySelector: String, root: VNode): IO[Unit] =
     Store.renderWithStore(initialState, reducer, querySelector, root)

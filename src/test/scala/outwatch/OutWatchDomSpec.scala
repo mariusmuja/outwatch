@@ -176,7 +176,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
 
     val patchedNode = document.getElementById(id)
 
@@ -210,7 +210,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
 
     pageHandler.onNext(1)
 
@@ -282,7 +282,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
 
     val patchedNode = document.getElementById("test")
 
@@ -303,7 +303,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.renderAppendApp(node, vtree).unsafeRunSync()
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
 
     val field = document.getElementById("input").asInstanceOf[html.Input]
 
@@ -332,7 +332,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -352,7 +352,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -374,7 +374,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     messagesA.onNext("1")
     messagesB.onNext("2")
@@ -390,7 +390,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext(Seq(div("otherMessage")))
     assertEquals(node.children(0).innerHTML, "<div>otherMessage</div>")
@@ -409,7 +409,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
     assertEquals(node.children(0).innerHTML, "")
@@ -428,7 +428,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, container).unsafeRunSync()
+    OutWatch.renderInto(node, container).unsafeRunSync()
 
     messages.onNext("message")
     assertEquals(node.children(0).children(0).innerHTML, "message")
@@ -447,11 +447,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node1 = document.createElement("div")
     document.body.appendChild(node1)
-    OutWatch.renderAppendApp(node1, vNodeTemplate).unsafeRunSync()
+    OutWatch.renderInto(node1, vNodeTemplate).unsafeRunSync()
 
     val node2 = document.createElement("div")
     document.body.appendChild(node2)
-    OutWatch.renderAppendApp(node2, vNode).unsafeRunSync()
+    OutWatch.renderInto(node2, vNode).unsafeRunSync()
 
     messages.onNext("gurkon")
     otherMessages.onNext("otherMessage")
@@ -475,7 +475,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
     assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
@@ -494,7 +494,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
@@ -513,7 +513,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
@@ -531,7 +531,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     assertEquals(node.innerHTML, "<div><span>one</span><span>two</span><span>three</span></div>")
   }
@@ -542,7 +542,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val node = document.createElement("div")
     document.body.appendChild(node)
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     classes.onNext("active")
 
@@ -572,7 +572,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.renderAppendApp(node, vNode).unsafeRunSync()
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     assertEquals(node.innerHTML, """<button class="class1 class2">Submit</button>""")
 
