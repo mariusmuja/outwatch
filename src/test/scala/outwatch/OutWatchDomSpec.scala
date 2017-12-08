@@ -151,7 +151,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val proxy = fixture.proxy
 
-    assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(proxy))
+    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(proxy))
   }
 
   test("VTrees should be correctly created with the HyperscriptHelper") { _ =>
@@ -160,7 +160,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val child = span(message)
     val vtree = div(IO.pure(attributes.head), IO.pure(attributes(1)), child)
 
-    assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(fixture.proxy))
+    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
   }
 
 
@@ -230,7 +230,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       span("Hello")
     )
 
-    assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(fixture.proxy))
+    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
   }
 
   test("The HTML DSL should construct VTrees with optional children properly") { _ =>
@@ -241,7 +241,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       Option.empty[VDomModifier]
     )
 
-    assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(fixture.proxy))
+    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
 
   }
 
@@ -262,7 +262,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val attrs = js.Dictionary[dom.Attr.Value]("a" -> true, "b" -> true, "c" -> false, "d" -> "true", "e" -> "true", "f" -> "false")
     val expected = hFunction("div", DataObject(attrs, js.Dictionary()))
 
-    assertEquals(JSON.stringify(vtree.map(_.asProxy).unsafeRunSync()), JSON.stringify(expected))
+    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(expected))
 
   }
 

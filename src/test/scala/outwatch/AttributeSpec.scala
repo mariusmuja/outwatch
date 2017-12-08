@@ -10,7 +10,7 @@ object AttributeSpec extends SimpleTestSuite {
     val node = input(
       classAccum := "class1",
       classAccum := "class2"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toMap,
@@ -24,7 +24,7 @@ object AttributeSpec extends SimpleTestSuite {
     val node = input(
       data.geul := "bar",
       data.geuli.gurk := "barz"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toMap,
@@ -39,7 +39,7 @@ object AttributeSpec extends SimpleTestSuite {
     val node = input(
       dataAttr("geul") := "bar",
       dataAttr("geuli-gurk") := "barz"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toMap,
@@ -66,7 +66,7 @@ object AttributeSpec extends SimpleTestSuite {
       contentEditable := false,
       autoComplete := false,
       disabled := false
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toList,
@@ -98,7 +98,7 @@ object AttributeSpec extends SimpleTestSuite {
     val node = input(
       data.foo :=? Option("bar"),
       data.bar :=? Option.empty[String]
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toMap, Map("data-foo" -> "bar")
@@ -112,7 +112,7 @@ object AttributeSpec extends SimpleTestSuite {
     )(
       data.a := "buh",
       data.a.tomate := "gisela"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.attrs.toMap,
@@ -131,7 +131,7 @@ object AttributeSpec extends SimpleTestSuite {
     )(
       style("color") := "blue",
       border := "1px solid black"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.style.toMap,
@@ -150,7 +150,7 @@ object AttributeSpec extends SimpleTestSuite {
     )(
       color.blue,
       border := "1px solid black"
-    ).map(_.asProxy).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.style.toMap,
@@ -163,18 +163,18 @@ object AttributeSpec extends SimpleTestSuite {
   }
 
   test("apply on vtree should correctly merge keys") {
-    val node = input( dom.key := "bumm")( dom.key := "klapp").map(_.asProxy).unsafeRunSync()
+    val node = input( dom.key := "bumm")( dom.key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node.data.key.toList, List("klapp"))
 
-    val node2 = input()( dom.key := "klapp").map(_.asProxy).unsafeRunSync()
+    val node2 = input()( dom.key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node2.data.key.toList, List("klapp"))
 
-    val node3 = input( dom.key := "bumm")().map(_.asProxy).unsafeRunSync()
+    val node3 = input( dom.key := "bumm")().map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node3.data.key.toList, List("bumm"))
   }
 
   test("style attribute should render correctly") {
-    val node = input(color.red).map(_.asProxy).unsafeRunSync()
+    val node = input(color.red).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(
       node.data.style.toMap,

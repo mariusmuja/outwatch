@@ -92,7 +92,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
           hFunction(proxy.sel, newData, proxy.text)
         }
       } else {
-        hFunction(proxy.sel,newData, nodes.map(_.unsafeRunSync().asProxy)(breakOut): js.Array[VNodeProxy])
+        hFunction(proxy.sel,newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
       }
     }
 
@@ -184,7 +184,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
 
     if (hasChildVNodes) { // staticNodes.nonEmpty doesn't work, children will always include StringModifiers as StringNodes
-      val childProxies: js.Array[VNodeProxy] = staticNodes.map(_.asProxy)(breakOut)
+      val childProxies: js.Array[VNodeProxy] = staticNodes.map(_.toSnabbdom)(breakOut)
       hFunction(nodeType, dataObject, childProxies)
     }
     else if (stringModifiers.nonEmpty) {

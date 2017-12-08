@@ -110,7 +110,7 @@ private[outwatch] final case class DestroyHook(observer: Observer[Element]) exte
 
 // Child Nodes
 private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
-  def asProxy: VNodeProxy
+  def toSnabbdom: VNodeProxy
 }
 
 private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends ChildVNode
@@ -119,7 +119,7 @@ private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observ
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {
-  override def asProxy: VNodeProxy = VNodeProxy.fromString(string)
+  override def toSnabbdom: VNodeProxy = VNodeProxy.fromString(string)
 }
 
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
@@ -130,7 +130,7 @@ private[outwatch] final case class VTree(nodeType: String,
 
   def apply(args: VDomModifier*): VNode = IO.pure(VTree(nodeType, modifiers ++ args))
 
-  override def asProxy: VNodeProxy = {
+  override def toSnabbdom: VNodeProxy = {
     //TODO: use .sequence instead of unsafeRunSync?
     // import cats.instances.list._
     // import cats.syntax.traverse._
