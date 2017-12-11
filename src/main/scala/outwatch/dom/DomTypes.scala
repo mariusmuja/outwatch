@@ -14,11 +14,11 @@ import org.scalajs.dom
 import helpers._
 
 private[outwatch] object DomTypesBuilder {
-  type VTree[Elem <: dom.Element] = IO[VTree_[Elem]]
+//  type VTree[Elem <: dom.Element] = IO[VTree_[Elem]]
 
-  trait VNodeBuilder extends TagBuilder[VTree, dom.Element] {
+  trait VNodeBuilder extends TagBuilder[VTree_, dom.Element] {
     // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-    protected override def tag[Elem <: dom.Element](tagName: String, void: Boolean): VTree[Elem] = IO.pure(VTree_[Elem](tagName, Seq.empty))
+    protected override def tag[Elem <: dom.Element](tagName: String, void: Boolean): VTree_[Elem] = VTree_[Elem](tagName, Seq.empty)
   }
 
   object CodecBuilder {
@@ -57,22 +57,25 @@ class TagContext[Elem <: dom.Element]
 
   override def eventProp[V <: dom.Event](key: String) =  EmitterBuilder[V with TypedCurrentTargetEvent[Elem]](key)
 }
+object TagContext {
+  def of[Elem <: dom.Element] = new TagContext[Elem]
+}
 
 trait Tags
-  extends EmbedTags[VTree]
-  with GroupingTags[VTree]
-  with TextTags[VTree]
-  with FormTags[VTree]
-  with SectionTags[VTree]
-  with TableTags[VTree]
+  extends EmbedTags[VTree_]
+  with GroupingTags[VTree_]
+  with TextTags[VTree_]
+  with FormTags[VTree_]
+  with SectionTags[VTree_]
+  with TableTags[VTree_]
   with TagsCompat
   with VNodeBuilder
   with TagHelpers
 object Tags extends Tags
 
 trait TagsExtra
-  extends DocumentTags[VTree]
-  with MiscTags[VTree]
+  extends DocumentTags[VTree_]
+  with MiscTags[VTree_]
   with VNodeBuilder
 object TagsExtra extends TagsExtra
 

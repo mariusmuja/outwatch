@@ -118,9 +118,10 @@ private[outwatch] final case class StringVNode(string: String) extends AnyVal wi
 // Needs to be benchmarked in the Browser
 final case class VTree_[Elem <: Element](nodeType: String, modifiers: Seq[VDomModifier_]) extends StaticVNode {
 
-  private val tagContext = new TagContext[Elem]
-  def apply(newModifiers: (TagContext[Elem] => VDomModifier_)*): VTree_[Elem] =
-    copy[Elem](modifiers = modifiers ++ newModifiers.map(_(tagContext)))
+  private val tagContext = TagContext.of[Elem]
+  def apply(newModifiers: (TagContext[Elem] => VDomModifier)*): VTree[Elem] = {
+    newModifiers.map(_ (tagContext)).sequence.map(newMod => copy(modifiers = modifiers ++ newMod))
+  }
 
   override def asProxy: VNodeProxy = {
     val separatedModifiers = SeparatedModifiers.separate(modifiers)
