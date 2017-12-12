@@ -18,14 +18,15 @@ trait ValueBuilder[T, SELF <: Attribute] extends Any {
     IO.pure(AttributeStreamReceiver(attributeName, valueStream.map(assign)))
   }
 }
+object ValueBuilder {
+  implicit def toAttribute(builder: ValueBuilder[Boolean, Attr]): IO[Attribute] = builder := true
+  implicit def toProperty(builder: ValueBuilder[Boolean, Prop]): IO[Property] = builder := true
+}
 
 final class AttributeBuilder[T](val attributeName: String, encode: T => Attr.Value) extends ValueBuilder[T, Attr] {
   @inline protected def assign(value: T) = BasicAttr(attributeName, encode(value))
 }
 
-object AttributeBuilder {
-  implicit def toAttribute(builder: AttributeBuilder[Boolean]): IO[Attribute] = IO.pure(builder assign true)
-}
 
 final class AccumAttributeBuilder[T](
   val attributeName: String,
@@ -47,9 +48,6 @@ final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Valu
   @inline protected def assign(value: T) = Prop(attributeName, encode(value))
 }
 
-object PropertyBuilder {
-  implicit def toProperty(builder: PropertyBuilder[Boolean]): IO[Property] = IO.pure(builder assign true)
-}
 
 final class StyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, Style] {
   @inline protected def assign(value: T) = Style(attributeName, value.toString)

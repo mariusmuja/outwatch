@@ -752,6 +752,23 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.innerHTML, "<main></main>")
   }
 
+
+  test("The HTML DSL should work with un-assigned booleans attributes and props") { _ =>
+
+    val vNode = option(selected, disabled)
+
+    val node = document.createElement("option").asInstanceOf[html.Option]
+    document.body.appendChild(node)
+
+    assertEquals(node.selected, false)
+    assertEquals(node.disabled, false)
+
+    OutWatch.render(node, vNode).unsafeRunSync()
+
+    assertEquals(node.selected, true)
+    assertEquals(node.disabled, true)
+  }
+
   test("class attributes should be merged") { _ =>
     val vNode = button(
       classToggle := ("class1" -> true),
