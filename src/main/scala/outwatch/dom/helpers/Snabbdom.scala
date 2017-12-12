@@ -2,8 +2,8 @@ package outwatch.dom.helpers
 
 import cats.effect.IO
 import monix.execution.Ack.Continue
-import monix.execution.Cancelable
 import monix.execution.Scheduler.Implicits.global
+import monix.execution.cancelables.SingleAssignmentCancelable
 import org.scalajs.dom
 import outwatch.dom.{AccumAttr, Attr, Attribute, BasicAttr, ClassToggle, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
 import snabbdom._
@@ -76,7 +76,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   }
 
   private def createInsertHook(receivers: Receivers,
-    subscriptionRef: STRef[Cancelable],
+    subscriptionCancelable: SingleAssignmentCancelable,
     hooks: Seq[InsertHook]
   ): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
@@ -104,25 +104,25 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
         error => dom.console.error(error.getMessage)
       )
 
-    subscriptionRef.put(subscription).unsafeRunSync()
+    subscriptionCancelable := subscription
 
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
   }
 
 
   private def createDestroyHook(
-    subscription: STRef[Cancelable],hooks: Seq[DestroyHook]
+    subscription: SingleAssignmentCancelable, hooks: Seq[DestroyHook]
   ): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
-    subscription.update { s => s.cancel(); s }.unsafeRunSync()
+    subscription.cancel()
     ()
   }
 
   def toSnabbdom(receivers: Receivers): Hooks = {
     val (insertHook, destroyHook) = if (receivers.nonEmpty) {
-      val subscriptionRef = STRef.empty[Cancelable]
-      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(receivers, subscriptionRef, insertHooks)
-      val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscriptionRef, destroyHooks)
+      val subscription = SingleAssignmentCancelable()
+      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(receivers, subscription, insertHooks)
+      val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscription, destroyHooks)
       (insertHook, destroyHook)
     }
     else {
