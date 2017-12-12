@@ -17,13 +17,19 @@ object OutWatch {
     }
   } yield ()
 
-  def render(element: dom.Element, vNode: VNode): IO[Unit] = for {
+  def renderReplace(element: dom.Element, vNode: VNode): IO[Unit] = for {
     node <- vNode
     _ <- IO(patch(element, node.toSnabbdom))
   } yield ()
 
-  def render(querySelector: String, vNode: VNode): IO[Unit] =
+  def renderInto(querySelector: String, vNode: VNode): IO[Unit] =
     renderInto(document.querySelector(querySelector), vNode)
+
+  def renderReplace(querySelector: String, vNode: VNode): IO[Unit] =
+    renderReplace(document.querySelector(querySelector), vNode)
+
+  @deprecated("Use renderInto instead (or renderReplace)", "0.11.0")
+  def render(querySelector: String, vNode: VNode): IO[Unit] = renderInto(querySelector, vNode)
 
   def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), querySelector: String, root: VNode): IO[Unit] =
     Store.renderWithStore(initialState, reducer, querySelector, root)

@@ -38,7 +38,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(switch, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
   }
@@ -61,7 +61,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assertEquals(switch, false)
     assertEquals(switch2, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
     assertEquals(switch2, true)
@@ -80,7 +80,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(switch, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
   }
@@ -104,7 +104,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assertEquals(switch, false)
     assertEquals(switch2, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
     assertEquals(switch2, true)
@@ -123,7 +123,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(switch, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
   }
@@ -144,7 +144,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     val message = PublishSubject[String]
     val node = div(child <-- message, update --> sink1)(update --> sink2)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
     assertEquals(switch2, false)
 
@@ -166,7 +166,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(switch, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
   }
@@ -185,7 +185,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     val message = PublishSubject[String]()
     val node = div(child <-- message, prepatch --> sink1)(prepatch --> sink2)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
     assertEquals(switch2, false)
 
@@ -206,7 +206,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(switch, false)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(switch, true)
   }
@@ -226,7 +226,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     val message = PublishSubject[String]()
     val node = div(child <-- message, postpatch --> sink1)(postpatch --> sink2)
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
     assertEquals(switch2, false)
 
@@ -255,7 +255,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(hooks.toList, List())
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(hooks.toList, List("insert"))
 
@@ -278,7 +278,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(hooks.toList, List())
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     assertEquals(hooks.toList, List("insert"))
   }
@@ -296,7 +296,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(hooks.toList, List())
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     message.onNext("next")
 
@@ -316,7 +316,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     assertEquals(hooks.toList, List())
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     messageList.onNext(Seq("one"))
 

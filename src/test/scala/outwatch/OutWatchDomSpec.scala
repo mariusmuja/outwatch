@@ -747,7 +747,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    OutWatch.render(node, vNode).unsafeRunSync()
+    OutWatch.renderReplace(node, vNode).unsafeRunSync()
 
     assertEquals(node.innerHTML, "<main></main>")
   }
@@ -763,7 +763,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.selected, false)
     assertEquals(node.disabled, false)
 
-    OutWatch.render(node, vNode).unsafeRunSync()
+    OutWatch.renderReplace(node, vNode).unsafeRunSync()
 
     assertEquals(node.selected, true)
     assertEquals(node.disabled, true)

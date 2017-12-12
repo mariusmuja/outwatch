@@ -38,7 +38,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
     assertEquals(document.getElementById("btn").hasAttribute("disabled"), false)
 
     val event = document.createEvent("Events")
@@ -58,7 +58,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     assertEquals(document.getElementById("child").innerHTML, "")
 
@@ -83,7 +83,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     assertEquals(document.getElementById("child").innerHTML, "")
 
@@ -116,7 +116,7 @@ object DomEventSpec extends TestSuite[Unit] {
 
     val vtree = input(id:= "input", value <-- values)
 
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
 
@@ -141,7 +141,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val defaultValues = PublishSubject[String]
 
     val vtree = input(id:= "input", defaultValue <-- defaultValues)
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
     assertEquals(patched.value, "")
@@ -161,7 +161,7 @@ object DomEventSpec extends TestSuite[Unit] {
     val values = PublishSubject[String]
 
     val vtree = input(id:= "input", value <-- values)
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
     assertEquals(patched.value, "")
@@ -184,7 +184,7 @@ object DomEventSpec extends TestSuite[Unit] {
       ul(id:= "list", children <-- state)
     )
 
-    OutWatch.render("#app", vtree).unsafeRunSync()
+    OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val list = document.getElementById("list")
 
@@ -234,7 +234,7 @@ object DomEventSpec extends TestSuite[Unit] {
       span(id:="second",child <-- second)
     )
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -258,7 +258,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -286,7 +286,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -308,7 +308,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)
@@ -330,7 +330,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("click", true, false)
@@ -358,7 +358,7 @@ object DomEventSpec extends TestSuite[Unit] {
       }
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputElement = document.getElementById("input").asInstanceOf[html.Input]
     val submitButton = document.getElementById("submit")
@@ -394,7 +394,7 @@ object DomEventSpec extends TestSuite[Unit] {
       )
     }
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val checkbox = document.getElementById("checkbox").asInstanceOf[html.Input]
     val onButton = document.getElementById("on_button")
@@ -435,7 +435,7 @@ object DomEventSpec extends TestSuite[Unit] {
       button(id := "input", tpe := "checkbox")
     )
 
-    OutWatch.render("#app", node).unsafeRunSync()
+    OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("click", true, false)

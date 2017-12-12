@@ -46,7 +46,7 @@ object SnabbdomSpec extends SimpleTestSuite {
     node.id = "app"
     document.body.appendChild(node)
 
-    OutWatch.render("#app", div(child <-- nodes)).unsafeRunSync()
+    OutWatch.renderInto("#app", div(child <-- nodes)).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)
