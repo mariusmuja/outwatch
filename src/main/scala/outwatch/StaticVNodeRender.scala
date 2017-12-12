@@ -3,25 +3,25 @@ package outwatch
 import cats.effect.IO
 import outwatch.dom.{StaticVNode, StringVNode, VNode}
 
-trait AsProxyRender[T] {
+trait StaticVNodeRender[T] {
   def render(value: T): IO[StaticVNode]
 }
 
-object AsProxyRender {
+object StaticVNodeRender {
 
-  implicit object NodeRenderer extends AsProxyRender[VNode] {
+  implicit object NodeRenderer extends StaticVNodeRender[VNode] {
     def render(value: VNode): IO[StaticVNode] = value
   }
 
-  implicit object StringRenderer extends AsProxyRender[String] {
+  implicit object StringRenderer extends StaticVNodeRender[String] {
     def render(value: String): IO[StaticVNode] = IO.pure(StringVNode(value))
   }
 
-  implicit object IntRenderer extends AsProxyRender[Int] {
+  implicit object IntRenderer extends StaticVNodeRender[Int] {
     def render(value: Int): IO[StaticVNode] = IO.pure(StringVNode(value.toString))
   }
 
-  implicit object DoubleRenderer extends AsProxyRender[Double] {
+  implicit object DoubleRenderer extends StaticVNodeRender[Double] {
     def render(value: Double): IO[StaticVNode] = IO.pure(StringVNode(value.toString))
   }
 

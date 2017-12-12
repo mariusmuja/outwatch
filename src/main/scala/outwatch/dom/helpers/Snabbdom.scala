@@ -76,7 +76,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   }
 
 
-  private def createInsertHook(changables: Changeables,
+  private def createInsertHook(receivers: Receivers,
     subscriptionRef: STRef[Cancelable],
     hooks: Seq[InsertHook]
   ): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
@@ -96,7 +96,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       }
     }
 
-    val subscription = changables.observable
+    val subscription = receivers.observable
       .map(toProxy)
       .startWith(Seq(proxy))
       .bufferSliding(2, 1)
@@ -119,10 +119,10 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ()
   }
 
-  def toSnabbdom(changeables: Changeables): Hooks = {
-    val (insertHook, destroyHook) = if (changeables.nonEmpty) {
+  def toSnabbdom(receivers: Receivers): Hooks = {
+    val (insertHook, destroyHook) = if (receivers.nonEmpty) {
       val subscriptionRef = STRef.empty[Cancelable]
-      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(changeables, subscriptionRef, insertHooks)
+      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(receivers, subscriptionRef, insertHooks)
       val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscriptionRef, destroyHooks)
       (insertHook, destroyHook)
     }
@@ -155,11 +155,11 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
-  private def createDataObject(changeables: Changeables): DataObject = {
+  private def createDataObject(receivers: Receivers): DataObject = {
 
     val keyOption = properties.keys.lastOption
-    val key = if (changeables.nonEmpty) {
-      keyOption.fold[Key.Value](changeables.hashCode)(_.value): js.UndefOr[Key.Value]
+    val key = if (receivers.nonEmpty) {
+      keyOption.fold[Key.Value](receivers.hashCode)(_.value): js.UndefOr[Key.Value]
     } else {
       keyOption.map(_.value).orUndefined
     }
@@ -167,7 +167,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     val (attrs, props, style, classToggle) = properties.attributes.toSnabbdom
     DataObject(
       attrs, props, style, classToggle, emitters.toSnabbdom,
-      properties.hooks.toSnabbdom(changeables),
+      properties.hooks.toSnabbdom(receivers),
       key
     )
   }
@@ -176,22 +176,17 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
-    val staticNodes = childrenNodes.staticNodesWithKey
-    val nodes = childrenNodes.allNodesWithKey
+    val childrenWithKey = children.ensureKey
+    val dataObject = createDataObject(Receivers(childrenWithKey, attributeReceivers))
 
-    val changeables = Changeables(nodes, childrenNodes.hasStreams, childrenNodes.childrenStreams > 1, attributeReceivers)
-    val dataObject = createDataObject(changeables)
-
-
-    if (hasChildVNodes) { // staticNodes.nonEmpty doesn't work, children will always include StringModifiers as StringNodes
-      val childProxies: js.Array[VNodeProxy] = staticNodes.map(_.toSnabbdom)(breakOut)
-      hFunction(nodeType, dataObject, childProxies)
-    }
-    else if (stringModifiers.nonEmpty) {
-      hFunction(nodeType, dataObject, stringModifiers.map(_.string).mkString)
-    }
-    else {
-      hFunction(nodeType, dataObject)
+    childrenWithKey match {
+      case Children.VNodes(vnodes, _) =>
+        val childProxies: js.Array[VNodeProxy] = vnodes.collect { case s: StaticVNode => s.toSnabbdom }(breakOut)
+        hFunction(nodeType, dataObject, childProxies)
+      case Children.StringModifiers(textChildren) =>
+        hFunction(nodeType, dataObject, textChildren.map(_.string).mkString)
+      case Children.Empty =>
+        hFunction(nodeType, dataObject)
     }
   }
 }

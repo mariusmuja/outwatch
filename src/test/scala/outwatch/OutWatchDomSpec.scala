@@ -3,9 +3,10 @@ package outwatch
 import cats.effect.IO
 import minitest.TestSuite
 import monix.execution.Ack.Continue
+import monix.execution.Cancelable
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom.{Element, document}
+import org.scalajs.dom.document
 import org.scalajs.dom.html
 import outwatch.dom._
 import outwatch.dom.all._
@@ -18,6 +19,15 @@ import scala.scalajs.js
 import scala.scalajs.js.JSON
 
 object OutWatchDomSpec extends TestSuite[Unit]{
+
+  implicit val executionContext = monix.execution.Scheduler.Implicits.global
+
+  implicit class Subscriber[T](obs: Observable[T]) {
+    def apply(next: T => Unit): Cancelable = obs.subscribe { t =>
+      next(t)
+      Continue
+    }
+  }
 
   def setup(): Unit = {}
 
@@ -36,7 +46,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       PostPatchHook(PublishSubject())
     )
 
-    val SeparatedProperties(att, hooks, keys) = properties.foldRight(SeparatedProperties())((p, sp) => sp.add(p))
+    val SeparatedProperties(att, hooks, keys) = properties.foldRight(SeparatedProperties())((p, sp) => p :: sp)
 
     assertEquals(hooks.insertHooks.length, 2)
     assertEquals(hooks.prePatchHooks.length, 1)
@@ -61,20 +71,19 @@ object OutWatchDomSpec extends TestSuite[Unit]{
           Attributes.`class` := "blue",
           Attributes.onClick(1) --> Sink.create[Int](_ => IO.pure(Continue)),
           Attributes.hidden <-- Observable(false)
-        )
+        ).map(_.unsafeRunSync())
       )
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
-      modifiers.foldRight(SeparatedModifiers())((m, sm) => sm.add(m))
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
+      SeparatedModifiers.separate(modifiers)
 
     assertEquals(emitters.emitters.length, 2)
     assertEquals(receivers.length, 2)
-    assertEquals(vNodes.allNodes.length, 3)
     assertEquals(properties.attributes.attributes.length, 2)
-    assertEquals(hasChildVNodes, true)
-    assertEquals(stringModifiers.length, 1)
-
+    assertEquals(childNodes.length, 3)
+    assertEquals(streamStatus.numChild, 0)
+    assertEquals(streamStatus.numChildren, 0)
   }
 
   test("VDomModifiers should be separated correctly with children") { _ =>
@@ -86,18 +95,41 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       AttributeStreamReceiver("hidden", Observable()),
       AttributeStreamReceiver("disabled", Observable()),
       Emitter("keyup", _ => Continue),
-      StringModifier("text")
+      StringModifier("text"),
+      div().unsafeRunSync()
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
       SeparatedModifiers.separate(modifiers)
 
     assertEquals(emitters.emitters.length, 3)
     assertEquals(receivers.length, 2)
     assertEquals(properties.attributes.attributes.length, 1)
-    assertEquals(vNodes.allNodes.length, 1)
-    assertEquals(hasChildVNodes, false)
-    assertEquals(stringModifiers.length, 1)
+    assertEquals(childNodes.length, 2)
+    assertEquals(streamStatus.numChild, 0)
+    assertEquals(streamStatus.numChildren, 0)
+  }
+
+  test("VDomModifiers should be separated correctly with string children")  { _ =>
+    val modifiers: Seq[Modifier] = Seq(
+      Attribute("class","red"),
+      EmptyModifier,
+      Emitter("click", _ => Continue),
+      Emitter("input", _ => Continue),
+      Emitter("keyup", _ => Continue),
+      AttributeStreamReceiver("hidden",Observable()),
+      AttributeStreamReceiver("disabled",Observable()),
+      StringModifier("text"),
+      StringVNode("text2")
+    )
+
+    val SeparatedModifiers(properties, emitters, receivers, Children.StringModifiers(stringMods)) =
+      SeparatedModifiers.separate(modifiers)
+
+    assertEquals(emitters.emitters.length, 3)
+    assertEquals(receivers.length, 2)
+    assertEquals(properties.attributes.attributes.length, 1)
+    assertEquals(stringMods.map(_.string).toSet, Set("text", "text2"))
   }
 
   test("VDomModifiers should be separated correctly with children and properties") { _ =>
@@ -111,15 +143,14 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       AttributeStreamReceiver("disabled",Observable()),
       ChildrenStreamReceiver(Observable()),
       Emitter("keyup", _ => Continue),
-      InsertHook(PublishSubject[Element]),
+      InsertHook(PublishSubject()),
       PrePatchHook(PublishSubject()),
       PostPatchHook(PublishSubject()),
       StringModifier("text")
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, vNodes, hasChildVNodes, stringModifiers) =
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
       SeparatedModifiers.separate(modifiers)
-
 
     assertEquals(emitters.emitters.map(_.eventType), List("click", "input", "keyup"))
     assertEquals(properties.hooks.insertHooks.length, 1)
@@ -129,11 +160,10 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(properties.hooks.destroyHooks.length, 0)
     assertEquals(properties.attributes.attributes.length, 1)
     assertEquals(receivers.length, 2)
-    assertEquals(vNodes.allNodes.length, 2)
     assertEquals(properties.keys.length, 0)
-    assertEquals(hasChildVNodes, true)
-    assertEquals(stringModifiers.length, 1)
-
+    assertEquals(childNodes.length, 2)
+    assertEquals(streamStatus.numChild, 0)
+    assertEquals(streamStatus.numChildren, 1)
   }
 
   val fixture = new {
@@ -141,6 +171,99 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       hFunction("span", DataObject(js.Dictionary(), js.Dictionary()), "Hello")
     ))
   }
+
+  test("VDomModifiers should be run once") { _ =>
+    val list = new collection.mutable.ArrayBuffer[String]
+
+    val vtree = div(
+      IO {
+        list += "child1"
+        ChildStreamReceiver(Observable())
+      },
+      IO {
+        list += "child2"
+        ChildStreamReceiver(Observable())
+      },
+      IO {
+        list += "children1"
+        ChildrenStreamReceiver(Observable())
+      },
+      IO {
+        list += "children2"
+        ChildrenStreamReceiver(Observable())
+      },
+      div(
+        IO {
+          list += "attr1"
+          Attribute("attr1", "peter")
+        },
+        Seq(
+          IO {
+            list += "attr2"
+            Attribute("attr2", "hans")
+          }
+        )
+      )
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    assertEquals(list.isEmpty, true)
+
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+
+    assertEquals(list.toSet, Set("child1", "child2", "children1", "children2", "attr1", "attr2"))
+  }
+
+  test("VDomModifiers should provide unique key for child nodes if stream is present") { _ =>
+    val mods = Seq(
+      ChildrenStreamReceiver(Observable()),
+      div(id := "1").unsafeRunSync(),
+      div(id := "2").unsafeRunSync()
+      // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
+    )
+
+    val modifiers =  SeparatedModifiers.separate(mods)
+    val Children.VNodes(childNodes, streamStatus) = modifiers.children
+
+    assertEquals(childNodes.size, 3)
+    assertEquals(streamStatus.numChild, 0)
+    assertEquals(streamStatus.numChildren, 1)
+
+    val proxy = modifiers.toSnabbdom("div")
+    assertEquals(proxy.key.isDefined, true)
+
+    assertEquals(proxy.children.get.length, 2)
+
+    val key1 = proxy.children.get(0).key
+    val key2 = proxy.children.get(1).key
+
+    assertEquals(key1.isDefined, true)
+    assertEquals(key2.isDefined, true)
+    assert(key1.get != key2.get)
+  }
+
+  test("VDomModifiers should keep existing key for child nodes") { _ =>
+    val mods = Seq(
+      Key(1234),
+      ChildrenStreamReceiver(Observable()),
+      div()(IO.pure(Key(5678))).unsafeRunSync()
+    )
+
+    val modifiers =  SeparatedModifiers.separate(mods)
+    val Children.VNodes(childNodes, streamStatus) = modifiers.children
+
+    assertEquals(childNodes.size, 2)
+    assertEquals(streamStatus.numChild, 0)
+    assertEquals(streamStatus.numChildren, 1)
+
+    val proxy = modifiers.toSnabbdom("div")
+    assertEquals(proxy.key.toOption, Some(1234))
+
+    assertEquals(proxy.children.get(0).key.toOption, Some(5678))
+  }
+
 
   test("VTrees should be constructed correctly") { _ =>
 
@@ -164,6 +287,68 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
   }
 
+
+  test("VTrees should run its modifiers once!" ) { _ =>
+    val stringHandler = Handler.create[String]().unsafeRunSync()
+    var ioCounter = 0
+    var handlerCounter = 0
+    stringHandler { _ =>
+      handlerCounter += 1
+    }
+
+    val vtree = div(
+      div(
+        IO {
+          ioCounter += 1
+          Attribute("hans", "")
+        }
+      ),
+      child <-- stringHandler
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    assertEquals(ioCounter, 0)
+    assertEquals(handlerCounter, 0)
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+    assertEquals(ioCounter, 1)
+    assertEquals(handlerCounter, 0)
+    stringHandler.observer.onNext("pups")
+    assertEquals(ioCounter, 1)
+    assertEquals(handlerCounter, 1)
+  }
+
+  test("VTrees should run its modifiers once in CompositeModifier!") { _ =>
+    val stringHandler = Handler.create[String]().unsafeRunSync()
+    var ioCounter = 0
+    var handlerCounter = 0
+    stringHandler { _ =>
+      handlerCounter += 1
+    }
+
+    val vtree = div(
+      div(Seq(
+        IO {
+          ioCounter += 1
+          Attribute("hans", "")
+        }
+      )),
+      child <-- stringHandler
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    assertEquals(ioCounter, 0)
+    assertEquals(handlerCounter, 0)
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+    assertEquals(ioCounter, 1)
+    assertEquals(handlerCounter, 0)
+    stringHandler.observer.onNext("pups")
+    assertEquals(ioCounter, 1)
+    assertEquals(handlerCounter, 1)
+  }
 
   test("VTrees should be correctly patched into the DOM") { _ =>
     val id = "msg"

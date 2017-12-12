@@ -14,10 +14,10 @@ import scala.concurrent.Future
 Modifier
   Property
     Attribute
-      Attr
-      AccumAttr
-      Prop
-      Style
+      TitledAttribute
+        Attr
+        Prop
+        Style
       EmptyAttribute
     Hook
       InsertHook
@@ -51,17 +51,14 @@ final case class Emitter(eventType: String, trigger: Event => Future[Ack]) exten
 
 private[outwatch] final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Modifier
 
-private[outwatch] final case class CompositeModifier(modifiers: Seq[VDomModifier]) extends Modifier
+private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
 private[outwatch] final case class StringModifier(string: String) extends Modifier
 
 case object EmptyModifier extends Modifier
 
 // Properties
-
-sealed trait Attribute extends Property {
-  val title: String
-}
+sealed trait Attribute extends Property
 object Attribute {
   def apply(title: String, value: Attr.Value) = Attr(title, value)
 }
@@ -77,7 +74,13 @@ object Key {
 
 // Attributes
 
-final case class Attr(title: String, value: Attr.Value) extends Attribute
+case object EmptyAttribute extends Attribute
+
+sealed trait TitledAttribute extends Attribute {
+  val title: String
+}
+
+final case class Attr(title: String, value: Attr.Value) extends TitledAttribute
 object Attr {
   type Value = DataObject.AttrValue
 }
@@ -96,9 +99,6 @@ object Prop {
 
 final case class Style(title: String, value: String) extends Attribute
 
-case object EmptyAttribute extends Attribute {
-  val title: String = ""
-}
 // Hooks
 
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]
@@ -125,16 +125,12 @@ private[outwatch] final case class StringVNode(string: String) extends AnyVal wi
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
 // Fast concatenation and lastOption operations are important
 // Needs to be benchmarked in the Browser
-private[outwatch] final case class VTree(nodeType: String,
-                       modifiers: Seq[VDomModifier]) extends StaticVNode {
+private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifier]) extends StaticVNode {
 
-  def apply(args: VDomModifier*): VNode = IO.pure(VTree(nodeType, modifiers ++ args))
+  def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy( modifiers = modifiers ++ args))
 
   override def toSnabbdom: VNodeProxy = {
-    //TODO: use .sequence instead of unsafeRunSync?
-    // import cats.instances.list._
-    // import cats.syntax.traverse._
-    val separatedModifiers = SeparatedModifiers.separate(modifiers.map(_.unsafeRunSync()))
+    val separatedModifiers = SeparatedModifiers.separate(modifiers)
     separatedModifiers.toSnabbdom(nodeType)
   }
 }

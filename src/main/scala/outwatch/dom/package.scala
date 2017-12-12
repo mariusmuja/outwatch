@@ -1,9 +1,7 @@
 package outwatch
 
 import cats.effect.IO
-
-import scala.language.implicitConversions
-
+import cats.syntax.apply._
 
 package object dom {
 
@@ -29,7 +27,7 @@ package object dom {
 
   implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse VDomModifier.empty
 
-  implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = IO.pure(CompositeModifier(modifiers))
+  implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = modifiers.sequence.map(CompositeModifier)
 
   implicit class ioVTreeMerge(vnode: VNode) {
     def apply(args: VDomModifier*): VNode = {
@@ -37,4 +35,7 @@ package object dom {
     }
   }
 
+  private[outwatch] implicit class SeqIOSequence[T](args: Seq[IO[T]]) {
+    def sequence: IO[Seq[T]] = args.foldRight(IO.pure(List.empty[T]))((a, l) => a.map2(l)(_ :: _))
+  }
 }

@@ -1,7 +1,7 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
-import outwatch.AsProxyRender
+import outwatch.StaticVNodeRender
 
 import scala.language.dynamics
 import outwatch.dom._
@@ -71,7 +71,7 @@ object KeyBuilder {
 }
 
 object ChildStreamReceiverBuilder {
-  def <--[T](valueStream: Observable[T])(implicit r: AsProxyRender[T]): IO[ChildStreamReceiver] = {
+  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] = {
     IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
   }
 }
