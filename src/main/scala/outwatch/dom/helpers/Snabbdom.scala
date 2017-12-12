@@ -5,7 +5,7 @@ import monix.execution.Ack.Continue
 import monix.execution.Cancelable
 import monix.execution.Scheduler.Implicits.global
 import org.scalajs.dom
-import outwatch.dom.{AccumAttr, Attr, Attribute, ClassToggle, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
+import outwatch.dom.{AccumAttr, Attr, Attribute, BasicAttr, ClassToggle, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
 import snabbdom._
 
 import scala.scalajs.js.JSConverters._
@@ -23,8 +23,8 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
     val classToggleDict = js.Dictionary[Boolean]()
 
     attributes.foreach {
+      case a: BasicAttr => attrsDict(a.title) = a.value
       case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
-      case a: Attr => attrsDict(a.title) = a.value
       case p: Prop => propsDict(p.title) = p.value
       case s: Style => styleDict(s.title) = s.value
       case s: ClassToggle => classToggleDict(s.title) = s.toggle
@@ -74,7 +74,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
     ).orUndefined
   }
-
 
   private def createInsertHook(receivers: Receivers,
     subscriptionRef: STRef[Cancelable],

@@ -20,10 +20,7 @@ trait ValueBuilder[T, SELF <: Attribute] extends Any {
 }
 
 final class AttributeBuilder[T](val attributeName: String, encode: T => Attr.Value) extends ValueBuilder[T, Attr] {
-  @inline protected def assign(value: T) = Attr(attributeName, encode(value))
-
-  def accum(reduce: (Attr.Value, Attr.Value) => Attr.Value): AccumAttributeBuilder[T] =
-    new AccumAttributeBuilder(attributeName, encode, reduce)
+  @inline protected def assign(value: T) = BasicAttr(attributeName, encode(value))
 }
 
 object AttributeBuilder {
@@ -34,7 +31,7 @@ final class AccumAttributeBuilder[T](
   val attributeName: String,
   encode: T => Attr.Value,
   reduce: (Attr.Value, Attr.Value) => Attr.Value
-) extends ValueBuilder[T, AccumAttr] {
+) extends ValueBuilder[T, Attr] {
   @inline protected def assign(value: T) = AccumAttr(attributeName, encode(value), reduce)
 }
 
@@ -63,7 +60,7 @@ final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic with
 
   def selectDynamic(s: String) = new DynamicAttributeBuilder[T](s :: parts)
 
-  @inline protected def assign(value: T) = Attr(attributeName, value.toString)
+  @inline protected def assign(value: T) = BasicAttr(attributeName, value.toString)
 }
 
 object KeyBuilder {

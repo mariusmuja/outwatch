@@ -16,6 +16,8 @@ Modifier
     Attribute
       TitledAttribute
         Attr
+          BasicAttr
+          AccumAttr
         Prop
         Style
       EmptyAttribute
@@ -39,13 +41,12 @@ Modifier
   EmptyModifier
  */
 
+
 private[outwatch] sealed trait Modifier extends Any
 
 // Modifiers
 
 private[outwatch] sealed trait Property extends Modifier
-
-private[outwatch] sealed trait ChildVNode extends Any with Modifier
 
 final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
 
@@ -53,23 +54,27 @@ private[outwatch] final case class AttributeStreamReceiver(attribute: String, at
 
 private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
-private[outwatch] final case class StringModifier(string: String) extends Modifier
-
 case object EmptyModifier extends Modifier
 
-// Properties
-sealed trait Attribute extends Property
-object Attribute {
-  def apply(title: String, value: Attr.Value) = Attr(title, value)
-}
+private[outwatch] final case class StringModifier(string: String) extends Modifier
 
-sealed trait Hook[T] extends Property {
-  def observer: Observer[T]
-}
+private[outwatch] sealed trait ChildVNode extends Any with Modifier
+
+// Properties
 
 private[outwatch] final case class Key(value: Key.Value) extends Property
 object Key {
   type Value = DataObject.KeyValue
+}
+
+sealed trait Attribute extends Property
+object Attribute {
+  def apply(title: String, value: Attr.Value): Attribute = BasicAttr(title, value)
+}
+
+
+sealed trait Hook[T] extends Property {
+  def observer: Observer[T]
 }
 
 // Attributes
@@ -80,15 +85,18 @@ sealed trait TitledAttribute extends Attribute {
   val title: String
 }
 
-final case class Attr(title: String, value: Attr.Value) extends TitledAttribute
+
+sealed trait Attr extends TitledAttribute
 object Attr {
   type Value = DataObject.AttrValue
 }
 
+final case class BasicAttr(title: String, value: Attr.Value) extends Attr
+
 /**
   * Attribute that accumulates the previous value in the same VNode with it's value
   */
-final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attribute
+final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
 
 final case class ClassToggle(title: String, toggle: Boolean) extends Attribute
 

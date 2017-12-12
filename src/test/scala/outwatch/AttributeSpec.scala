@@ -9,8 +9,8 @@ object AttributeSpec extends SimpleTestSuite {
 
   test("class attributes should be merged") {
     val node = input(
-      classAccum := "class1",
-      classAccum := "class2"
+      className := "class1",
+      cls := "class2"
     ).map(_.toSnabbdom).unsafeRunSync()
 
     assertEquals(

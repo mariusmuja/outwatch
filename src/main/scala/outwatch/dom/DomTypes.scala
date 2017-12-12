@@ -13,7 +13,6 @@ import cats.effect.IO
 import org.scalajs.dom
 import helpers._
 import monix.execution.{Ack, Cancelable}
-import monix.execution.cancelables.SingleAssignmentCancelable
 import monix.reactive.OverflowStrategy.Unbounded
 
 import scala.language.implicitConversions
@@ -28,7 +27,7 @@ private[outwatch] object DomTypesBuilder {
   }
 
   object CodecBuilder {
-    type Attribute[T, _] = AttributeBuilder[T]
+    type Attribute[T, _] = ValueBuilder[T, Attr]
     type Property[T, _] = PropertyBuilder[T]
 
     def encodeAttribute[V](codec: Codec[V, String]): V => Attr.Value = codec match {
@@ -42,10 +41,9 @@ private[outwatch] object DomTypesBuilder {
 
   abstract class ObservableEventPropBuilder(target: dom.EventTarget) extends EventPropBuilder[Observable, dom.Event] {
     override def eventProp[V <: dom.Event](key: String): Observable[V] = Observable.create(Unbounded) { obs =>
-      val c = SingleAssignmentCancelable()
       val eventHandler: js.Function1[V, Ack] = obs.onNext _
       target.addEventListener(key, eventHandler)
-      c := Cancelable(() => target.removeEventListener(key, eventHandler))
+      Cancelable(() => target.removeEventListener(key, eventHandler))
     }
   }
 
@@ -101,7 +99,7 @@ trait ReflectedAttrs
   extends reflectedAttrs.ReflectedAttrs[CodecBuilder.Attribute]
   with ReflectedAttrBuilder[CodecBuilder.Attribute] {
 
-  def classAccum: AccumAttributeBuilder[String] = className.accum(_ + " " + _)
+  override lazy val className = new AccumAttributeBuilder[String]("class", _.toString, _ + " " + _)
 
   // the name here doesnt' matter, should be different then any other attribute/prop though
   def classToggle: ClassToggleBuilder = new ClassToggleBuilder("classToggle")
@@ -111,7 +109,7 @@ trait ReflectedAttrs
     propKey: String,
     attrCodec: Codec[V, String],
     propCodec: Codec[V, DomPropV]
-  ): AttributeBuilder[V] =
+  ): ValueBuilder[V, Attr] =
     new AttributeBuilder(attrKey, CodecBuilder.encodeAttribute(attrCodec))
     //or: new PropertyBuilder(propKey, propCodec.encode)
 }

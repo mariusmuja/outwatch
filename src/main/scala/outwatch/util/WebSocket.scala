@@ -2,6 +2,7 @@ package outwatch.util
 
 import cats.effect.IO
 import monix.execution.Ack.Continue
+import monix.execution.Cancelable
 import monix.reactive.Observable
 import monix.reactive.OverflowStrategy.Unbounded
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent}
@@ -21,7 +22,7 @@ final case class WebSocket private(url: String) {
     ws.onmessage = (e: MessageEvent) => observer.onNext(e)
     ws.onerror = (e: ErrorEvent) => observer.onError(new Exception(e.message))
     ws.onclose = (e: CloseEvent) => observer.onComplete()
-    () => ws.close()
+    Cancelable(() => ws.close())
   })
 
   lazy val sink = Sink.create[String](
