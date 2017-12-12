@@ -5,6 +5,7 @@ import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.{html, _}
 import outwatch.dom._
+import outwatch.dom.all._
 
 import scala.concurrent.duration.FiniteDuration
 

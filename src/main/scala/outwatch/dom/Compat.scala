@@ -26,7 +26,7 @@ trait Handlers {
 
 object Handlers extends Handlers
 
-trait AttributesCompat {
+trait AttributesCompat { self: Attributes =>
   lazy val `class` = className
 
   lazy val `for` = forId
@@ -59,7 +59,7 @@ trait AttributesCompat {
   lazy val keydown = onKeyDown
 }
 
-trait TagsCompat {
+trait TagsCompat { self: Tags =>
   @deprecated("Use textArea instead", "0.11.0")
   lazy val textarea = textArea
 }

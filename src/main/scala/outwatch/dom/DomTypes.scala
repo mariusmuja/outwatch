@@ -151,3 +151,5 @@ trait StylesExtra
   extends styles.Styles2[IO[Style]]
   with SimpleStyleBuilder
 object StylesExtra extends StylesExtra
+
+object all extends Attributes with Tags with HandlerFactories

@@ -31,11 +31,12 @@ object SnabbdomSpec extends SimpleTestSuite {
 
   test("The Snabbdom Facade should correctly patch nodes with keys") {
     import outwatch.dom._
+    import outwatch.dom.all._
 
     val clicks = outwatch.Handler.create[Int](1).unsafeRunSync()
     val nodes = clicks.map { i =>
       div(
-        dom.key := s"key-$i",
+        key := s"key-$i",
         span(onClick(if (i == 1) 2 else 1) --> clicks, s"This is number $i", id := "btn"),
         input(id := "input")
       )

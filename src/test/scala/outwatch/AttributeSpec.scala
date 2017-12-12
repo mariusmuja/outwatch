@@ -2,6 +2,7 @@ package outwatch
 
 import minitest._
 import outwatch.dom._
+import outwatch.dom.all._
 
 object AttributeSpec extends SimpleTestSuite {
 
@@ -163,13 +164,13 @@ object AttributeSpec extends SimpleTestSuite {
   }
 
   test("apply on vtree should correctly merge keys") {
-    val node = input( dom.key := "bumm")( dom.key := "klapp").map(_.toSnabbdom).unsafeRunSync()
+    val node = input( key := "bumm")( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node.data.key.toList, List("klapp"))
 
-    val node2 = input()( dom.key := "klapp").map(_.toSnabbdom).unsafeRunSync()
+    val node2 = input()( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node2.data.key.toList, List("klapp"))
 
-    val node3 = input( dom.key := "bumm")().map(_.toSnabbdom).unsafeRunSync()
+    val node3 = input( key := "bumm")().map(_.toSnabbdom).unsafeRunSync()
     assertEquals(node3.data.key.toList, List("bumm"))
   }
 

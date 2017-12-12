@@ -5,6 +5,7 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
 import org.scalajs.dom.html
 import outwatch.dom._
+import outwatch.dom.all._
 import Deprecated.IgnoreWarnings.initEvent
 import monix.eval.Task
 import monix.execution.Ack.Continue
@@ -109,10 +110,11 @@ object DomEventSpec extends TestSuite[Unit] {
 
   test("EventStreams should be able to set the value of a text field") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     val values = PublishSubject[String]
 
-    val vtree = input(id:= "input", outwatch.dom.value <-- values)
+    val vtree = input(id:= "input", value <-- values)
 
     OutWatch.render("#app", vtree).unsafeRunSync()
 
@@ -138,7 +140,7 @@ object DomEventSpec extends TestSuite[Unit] {
   test("EventStreams should preserve user input after setting defaultValue") { _ =>
     val defaultValues = PublishSubject[String]
 
-    val vtree = input(id:= "input", outwatch.dom.defaultValue <-- defaultValues)
+    val vtree = input(id:= "input", defaultValue <-- defaultValues)
     OutWatch.render("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
@@ -158,7 +160,7 @@ object DomEventSpec extends TestSuite[Unit] {
   test("EventStreams should set input value to the same value after user change") { _ =>
     val values = PublishSubject[String]
 
-    val vtree = input(id:= "input", outwatch.dom.value <-- values)
+    val vtree = input(id:= "input", value <-- values)
     OutWatch.render("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
@@ -416,6 +418,7 @@ object DomEventSpec extends TestSuite[Unit] {
 
   testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     var docClicked = false
     var winClicked = false

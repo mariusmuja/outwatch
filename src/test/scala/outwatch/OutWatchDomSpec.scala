@@ -8,6 +8,7 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{Element, document}
 import org.scalajs.dom.html
 import outwatch.dom._
+import outwatch.dom.all._
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
 
@@ -225,6 +226,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   test("The HTML DSL should construct VTrees properly") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     val vtree = div(cls := "red", id := "msg",
       span("Hello")
@@ -235,6 +237,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   test("The HTML DSL should construct VTrees with optional children properly") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     val vtree = div(cls := "red", id := "msg",
       Option(span("Hello")),
@@ -247,6 +250,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   test("The HTML DSL should construct VTrees with boolean attributes") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     def boolBuilder(name: String) = new AttributeBuilder[Boolean](name, identity)
     def stringBuilder(name: String) = new AttributeBuilder[Boolean](name, _.toString)
@@ -268,6 +272,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   test("The HTML DSL should patch into the DOM properly") { _ =>
     import outwatch.dom._
+    import outwatch.dom.all._
 
     val message = "Test"
     val vtree = div(cls := "blue", id := "test",
@@ -297,7 +302,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
     val messages = PublishSubject[String]
     val vtree = div(
-      input(outwatch.dom.value <-- messages, id := "input")
+      input(value <-- messages, id := "input")
     )
 
     val node = document.createElement("div")

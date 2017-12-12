@@ -5,7 +5,7 @@ import cats.effect.IO
 import scala.language.implicitConversions
 
 
-package object dom extends Attributes with Tags with HandlerFactories {
+package object dom {
 
   type VNode = IO[VTree]
   type VDomModifier = IO[Modifier]
