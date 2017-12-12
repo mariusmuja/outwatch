@@ -5,31 +5,42 @@ import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
 import monix.execution.cancelables.SingleAssignmentCancelable
 import org.scalajs.dom
-import outwatch.dom.{AccumAttr, Attr, Attribute, BasicAttr, ClassToggle, DestroyHook, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, StaticVNode, Style}
+import outwatch.dom.{AccumAttr, Attr, Attribute, BasicAttr, BasicStyle, ClassToggle, DelayedStyle, DestroyHook, DestroyStyle, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, RemoveStyle, StaticVNode}
 import snabbdom._
 
-import scala.scalajs.js.JSConverters._
 import scala.collection.breakOut
 import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 
 private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
   type jsDict[T] = js.Dictionary[T]
 
-  def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[String], jsDict[Boolean]) = {
+  def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[DataObject.StyleValue], jsDict[Boolean]) = {
     val attrsDict = js.Dictionary[Attr.Value]()
     val propsDict = js.Dictionary[Prop.Value]()
-    val styleDict = js.Dictionary[String]()
+    val styleDict = js.Dictionary[DataObject.StyleValue]()
     val classToggleDict = js.Dictionary[Boolean]()
+
+    val delayedDict = js.Dictionary[String]()
+    val removeDict = js.Dictionary[String]()
+    val destroyDict = js.Dictionary[String]()
 
     attributes.foreach {
       case a: BasicAttr => attrsDict(a.title) = a.value
       case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
       case p: Prop => propsDict(p.title) = p.value
-      case s: Style => styleDict(s.title) = s.value
+      case s: BasicStyle => styleDict(s.title) = s.value
+      case s: DelayedStyle => delayedDict(s.title) = s.value
+      case s: RemoveStyle => removeDict(s.title) = s.value
+      case s: DestroyStyle => destroyDict(s.title) = s.value
       case s: ClassToggle => classToggleDict(s.title) = s.toggle
       case EmptyAttribute =>
     }
+
+    if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : DataObject.StyleValue
+    if (removeDict.nonEmpty) styleDict("remove") = removeDict : DataObject.StyleValue
+    if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict : DataObject.StyleValue
 
     (attrsDict, propsDict, styleDict, classToggleDict)
   }

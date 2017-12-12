@@ -49,8 +49,24 @@ final class PropertyBuilder[T](val attributeName: String, encode: T => Prop.Valu
 }
 
 
-final class StyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, Style] {
-  @inline protected def assign(value: T) = Style(attributeName, value.toString)
+final class StyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, BasicStyle] {
+  @inline protected def assign(value: T) = BasicStyle(attributeName, value.toString)
+
+  def delayed: DelayedStyleBuilder[T] = new DelayedStyleBuilder[T](attributeName)
+  def remove: RemoveStyleBuilder[T] = new RemoveStyleBuilder[T](attributeName)
+  def destroy: DestroyStyleBuilder[T] = new DestroyStyleBuilder[T](attributeName)
+}
+
+final class DelayedStyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, DelayedStyle] {
+  @inline protected def assign(value: T) = DelayedStyle(attributeName, value.toString)
+}
+
+final class RemoveStyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, RemoveStyle] {
+  @inline protected def assign(value: T) = RemoveStyle(attributeName, value.toString)
+}
+
+final class DestroyStyleBuilder[T](val attributeName: String) extends AnyVal with ValueBuilder[T, DestroyStyle] {
+  @inline protected def assign(value: T) = DestroyStyle(attributeName, value.toString)
 }
 
 final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic with ValueBuilder[T, Attr] {

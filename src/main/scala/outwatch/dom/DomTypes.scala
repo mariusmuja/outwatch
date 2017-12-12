@@ -15,7 +15,6 @@ import helpers._
 import monix.execution.{Ack, Cancelable}
 import monix.reactive.OverflowStrategy.Unbounded
 
-import scala.language.implicitConversions
 import scala.scalajs.js
 
 private[outwatch] object DomTypesBuilder {
@@ -47,14 +46,7 @@ private[outwatch] object DomTypesBuilder {
     }
   }
 
-  trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
 
-    implicit def StyleIsBuilder[T](style: keys.Style[T]): StyleBuilder[T] = new StyleBuilder[T](style.cssName)
-
-    override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
-    override protected def buildIntStyleSetter(style: keys.Style[Int],value: Int): IO[Style] = style := value
-    override protected def buildStringStyleSetter(style: keys.Style[_],value: String): IO[Style] = new StyleBuilder[Any](style.cssName) := value
-  }
 }
 import DomTypesBuilder._
 
@@ -139,6 +131,12 @@ object WindowEvents
 object DocumentEvents
   extends ObservableEventPropBuilder(dom.document)
   with DocumentEventProps[Observable]
+
+trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
+  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
+  override protected def buildIntStyleSetter(style: keys.Style[Int],value: Int): IO[Style] = style := value
+  override protected def buildStringStyleSetter(style: keys.Style[_],value: String): IO[Style] = new StyleBuilder[Any](style.cssName) := value
+}
 
 trait Styles
   extends styles.Styles[IO[Style]]

@@ -20,6 +20,10 @@ Modifier
           AccumAttr
         Prop
         Style
+          BasicStyle
+          DelayedStyle
+          RemoveStyle
+          DestroyStyle
       EmptyAttribute
     Hook
       InsertHook
@@ -98,14 +102,20 @@ final case class BasicAttr(title: String, value: Attr.Value) extends Attr
   */
 final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
 
-final case class ClassToggle(title: String, toggle: Boolean) extends Attribute
+final case class ClassToggle(title: String, toggle: Boolean) extends TitledAttribute
 
-final case class Prop(title: String, value: Prop.Value) extends Attribute
+final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
 object Prop {
   type Value = DataObject.PropValue
 }
 
-final case class Style(title: String, value: String) extends Attribute
+sealed trait Style extends TitledAttribute
+
+final case class BasicStyle(title: String, value: String) extends Style
+final case class DelayedStyle(title: String, value: String) extends Style
+final case class RemoveStyle(title: String, value: String) extends Style
+final case class DestroyStyle(title: String, value: String) extends Style
+
 
 // Hooks
 
