@@ -7,8 +7,6 @@ import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
 import outwatch.dom.all._
 
-import scala.concurrent.duration.FiniteDuration
-
 object ScenarioTestSpec extends JSDomSuite {
 
   testAsync("A simple counter application should work as intended") {
@@ -130,7 +128,7 @@ object ScenarioTestSpec extends JSDomSuite {
   }
 
 
-  private val delay = FiniteDuration(20,"ms")
+//  private val delay = FiniteDuration(20,"ms")
 
   testAsync("A todo application should work with components") {
 
@@ -225,7 +223,7 @@ object ScenarioTestSpec extends JSDomSuite {
 
       _ <- Task{
         assertEquals(list.childElementCount, 1)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
       todo2 <- Task {
         val todo2 = "wash dishes"
@@ -236,7 +234,7 @@ object ScenarioTestSpec extends JSDomSuite {
       }
       _ <- Task{
         assertEquals(list.childElementCount, 2)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
       todo3 <- Task {
         val todo3 = "clean windows"
@@ -247,7 +245,7 @@ object ScenarioTestSpec extends JSDomSuite {
       }
       _ <- Task {
         assertEquals(list.childElementCount, 3)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
       _ <- Task {
         document.getElementById(todo2).dispatchEvent(clickEvt)
@@ -255,21 +253,21 @@ object ScenarioTestSpec extends JSDomSuite {
 
       _ <- Task {
         assertEquals(list.childElementCount, 2)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
       _ <- Task {
         document.getElementById(todo3).dispatchEvent(clickEvt)
       }
       _ <- Task {
         assertEquals(list.childElementCount, 1)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
       _ <- Task {
         document.getElementById(todo).dispatchEvent(clickEvt)
       }
       _ <- Task {
         assertEquals(list.childElementCount, 0)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
 
 
     } yield ()).runAsync

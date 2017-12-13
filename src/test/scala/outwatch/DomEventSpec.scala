@@ -8,8 +8,6 @@ import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
 import outwatch.dom.all._
 
-import scala.concurrent.duration.FiniteDuration
-
 object DomEventSpec extends JSDomSuite {
 
   test("EventStreams should emit and receive events correctly") {
@@ -399,7 +397,7 @@ object DomEventSpec extends JSDomSuite {
     assertEquals(checkbox.checked, false)
   }
 
-  private val delay = FiniteDuration(20,"ms")
+//  private val delay = FiniteDuration(20,"ms")
 
   testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") {
     import outwatch.dom._
@@ -430,10 +428,10 @@ object DomEventSpec extends JSDomSuite {
     (for {
       _ <- Task {
         assertEquals(winClicked, true)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
       _ <- Task {
         assertEquals(docClicked, true)
-      }.delayExecution(delay)
+      }.executeWithFork//.delayExecution(delay)
     } yield ()).runAsync
   }
 
