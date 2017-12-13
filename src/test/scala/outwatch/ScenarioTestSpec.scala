@@ -66,7 +66,7 @@ object ScenarioTestSpec extends JSDomSuite {
     val node = Handler.create[String].flatMap { nameHandler =>
       div(
         label("Name:"),
-        input(id := "input", tpe := "text", onInputString --> nameHandler),
+        input(id := "input", tpe := "text", inputString --> nameHandler),
         hr(),
         h1(id := "greeting", greetStart, child <-- nameHandler)
       )
@@ -158,7 +158,7 @@ object ScenarioTestSpec extends JSDomSuite {
 
       div <- div(
         label(labelText),
-        input(id:= "input", tpe := "text", onInputString --> textFieldStream, onKeyUp --> keyStream),
+        input(id:= "input", tpe := "text", inputString --> textFieldStream, onKeyUp --> keyStream),
         button(id := "submit", onClick --> clickStream, disabled <-- buttonDisabled, "Submit")
       )
     } yield div

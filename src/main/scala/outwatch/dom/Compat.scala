@@ -43,15 +43,6 @@ trait AttributesCompat { self: Attributes =>
   @deprecated("Use listId instead", "0.11.0")
   lazy val list = listId
 
-  @deprecated("Use onInputString instead", "0.11.0")
-  lazy val inputString = onInputString
-
-  @deprecated("Use onInputNumber instead", "0.11.0")
-  lazy val inputNumber = onInputNumber
-
-  @deprecated("Use onInputChecked instead", "0.11.0")
-  lazy val inputChecked = onInputChecked
-
   @deprecated("Use onClick instead", "0.11.0")
   lazy val click = onClick
 

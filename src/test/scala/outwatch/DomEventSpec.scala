@@ -286,7 +286,7 @@ object DomEventSpec extends JSDomSuite {
     val number = 42
     val node = Handler.create[Int].flatMap { stream =>
       div(
-        button(id := "input", onInputString(number) --> stream),
+        input(id := "input", inputString(number) --> stream),
         span(id:="num",child <-- stream)
       )
     }
@@ -332,7 +332,7 @@ object DomEventSpec extends JSDomSuite {
 
       Handler.create[String].flatMap { stream =>
         div(
-          input(id := "input", tpe := "text", onInputString --> stream),
+          input(id := "input", tpe := "text", inputString --> stream),
           button(id := "submit", onClick(stream) --> submit),
           ul( id := "items",
             children <-- state.map(items => items.map(it => li(it)))

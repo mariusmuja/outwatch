@@ -61,17 +61,19 @@ trait SnabbdomKeyAttributes {
   lazy val key = KeyBuilder
 }
 
+
+
 trait TypedInputEventProps {
   import org.scalajs.dom
 
-  /** The input event is fired when an element gets user input. */
-  lazy val onInputChecked = Events.onChange.map(_.target.asInstanceOf[dom.html.Input].checked)
+  /** The input event is fired when an element is checked. */
+  lazy val inputChecked = Events.onChange.checked[dom.html.Input]
 
   /** The input event is fired when an element gets user input. */
-  lazy val onInputNumber  = Events.onInput.map(_.target.asInstanceOf[dom.html.Input].valueAsNumber)
+  lazy val inputNumber  = Events.onInput.numberValue[dom.html.Input]
 
   /** The input event is fired when an element gets user input. */
-  lazy val onInputString  = Events.onInput.map(_.target.asInstanceOf[dom.html.Input].value)
+  lazy val inputString  = Events.onInput.stringValue[dom.html.Input]
 }
 
 trait AttributeHelpers {

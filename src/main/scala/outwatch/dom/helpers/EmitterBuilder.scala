@@ -1,10 +1,9 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
-import monix.reactive.Observable
 import org.scalajs.dom._
 import outwatch.Sink
-import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, PostPatchHook, PrePatchHook, UpdateHook}
+import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, Observable, PostPatchHook, PrePatchHook, TagWithChecked, TagWithNumber, TagWithString, UpdateHook}
 
 
 trait EmitterBuilder[E <: Event, O] extends Any {
@@ -48,10 +47,24 @@ final case class TransformingEmitterBuilder[E <: Event, O] private[helpers] (
   }
 }
 
+
+trait EventProps[E <: Event] extends Any { self: EmitterBuilder[E, E] =>
+
+  def stringValue[L <: html.Element](implicit tag: TagWithString[L]): TransformingEmitterBuilder[E, String] =
+    map(e => tag.value(e.currentTarget.asInstanceOf[L]))
+
+  def numberValue[L <: html.Element](implicit tag: TagWithNumber[L]): TransformingEmitterBuilder[E, Double] =
+    map(e => tag.valueAsNumber(e.currentTarget.asInstanceOf[L]))
+
+  def checked[L <: html.Element](implicit tag: TagWithChecked[L]): TransformingEmitterBuilder[E, Boolean] =
+    map(e => tag.checked(e.currentTarget.asInstanceOf[L]))
+}
+
 final class SimpleEmitterBuilder[E <: Event] private[helpers](
   val eventType: String
-) extends AnyVal with
-          EmitterBuilder[E, E] {
+) extends AnyVal
+          with EmitterBuilder[E, E]
+          with EventProps[E] {
 
   private[outwatch] def transform[O](transformer: Observable[E] => Observable[O]) = new TransformingEmitterBuilder[E, O](eventType, transformer)
 
