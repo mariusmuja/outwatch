@@ -34,7 +34,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(insert --> sink)
+    val node = div(onInsert --> sink)
 
     assertEquals(switch, false)
 
@@ -56,7 +56,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(insert --> sink)(insert --> sink2)
+    val node = div(onInsert --> sink)(onInsert --> sink2)
 
     assertEquals(switch, false)
     assertEquals(switch2, false)
@@ -76,7 +76,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span(destroy --> sink), div("Hasdasd")))
+    val node = div(child <-- Observable(span(onDestroy --> sink), div("Hasdasd")))
 
     assertEquals(switch, false)
 
@@ -99,7 +99,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span(destroy --> sink)(destroy --> sink2), div("Hasdasd")))
+    val node = div(child <-- Observable(span(onDestroy --> sink)(onDestroy --> sink2), div("Hasdasd")))
 
     assertEquals(switch, false)
     assertEquals(switch2, false)
@@ -119,7 +119,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span(update --> sink, "Hello"), span(update --> sink, "Hey")))
+    val node = div(child <-- Observable(span(onUpdate --> sink, "Hello"), span(onUpdate --> sink, "Hey")))
 
     assertEquals(switch, false)
 
@@ -142,7 +142,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     })
 
     val message = PublishSubject[String]
-    val node = div(child <-- message, update --> sink1)(update --> sink2)
+    val node = div(child <-- message, onUpdate --> sink1)(onUpdate --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
@@ -162,7 +162,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable(span("Hello")), span(prepatch --> sink, "Hey"))
+    val node = div(child <-- Observable(span("Hello")), span(onPrepatch --> sink, "Hey"))
 
     assertEquals(switch, false)
 
@@ -183,7 +183,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
     val message = PublishSubject[String]()
-    val node = div(child <-- message, prepatch --> sink1)(prepatch --> sink2)
+    val node = div(child <-- message, onPrepatch --> sink1)(onPrepatch --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
@@ -202,7 +202,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
 
-    val node = div(child <-- Observable("message"), postpatch --> sink, "Hey")
+    val node = div(child <-- Observable("message"), onPostpatch --> sink, "Hey")
 
     assertEquals(switch, false)
 
@@ -224,7 +224,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
       Continue
     })
     val message = PublishSubject[String]()
-    val node = div(child <-- message, postpatch --> sink1)(postpatch --> sink2)
+    val node = div(child <-- message, onPostpatch --> sink1)(onPostpatch --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     assertEquals(switch1, false)
@@ -246,11 +246,11 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     val message = PublishSubject[String]()
     val node = div(child <-- message,
-      insert --> insertSink,
-      prepatch --> prepatchSink,
-      update --> updateSink,
-      postpatch --> postpatchSink,
-      destroy --> destroySink
+      onInsert --> insertSink,
+      onPrepatch --> prepatchSink,
+      onUpdate --> updateSink,
+      onPostpatch --> postpatchSink,
+      onDestroy --> destroySink
     )
 
     assertEquals(hooks.toList, List())
@@ -272,8 +272,8 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     val messageList = PublishSubject[Seq[String]]()
     val node = div("Hello",  children <-- messageList.map(_.map(span(_))),
-      insert --> insertSink,
-      update --> updateSink
+      onInsert --> insertSink,
+      onUpdate --> updateSink
     )
 
     assertEquals(hooks.toList, List())
@@ -290,7 +290,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     val destroySink = Sink.create((_: Element) => IO {hooks += "destroy"; Continue})
 
     val message = PublishSubject[String]()
-    val node = div(span("Hello", insert --> insertSink, update --> updateSink,destroy --> destroySink),
+    val node = div(span("Hello", onInsert --> insertSink, onUpdate --> updateSink,onDestroy --> destroySink),
       child <-- message.map(span(_))
     )
 
@@ -311,7 +311,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
 
     val messageList = PublishSubject[Seq[String]]()
     val node = div(children <-- messageList.map(_.map(span(_))),
-      span("Hello", insert --> insertSink, update --> updateSink,destroy --> destroySink)
+      span("Hello", onInsert --> insertSink, onUpdate --> updateSink,onDestroy --> destroySink)
     )
 
     assertEquals(hooks.toList, List())
