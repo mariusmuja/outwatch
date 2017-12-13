@@ -1,8 +1,11 @@
 package outwatch
 
 import minitest._
+import outwatch.dom.Styles.all.{opacity, transition}
 import outwatch.dom._
 import outwatch.dom.all._
+
+import scala.scalajs.js
 
 object AttributeSpec extends SimpleTestSuite {
 
@@ -181,6 +184,35 @@ object AttributeSpec extends SimpleTestSuite {
       node.data.style.toMap,
       Map(
         "color" -> "red"
+      )
+    )
+  }
+
+
+  test("extended styles should convert correctly") {
+    val node = div(
+      opacity := 0,
+      opacity.delayed := 1,
+      opacity.remove := 0,
+      opacity.destroy := 0
+    ).map(_.toSnabbdom).unsafeRunSync()
+
+    assertEquals(node.data.style("opacity"), "0")
+    assertEquals(node.data.style("delayed").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "1"))
+    assertEquals(node.data.style("remove").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "0"))
+    assertEquals(node.data.style("destroy").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "0"))
+  }
+
+  test("style accum should convert correctly") {
+    val node = div(
+      transition := "transform .2s ease-in-out",
+      transition.accum(",") := "opacity .2s ease-in-out"
+    ).map(_.toSnabbdom).unsafeRunSync()
+
+    assertEquals(
+      node.data.style.toMap,
+      Map(
+        "transition" -> "transform .2s ease-in-out,opacity .2s ease-in-out"
       )
     )
   }

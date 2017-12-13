@@ -20,10 +20,12 @@ Modifier
           AccumAttr
         Prop
         Style
-          BasicStyle
-          DelayedStyle
-          RemoveStyle
-          DestroyStyle
+          SimpleStyle
+            BasicStyle
+            DelayedStyle
+            RemoveStyle
+            DestroyStyle
+          AccumStyle
       EmptyAttribute
     Hook
       InsertHook
@@ -95,13 +97,6 @@ object Attr {
   type Value = DataObject.AttrValue
 }
 
-final case class BasicAttr(title: String, value: Attr.Value) extends Attr
-
-/**
-  * Attribute that accumulates the previous value in the same VNode with it's value
-  */
-final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
-
 final case class ClassToggle(title: String, toggle: Boolean) extends TitledAttribute
 
 final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
@@ -111,11 +106,24 @@ object Prop {
 
 sealed trait Style extends TitledAttribute
 
-final case class BasicStyle(title: String, value: String) extends Style
-final case class DelayedStyle(title: String, value: String) extends Style
-final case class RemoveStyle(title: String, value: String) extends Style
-final case class DestroyStyle(title: String, value: String) extends Style
 
+final case class BasicAttr(title: String, value: Attr.Value) extends Attr
+
+/**
+  * Attribute that accumulates the previous value in the same VNode with it's value
+  */
+final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
+
+
+sealed trait SimpleStyle extends Style {
+  val value: String
+}
+final case class AccumStyle(title: String, style: BasicStyle, accum: (String, String) => String) extends Style
+
+final case class BasicStyle(title: String, value: String) extends SimpleStyle
+final case class DelayedStyle(title: String, value: String) extends SimpleStyle
+final case class RemoveStyle(title: String, value: String) extends SimpleStyle
+final case class DestroyStyle(title: String, value: String) extends SimpleStyle
 
 // Hooks
 
@@ -148,7 +156,7 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifi
   def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy( modifiers = modifiers ++ args))
 
   override def toSnabbdom: VNodeProxy = {
-    val separatedModifiers = SeparatedModifiers.separate(modifiers)
+    val separatedModifiers = SeparatedModifiers.from(modifiers)
     separatedModifiers.toSnabbdom(nodeType)
   }
 }

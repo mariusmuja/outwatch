@@ -5,12 +5,41 @@ import monix.execution.Ack.Continue
 import monix.execution.Scheduler.Implicits.global
 import monix.execution.cancelables.SingleAssignmentCancelable
 import org.scalajs.dom
-import outwatch.dom.{AccumAttr, Attr, Attribute, BasicAttr, BasicStyle, ClassToggle, DelayedStyle, DestroyHook, DestroyStyle, Emitter, EmptyAttribute, Hook, InsertHook, Key, Prop, RemoveStyle, StaticVNode}
+import outwatch.dom._
 import snabbdom._
 
 import scala.collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+
+
+private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
+  def toSnabbdom: js.Dictionary[DataObject.StyleValue] = {
+    val styleDict = js.Dictionary[DataObject.StyleValue]()
+
+    val delayedDict = js.Dictionary[String]()
+    val removeDict = js.Dictionary[String]()
+    val destroyDict = js.Dictionary[String]()
+
+    styles.foreach {
+      case s: BasicStyle => styleDict(s.title) = s.value
+      case s: DelayedStyle => delayedDict(s.title) = s.value
+      case s: RemoveStyle => removeDict(s.title) = s.value
+      case s: DestroyStyle => destroyDict(s.title) = s.value
+      case a: AccumStyle =>
+        styleDict(a.style.title) = styleDict.get(a.style.title).map(s =>
+          a.accum(s.asInstanceOf[String], a.style.value): DataObject.StyleValue
+        ).getOrElse(a.style.value)
+
+    }
+
+    if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : DataObject.StyleValue
+    if (removeDict.nonEmpty) styleDict("remove") = removeDict : DataObject.StyleValue
+    if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict : DataObject.StyleValue
+
+    styleDict
+  }
+}
 
 private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
@@ -19,30 +48,16 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
   def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[DataObject.StyleValue], jsDict[Boolean]) = {
     val attrsDict = js.Dictionary[Attr.Value]()
     val propsDict = js.Dictionary[Prop.Value]()
-    val styleDict = js.Dictionary[DataObject.StyleValue]()
     val classToggleDict = js.Dictionary[Boolean]()
 
-    val delayedDict = js.Dictionary[String]()
-    val removeDict = js.Dictionary[String]()
-    val destroyDict = js.Dictionary[String]()
-
-    attributes.foreach {
+    attrs.foreach {
       case a: BasicAttr => attrsDict(a.title) = a.value
       case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
-      case p: Prop => propsDict(p.title) = p.value
-      case s: BasicStyle => styleDict(s.title) = s.value
-      case s: DelayedStyle => delayedDict(s.title) = s.value
-      case s: RemoveStyle => removeDict(s.title) = s.value
-      case s: DestroyStyle => destroyDict(s.title) = s.value
-      case s: ClassToggle => classToggleDict(s.title) = s.toggle
-      case EmptyAttribute =>
     }
+    props.foreach { p => propsDict(p.title) = p.value }
+    classToggles.foreach{ c => classToggleDict(c.title) = c.toggle }
 
-    if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : DataObject.StyleValue
-    if (removeDict.nonEmpty) styleDict("remove") = removeDict : DataObject.StyleValue
-    if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict : DataObject.StyleValue
-
-    (attrsDict, propsDict, styleDict, classToggleDict)
+    (attrsDict, propsDict, styles.toSnabbdom , classToggleDict)
   }
 
   private def merge[T](first: js.Dictionary[T], second: js.Dictionary[T]) = {
@@ -93,7 +108,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
     def toProxy(changable: (Seq[Attribute], Seq[IO[StaticVNode]])): VNodeProxy = {
       val (attributes, nodes) = changable
-      val newData = SeparatedAttributes(attributes.toList).updateDataObject(proxy.data)
+      val newData = SeparatedAttributes.from(attributes).updateDataObject(proxy.data)
 
       if (nodes.isEmpty) {
         if (proxy.children.isDefined) {

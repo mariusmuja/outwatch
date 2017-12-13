@@ -2,7 +2,7 @@ package outwatch.dom
 
 import com.raquo.domtypes.generic.keys
 import outwatch.ValueModifier
-import outwatch.dom.helpers.StyleBuilder
+import outwatch.dom.helpers.BasicStyleBuilder
 
 trait Implicits {
 
@@ -18,5 +18,5 @@ trait Implicits {
     }
   }
 
-  implicit def StyleIsBuilder[T](style: keys.Style[T]): StyleBuilder[T] = new StyleBuilder[T](style.cssName)
+  implicit def StyleIsBuilder[T](style: keys.Style[T]): BasicStyleBuilder[T] = new BasicStyleBuilder[T](style.cssName)
 }

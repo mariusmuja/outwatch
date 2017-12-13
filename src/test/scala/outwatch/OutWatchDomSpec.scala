@@ -53,7 +53,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(hooks.updateHooks.length,1)
     assertEquals(hooks.postPatchHooks.length,1)
     assertEquals(hooks.destroyHooks.length, 1)
-    assertEquals(att.attributes.length, 1)
+    assertEquals(att.attrs.length, 1)
     assertEquals(keys.length, 0)
   }
 
@@ -76,11 +76,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
-      SeparatedModifiers.separate(modifiers)
+      SeparatedModifiers.from(modifiers)
 
     assertEquals(emitters.emitters.length, 2)
     assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attributes.length, 2)
+    assertEquals(properties.attributes.attrs.length, 2)
     assertEquals(childNodes.length, 3)
     assertEquals(streamStatus.numChild, 0)
     assertEquals(streamStatus.numChildren, 0)
@@ -100,11 +100,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
-      SeparatedModifiers.separate(modifiers)
+      SeparatedModifiers.from(modifiers)
 
     assertEquals(emitters.emitters.length, 3)
     assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attributes.length, 1)
+    assertEquals(properties.attributes.attrs.length, 1)
     assertEquals(childNodes.length, 2)
     assertEquals(streamStatus.numChild, 0)
     assertEquals(streamStatus.numChildren, 0)
@@ -124,11 +124,11 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, Children.StringModifiers(stringMods)) =
-      SeparatedModifiers.separate(modifiers)
+      SeparatedModifiers.from(modifiers)
 
     assertEquals(emitters.emitters.length, 3)
     assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attributes.length, 1)
+    assertEquals(properties.attributes.attrs.length, 1)
     assertEquals(stringMods.map(_.string).toSet, Set("text", "text2"))
   }
 
@@ -150,7 +150,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     )
 
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
-      SeparatedModifiers.separate(modifiers)
+      SeparatedModifiers.from(modifiers)
 
     assertEquals(emitters.emitters.map(_.eventType), List("click", "input", "keyup"))
     assertEquals(properties.hooks.insertHooks.length, 1)
@@ -158,7 +158,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(properties.hooks.updateHooks.length, 1)
     assertEquals(properties.hooks.postPatchHooks.length, 1)
     assertEquals(properties.hooks.destroyHooks.length, 0)
-    assertEquals(properties.attributes.attributes.length, 1)
+    assertEquals(properties.attributes.attrs.length, 1)
     assertEquals(receivers.length, 2)
     assertEquals(properties.keys.length, 0)
     assertEquals(childNodes.length, 2)
@@ -224,7 +224,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
     )
 
-    val modifiers =  SeparatedModifiers.separate(mods)
+    val modifiers =  SeparatedModifiers.from(mods)
     val Children.VNodes(childNodes, streamStatus) = modifiers.children
 
     assertEquals(childNodes.size, 3)
@@ -251,7 +251,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
       div()(IO.pure(Key(5678))).unsafeRunSync()
     )
 
-    val modifiers =  SeparatedModifiers.separate(mods)
+    val modifiers =  SeparatedModifiers.from(mods)
     val Children.VNodes(childNodes, streamStatus) = modifiers.children
 
     assertEquals(childNodes.size, 2)

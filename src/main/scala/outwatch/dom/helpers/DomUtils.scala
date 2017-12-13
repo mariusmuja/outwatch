@@ -80,10 +80,32 @@ private[outwatch] final case class SeparatedProperties(
   }
 }
 
+private[outwatch] final case class SeparatedStyles(
+  styles: List[Style] = Nil
+) extends SnabbdomStyles {
+  @inline def ::(s: Style): SeparatedStyles = copy(styles = s :: styles)
+}
+
+
 private[outwatch] final case class SeparatedAttributes(
-  attributes: List[Attribute] = Nil
+  attrs: List[Attr] = Nil,
+  props: List[Prop] = Nil,
+  styles: SeparatedStyles = SeparatedStyles(),
+  classToggles: List[ClassToggle] = Nil,
+
 ) extends SnabbdomAttributes {
-  @inline def ::(a: Attribute): SeparatedAttributes = copy(attributes = a :: attributes)
+  @inline def ::(a: Attribute): SeparatedAttributes = a match {
+    case a : Attr => copy(attrs = a :: attrs)
+    case p : Prop => copy(props = p :: props)
+    case s : Style => copy(styles= s :: styles)
+    case c : ClassToggle => copy(classToggles = c :: classToggles)
+    case EmptyAttribute => this
+  }
+}
+object SeparatedAttributes {
+  private[outwatch] def from(attributes: Seq[Attribute]): SeparatedAttributes = {
+    attributes.foldRight(SeparatedAttributes())((a, sa) => a :: sa)
+  }
 }
 
 private[outwatch] final case class SeparatedHooks(
@@ -127,7 +149,7 @@ private[outwatch] final case class SeparatedModifiers(
 }
 
 object SeparatedModifiers {
-  private[outwatch] def separate(modifiers: Seq[Modifier]): SeparatedModifiers = {
+  private[outwatch] def from(modifiers: Seq[Modifier]): SeparatedModifiers = {
     modifiers.foldRight(SeparatedModifiers())((m, sm) => m :: sm)
   }
 }
