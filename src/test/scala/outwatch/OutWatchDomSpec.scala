@@ -419,8 +419,8 @@ object OutWatchDomSpec extends JSDomSuite {
   test("The HTML DSL should construct VTrees with boolean attributes") {
     import outwatch.dom.all._
 
-    def boolBuilder(name: String) = new AttributeBuilder[Boolean](name, identity[Boolean])
-    def stringBuilder(name: String) = new AttributeBuilder[Boolean](name, _.toString)
+    def boolBuilder(name: String) = new AttrBuilder[Boolean](name, identity[Boolean])
+    def stringBuilder(name: String) = new AttrBuilder[Boolean](name, _.toString)
     val vtree = div(
       boolBuilder("a"),
       boolBuilder("b") := true,

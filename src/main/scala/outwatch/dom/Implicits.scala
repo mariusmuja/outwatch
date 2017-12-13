@@ -10,12 +10,10 @@ trait Implicits {
 
   implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse VDomModifier.empty
 
-  implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = modifiers.sequence.map(CompositeModifier)
+  implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = VDomModifier.apply(modifiers : _*)
 
   implicit class ioVTreeMerge(vnode: VNode) {
-    def apply(args: VDomModifier*): VNode = {
-      vnode.flatMap(vnode_ => vnode_(args:_*))
-    }
+    def apply(args: VDomModifier*): VNode = vnode.flatMap(_(args:_*))
   }
 
   implicit def StyleIsBuilder[T](style: keys.Style[T]): BasicStyleBuilder[T] = new BasicStyleBuilder[T](style.cssName)

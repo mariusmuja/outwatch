@@ -77,8 +77,8 @@ trait TypedInputEventProps {
 trait AttributeHelpers {
   lazy val data = new DynamicAttributeBuilder[Any]("data" :: Nil)
 
-  def attr[T](key: String, convert: T => Attr.Value = (t: T) => t.toString : Attr.Value) = new AttributeBuilder[T](key, convert)
-  def prop[T](key: String, convert: T => Prop.Value = (t: T) => t) = new PropertyBuilder[T](key, convert)
+  def attr[T](key: String, convert: T => Attr.Value = (t: T) => t.toString : Attr.Value) = new AttrBuilder[T](key, convert)
+  def prop[T](key: String, convert: T => Prop.Value = (t: T) => t) = new PropBuilder[T](key, convert)
   def style[T](key: String) = new BasicStyleBuilder[T](key)
 }
 
