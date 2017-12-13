@@ -1,13 +1,10 @@
 package outwatch
 
 import cats.effect.IO
-import minitest.TestSuite
 import monix.execution.Ack.Continue
-import monix.execution.Cancelable
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom.document
-import org.scalajs.dom.html
+import org.scalajs.dom.{document, html}
 import outwatch.dom._
 import outwatch.dom.all._
 import outwatch.dom.helpers._
@@ -18,24 +15,10 @@ import scala.language.reflectiveCalls
 import scala.scalajs.js
 import scala.scalajs.js.JSON
 
-object OutWatchDomSpec extends TestSuite[Unit]{
+object OutWatchDomSpec extends JSDomSuite {
 
-  implicit val executionContext = monix.execution.Scheduler.Implicits.global
 
-  implicit class Subscriber[T](obs: Observable[T]) {
-    def apply(next: T => Unit): Cancelable = obs.subscribe { t =>
-      next(t)
-      Continue
-    }
-  }
-
-  def setup(): Unit = {}
-
-  def tearDown(env: Unit): Unit = {
-    document.body.innerHTML = ""
-  }
-
-  test("Properties should be separated correctly") { _ =>
+  test("Properties should be separated correctly") {
     val properties = Seq(
       Attribute("hidden", "true"),
       InsertHook(PublishSubject()),
@@ -57,7 +40,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(keys.length, 0)
   }
 
-  test("VDomModifiers should be separated correctly") { _ =>
+  test("VDomModifiers should be separated correctly") {
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyModifier,
@@ -86,7 +69,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(streamStatus.numChildren, 0)
   }
 
-  test("VDomModifiers should be separated correctly with children") { _ =>
+  test("VDomModifiers should be separated correctly with children") {
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyModifier,
@@ -110,7 +93,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(streamStatus.numChildren, 0)
   }
 
-  test("VDomModifiers should be separated correctly with string children")  { _ =>
+  test("VDomModifiers should be separated correctly with string children") {
     val modifiers: Seq[Modifier] = Seq(
       Attribute("class","red"),
       EmptyModifier,
@@ -132,7 +115,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(stringMods.map(_.string).toSet, Set("text", "text2"))
   }
 
-  test("VDomModifiers should be separated correctly with children and properties") { _ =>
+  test("VDomModifiers should be separated correctly with children and properties") {
     val modifiers = Seq(
       Attribute("class","red"),
       EmptyModifier,
@@ -172,7 +155,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     ))
   }
 
-  test("VDomModifiers should be run once") { _ =>
+  test("VDomModifiers should be run once") {
     val list = new collection.mutable.ArrayBuffer[String]
 
     val vtree = div(
@@ -216,7 +199,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(list.toSet, Set("child1", "child2", "children1", "children2", "attr1", "attr2"))
   }
 
-  test("VDomModifiers should provide unique key for child nodes if stream is present") { _ =>
+  test("VDomModifiers should provide unique key for child nodes if stream is present") {
     val mods = Seq(
       ChildrenStreamReceiver(Observable()),
       div(id := "1").unsafeRunSync(),
@@ -244,7 +227,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assert(key1.get != key2.get)
   }
 
-  test("VDomModifiers should keep existing key for child nodes") { _ =>
+  test("VDomModifiers should keep existing key for child nodes") {
     val mods = Seq(
       Key(1234),
       ChildrenStreamReceiver(Observable()),
@@ -265,7 +248,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   }
 
 
-  test("VTrees should be constructed correctly") { _ =>
+  test("VTrees should be constructed correctly") {
 
 
     val attributes = List(Attribute("class", "red"), Attribute("id", "msg"))
@@ -278,7 +261,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(proxy))
   }
 
-  test("VTrees should be correctly created with the HyperscriptHelper") { _ =>
+  test("VTrees should be correctly created with the HyperscriptHelper") {
     val attributes = List(Attribute("class", "red"), Attribute("id", "msg"))
     val message = "Hello"
     val child = span(message)
@@ -288,7 +271,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   }
 
 
-  test("VTrees should run its modifiers once!" ) { _ =>
+  test("VTrees should run its modifiers once!" ) {
     val stringHandler = Handler.create[String]().unsafeRunSync()
     var ioCounter = 0
     var handlerCounter = 0
@@ -319,7 +302,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(handlerCounter, 1)
   }
 
-  test("VTrees should run its modifiers once in CompositeModifier!") { _ =>
+  test("VTrees should run its modifiers once in CompositeModifier!") {
     val stringHandler = Handler.create[String]().unsafeRunSync()
     var ioCounter = 0
     var handlerCounter = 0
@@ -350,7 +333,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(handlerCounter, 1)
   }
 
-  test("VTrees should be correctly patched into the DOM") { _ =>
+  test("VTrees should be correctly patched into the DOM") {
     val id = "msg"
     val cls = "red"
     val attributes = List(Attribute("class", cls), Attribute("id", id))
@@ -372,7 +355,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   }
 
-  test("VTrees should be replaced if they contain changeables") { _ =>
+  test("VTrees should be replaced if they contain changeables") {
 
     def page(num: Int): VNode = {
       val pageNum = Handler.create[Int](num).unsafeRunSync()
@@ -409,7 +392,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(domNode.textContent, "2")
   }
 
-  test("The HTML DSL should construct VTrees properly") { _ =>
+  test("The HTML DSL should construct VTrees properly") {
     import outwatch.dom._
     import outwatch.dom.all._
 
@@ -420,7 +403,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
   }
 
-  test("The HTML DSL should construct VTrees with optional children properly") { _ =>
+  test("The HTML DSL should construct VTrees with optional children properly") {
     import outwatch.dom._
     import outwatch.dom.all._
 
@@ -433,11 +416,10 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   }
 
-  test("The HTML DSL should construct VTrees with boolean attributes") { _ =>
-    import outwatch.dom._
+  test("The HTML DSL should construct VTrees with boolean attributes") {
     import outwatch.dom.all._
 
-    def boolBuilder(name: String) = new AttributeBuilder[Boolean](name, identity)
+    def boolBuilder(name: String) = new AttributeBuilder[Boolean](name, identity[Boolean])
     def stringBuilder(name: String) = new AttributeBuilder[Boolean](name, _.toString)
     val vtree = div(
       boolBuilder("a"),
@@ -455,7 +437,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   }
 
-  test("The HTML DSL should patch into the DOM properly") { _ =>
+  test("The HTML DSL should patch into the DOM properly") {
     import outwatch.dom._
     import outwatch.dom.all._
 
@@ -483,7 +465,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(document.getElementById("list").childElementCount, 3)
   }
 
-  test("The HTML DSL should change the value of a textfield") { _ =>
+  test("The HTML DSL should change the value of a textfield") {
 
     val messages = PublishSubject[String]
     val vtree = div(
@@ -510,7 +492,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
 
   }
 
-  test("The HTML DSL render child nodes in correct order") { _ =>
+  test("The HTML DSL render child nodes in correct order") {
     val messagesA = PublishSubject[String]
     val messagesB = PublishSubject[String]
     val vNode = div(
@@ -530,7 +512,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.innerHTML, "<div><span>A</span><span>1</span><span>B</span><span>2</span></div>")
   }
 
-  test("The HTML DSL should render child string-nodes in correct order") { _ =>
+  test("The HTML DSL should render child string-nodes in correct order") {
     val messagesA = PublishSubject[String]
     val messagesB = PublishSubject[String]
     val vNode = div(
@@ -550,7 +532,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.innerHTML, "<div>A1B2</div>")
   }
 
-  test("The HTML DSL should render child string-nodes in correct order, mixed with children") { _ =>
+  test("The HTML DSL should render child string-nodes in correct order, mixed with children") {
     val messagesA = PublishSubject[String]
     val messagesB = PublishSubject[String]
     val messagesC = PublishSubject[Seq[VNode]]
@@ -573,7 +555,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.innerHTML, "<div>A1<div>5</div><div>7</div>B2</div>")
   }
 
-  test("The HTML DSL should update merged nodes children correctly") { _ =>
+  test("The HTML DSL should update merged nodes children correctly") {
     val messages = PublishSubject[Seq[VNode]]
     val otherMessages = PublishSubject[Seq[VNode]]
     val vNode = div(children <-- messages)(children <-- otherMessages)
@@ -592,7 +574,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).innerHTML, "<div>message</div><div>genus</div>")
   }
 
-  test("The HTML DSL should update merged nodes separate children correctly") { _ =>
+  test("The HTML DSL should update merged nodes separate children correctly") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
     val vNode = div(child <-- messages)(child <-- otherMessages)
@@ -611,7 +593,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).innerHTML, "messagegenus")
   }
 
-  test("The HTML DSL should update reused vnodes correctly") { _ =>
+  test("The HTML DSL should update reused vnodes correctly") {
     val messages = PublishSubject[String]
     val vNode = div(data.ralf := true, child <-- messages)
     val container = div(vNode, vNode)
@@ -629,7 +611,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).children(1).innerHTML, "bumo")
   }
 
-  test("The HTML DSL should update merged nodes correctly (render reuse)") { _ =>
+  test("The HTML DSL should update merged nodes correctly (render reuse)") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
     val vNodeTemplate = div(child <-- messages)
@@ -657,7 +639,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node2.children(0).innerHTML, "messagegenus")
   }
 
-  test("The HTML DSL should update merged node attributes correctly") { _ =>
+  test("The HTML DSL should update merged node attributes correctly") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
     val vNode = div(data.noise <-- messages)(data.noise <-- otherMessages)
@@ -677,7 +659,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).getAttribute("data-noise"), "genus")
   }
 
-  test("The HTML DSL should update merged node styles written with style() correctly") { _ =>
+  test("The HTML DSL should update merged node styles written with style() correctly") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
     val vNode = div(style("color") <-- messages)(style("color") <-- otherMessages)
@@ -696,7 +678,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
   }
 
-  test("The HTML DSL should update merged node styles correctly") { _ =>
+  test("The HTML DSL should update merged node styles correctly") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
     val vNode = div(color <-- messages)(color <-- otherMessages)
@@ -715,7 +697,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
   }
 
-  test("The HTML DSL should render composite VNodes properly") { _ =>
+  test("The HTML DSL should render composite VNodes properly") {
     val items = Seq("one", "two", "three")
     val vNode = div(items.map(item => span(item)))
 
@@ -726,7 +708,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.innerHTML, "<div><span>one</span><span>two</span><span>three</span></div>")
   }
 
-  test("The HTML DSL should render nodes with only attribute receivers properly") { _ =>
+  test("The HTML DSL should render nodes with only attribute receivers properly") {
     val classes = PublishSubject[String]
     val vNode = button( className <-- classes, "Submit")
 
@@ -740,7 +722,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   }
 
 
-  test("The HTML DSL should work with custom tags") { _ =>
+  test("The HTML DSL should work with custom tags") {
 
     val vNode = div(tag("main")())
 
@@ -753,7 +735,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
   }
 
 
-  test("The HTML DSL should work with un-assigned booleans attributes and props") { _ =>
+  test("The HTML DSL should work with un-assigned booleans attributes and props") {
 
     val vNode = option(selected, disabled)
 
@@ -769,7 +751,7 @@ object OutWatchDomSpec extends TestSuite[Unit]{
     assertEquals(node.disabled, true)
   }
 
-  test("class attributes should be merged") { _ =>
+  test("class attributes should be merged") {
     val vNode = button(
       classToggle := ("class1" -> true),
       classToggle := ("class2" -> true),

@@ -1,32 +1,17 @@
 package outwatch
 
-import minitest.TestSuite
 import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.{html, _}
+import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
 import outwatch.dom.all._
 
 import scala.concurrent.duration.FiniteDuration
 
-import Deprecated.IgnoreWarnings.initEvent
+object ScenarioTestSpec extends JSDomSuite {
 
-object ScenarioTestSpec extends TestSuite[Unit] {
-
-  implicit val executionContext = monix.execution.Scheduler.Implicits.global
-
-  def setup(): Unit = {
-    val root = document.createElement("div")
-    root.id = "app"
-    document.body.appendChild(root)
-    ()
-  }
-
-  def tearDown(env: Unit): Unit = {
-    document.body.innerHTML = ""
-  }
-
-  testAsync("A simple counter application should work as intended") { _ =>
+  testAsync("A simple counter application should work as intended") {
     val node = for {
       handlePlus <- Handler.mouseEvents
       plusOne = handlePlus.map(_ => 1)
@@ -77,7 +62,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     } yield()).runAsync
   }
 
-  test("A simple name application should work as intended") { _ =>
+  test("A simple name application should work as intended") {
     val greetStart = "Hello ,"
 
     val node = Handler.create[String].flatMap { nameHandler =>
@@ -112,7 +97,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
     assertEquals(document.getElementById("greeting").innerHTML, greetStart + name2)
   }
 
-  test("A component should be referential transparent") { _ =>
+  test("A component should be referential transparent") {
 
     def component() = {
       Handler.create[String].flatMap { handler =>
@@ -147,7 +132,7 @@ object ScenarioTestSpec extends TestSuite[Unit] {
 
   private val delay = FiniteDuration(20,"ms")
 
-  testAsync("A todo application should work with components") { _ =>
+  testAsync("A todo application should work with components") {
 
     def TodoComponent(title: String, deleteStream: Sink[String]) =
       li(

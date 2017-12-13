@@ -1,7 +1,6 @@
 package outwatch
 
 import cats.effect.IO
-import minitest.TestSuite
 import monix.execution.Ack.Continue
 import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
@@ -12,21 +11,9 @@ import outwatch.dom.all._
 import scala.collection.mutable
 
 
-object LifecycleHookSpec extends TestSuite[Unit] {
+object LifecycleHookSpec extends JSDomSuite {
 
-  def setup(): Unit = {
-    val root = document.createElement("div")
-    root.id = "app"
-    document.body.appendChild(root)
-    ()
-  }
-
-  def tearDown(env: Unit): Unit = {
-    document.body.innerHTML = ""
-  }
-
-
-  test("Insertion hooks should be called correctly") { _ =>
+  test("Insertion hooks should be called correctly") {
 
     var switch = false
     val sink = Sink.create((_: Element) => IO {
@@ -44,7 +31,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Insertion hooks should be called correctly on merged nodes") { _ =>
+  test("Insertion hooks should be called correctly on merged nodes") {
     var switch = false
     val sink = Sink.create((_: Element) => IO{
       switch = true
@@ -68,7 +55,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Destruction hooks should be called correctly") { _ =>
+  test("Destruction hooks should be called correctly") {
 
     var switch = false
     val sink = Sink.create((_: Element) => IO {
@@ -86,7 +73,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Destruction hooks should be called correctly on merged nodes") { _ =>
+  test("Destruction hooks should be called correctly on merged nodes") {
 
     var switch = false
     val sink = Sink.create((_: Element) => IO{
@@ -111,7 +98,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Update hooks should be called correctly") { _ =>
+  test("Update hooks should be called correctly") {
 
     var switch = false
     val sink = Sink.create((_: (Element, Element)) => IO {
@@ -129,7 +116,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Update hooks should be called correctly on merged nodes") { _ =>
+  test("Update hooks should be called correctly on merged nodes") {
     var switch1 = false
     val sink1 = Sink.create((_: (Element, Element)) => IO{
       switch1 = true
@@ -154,7 +141,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Prepatch hooks should be called") { _ =>
+  test("Prepatch hooks should be called") {
 
     var switch = false
     val sink = Sink.create((_: (Option[Element], Option[Element])) => IO {
@@ -171,7 +158,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assertEquals(switch, true)
   }
 
-  test("Prepatch hooks should be called correctly on merged nodes") { _ =>
+  test("Prepatch hooks should be called correctly on merged nodes") {
     var switch1 = false
     val sink1 = Sink.create((_: (Option[Element], Option[Element])) => IO{
       switch1 = true
@@ -194,7 +181,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assertEquals(switch2, true)
   }
 
-  test("Postpatch hooks should be called") { _ =>
+  test("Postpatch hooks should be called") {
 
     var switch = false
     val sink = Sink.create((_: (Element, Element)) => IO {
@@ -212,7 +199,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Postpatch hooks should be called correctly on merged nodes") { _ =>
+  test("Postpatch hooks should be called correctly on merged nodes") {
     var switch1 = false
     val sink1 = Sink.create((_: (Element, Element)) => IO{
       switch1 = true
@@ -236,7 +223,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Hooks should be called in the correct order for modified node") { _ =>
+  test("Hooks should be called in the correct order for modified node") {
     val hooks = mutable.ArrayBuffer.empty[String]
     val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
     val prepatchSink = Sink.create((_: (Option[Element], Option[Element])) => IO{hooks += "prepatch"; Continue} )
@@ -265,7 +252,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
   }
 
 
-  test("Empty single children receiver should not trigger node update on render") { _ =>
+  test("Empty single children receiver should not trigger node update on render") {
     val hooks = mutable.ArrayBuffer.empty[String]
     val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
     val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )
@@ -283,7 +270,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assertEquals(hooks.toList, List("insert"))
   }
 
-  test("Static child nodes should not be destroyed and inserted when child stream emits") { _ =>
+  test("Static child nodes should not be destroyed and inserted when child stream emits") {
     val hooks = mutable.ArrayBuffer.empty[String]
     val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
     val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )
@@ -303,7 +290,7 @@ object LifecycleHookSpec extends TestSuite[Unit] {
     assert(!hooks.contains("destroy"), "Static child node destroyed")
   }
 
-  test("Static child nodes should be only inserted once when children stream emits") { _ =>
+  test("Static child nodes should be only inserted once when children stream emits") {
     val hooks = mutable.ArrayBuffer.empty[String]
     val insertSink = Sink.create((_: Element) => IO {hooks += "insert"; Continue})
     val updateSink = Sink.create((_: (Element, Element)) => IO{hooks += "update"; Continue} )

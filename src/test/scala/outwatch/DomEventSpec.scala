@@ -1,33 +1,18 @@
 package outwatch
 
-import minitest._
-import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom._
-import org.scalajs.dom.html
-import outwatch.dom._
-import outwatch.dom.all._
-import Deprecated.IgnoreWarnings.initEvent
 import monix.eval.Task
 import monix.execution.Ack.Continue
+import monix.reactive.subjects.PublishSubject
+import org.scalajs.dom.{html, _}
+import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.dom._
+import outwatch.dom.all._
 
 import scala.concurrent.duration.FiniteDuration
 
-object DomEventSpec extends TestSuite[Unit] {
+object DomEventSpec extends JSDomSuite {
 
-  implicit val executionContext = monix.execution.Scheduler.Implicits.global
-
-  def setup(): Unit = {
-    val root = document.createElement("div")
-    root.id = "app"
-    document.body.appendChild(root)
-    ()
-  }
-
-  override def tearDown(env: Unit): Unit = {
-    document.body.innerHTML = ""
-  }
-
-  test("EventStreams should emit and receive events correctly") { _ =>
+  test("EventStreams should emit and receive events correctly") {
 
     val vtree = Handler.mouseEvents.flatMap { observable =>
 
@@ -48,7 +33,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(document.getElementById("btn").getAttribute("disabled"), "")
   }
 
-  test("EventStreams should be converted to a generic emitter correctly") { _ =>
+  test("EventStreams should be converted to a generic emitter correctly") {
 
     val message = "ad"
 
@@ -73,7 +58,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(document.getElementById("child").innerHTML, message)
   }
 
-  test("EventStreams should be converted to a generic stream emitter correctly") { _ =>
+  test("EventStreams should be converted to a generic stream emitter correctly") {
 
     val messages = Handler.create[String].unsafeRunSync()
 
@@ -108,7 +93,7 @@ object DomEventSpec extends TestSuite[Unit] {
 
   }
 
-  test("EventStreams should be able to set the value of a text field") { _ =>
+  test("EventStreams should be able to set the value of a text field") {
     import outwatch.dom._
     import outwatch.dom.all._
 
@@ -137,7 +122,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(patched.value, "")
   }
 
-  test("EventStreams should preserve user input after setting defaultValue") { _ =>
+  test("EventStreams should preserve user input after setting defaultValue") {
     val defaultValues = PublishSubject[String]
 
     val vtree = input(id:= "input", defaultValue <-- defaultValues)
@@ -157,7 +142,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(patched.value, userInput)
   }
 
-  test("EventStreams should set input value to the same value after user change") { _ =>
+  test("EventStreams should set input value to the same value after user change") {
     val values = PublishSubject[String]
 
     val vtree = input(id:= "input", value <-- values)
@@ -176,7 +161,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(patched.value, value1)
   }
 
-  test("EventStreams should be bindable to a list of children") { _ =>
+  test("EventStreams should be bindable to a list of children") {
 
     val state = PublishSubject[Seq[VNode]]
 
@@ -220,7 +205,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(list.innerHTML.contains(third), true)
   }
 
-  test("EventStreams should be able to handle two events of the same type") { _ =>
+  test("EventStreams should be able to handle two events of the same type") {
 
     val first = Handler.create[String].unsafeRunSync()
 
@@ -245,7 +230,7 @@ object DomEventSpec extends TestSuite[Unit] {
     assertEquals(document.getElementById("second").innerHTML, messages._2)
   }
 
-  test("EventStreams should be able to be transformed by a function in place") { _ =>
+  test("EventStreams should be able to be transformed by a function in place") {
 
     val number = 42
 
@@ -269,7 +254,7 @@ object DomEventSpec extends TestSuite[Unit] {
   }
 
 
-  test("EmitterBuilder.transform should work as expected") { _ =>
+  test("EmitterBuilder.transform should work as expected") {
 
     val numbers = Observable(1, 2)
 
@@ -298,7 +283,7 @@ object DomEventSpec extends TestSuite[Unit] {
   }
 
 
-  test("EventStreams should be able to be transformed from strings") { _ =>
+  test("EventStreams should be able to be transformed from strings") {
 
     val number = 42
     val node = Handler.create[Int].flatMap { stream =>
@@ -319,7 +304,7 @@ object DomEventSpec extends TestSuite[Unit] {
   }
 
 
-  test("EventStreams should be able to toggle attributes with a boolean observer") { _ =>
+  test("EventStreams should be able to toggle attributes with a boolean observer") {
     import outwatch.util.SyntaxSugar._
 
     val someClass = "some-class"
@@ -341,7 +326,7 @@ object DomEventSpec extends TestSuite[Unit] {
   }
 
 
-  test("EventStreams should currectly be transformed from latest in observable") { _ =>
+  test("EventStreams should currectly be transformed from latest in observable") {
 
     val node = Handler.create[String].flatMap { submit =>
 
@@ -384,7 +369,7 @@ object DomEventSpec extends TestSuite[Unit] {
   }
 
 
-  test("Boolean Props should be handled corectly") { _ =>
+  test("Boolean Props should be handled corectly") {
 
     val node = Handler.create[Boolean].flatMap { checkValue =>
       div(
@@ -416,7 +401,7 @@ object DomEventSpec extends TestSuite[Unit] {
 
   private val delay = FiniteDuration(20,"ms")
 
-  testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") { _ =>
+  testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") {
     import outwatch.dom._
     import outwatch.dom.all._
 
