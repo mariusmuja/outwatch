@@ -60,7 +60,9 @@ trait Tags
   with TagsCompat
   with VNodeBuilder
   with TagHelpers
-object Tags extends Tags
+object Tags extends Tags {
+  object all extends Tags with TagsExtra
+}
 
 trait TagsExtra
   extends DocumentTags[GenericVNode, VTree]
@@ -141,7 +143,9 @@ trait SimpleStyleBuilder extends StyleBuilders[IO[Style]] {
 trait Styles
   extends styles.Styles[IO[Style]]
   with SimpleStyleBuilder
-object Styles extends Styles
+object Styles extends Styles {
+  object all extends Styles with StylesExtra
+}
 
 trait StylesExtra
   extends styles.Styles2[IO[Style]]

@@ -9,6 +9,8 @@ package object dom extends Implicits {
   type VDomModifier = IO[Modifier]
   object VDomModifier {
     val empty: VDomModifier = IO.pure(EmptyModifier)
+
+    def apply(modifiers: VDomModifier*): VDomModifier = modifiers.sequence.map(CompositeModifier)
   }
 
   type Observable[+A] = monix.reactive.Observable[A]
