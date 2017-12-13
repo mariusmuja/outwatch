@@ -91,8 +91,7 @@ private[outwatch] final case class SeparatedAttributes(
   attrs: List[Attr] = Nil,
   props: List[Prop] = Nil,
   styles: SeparatedStyles = SeparatedStyles(),
-  classToggles: List[ClassToggle] = Nil,
-
+  classToggles: List[ClassToggle] = Nil
 ) extends SnabbdomAttributes {
   @inline def ::(a: Attribute): SeparatedAttributes = a match {
     case a : Attr => copy(attrs = a :: attrs)
