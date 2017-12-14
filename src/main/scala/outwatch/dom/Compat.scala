@@ -4,13 +4,13 @@ import cats.effect.IO
 import org.scalajs.dom.{ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent}
 
 trait Handlers {
-  @deprecated("Use Handler.mouseEvents instead", "0.11.0")
+  @deprecated("Use Handler.create[MouseEvent] instead", "0.11.0")
   def createMouseHandler() = Handler.create[MouseEvent]
-  @deprecated("Use Handler.keyboardEvents instead", "0.11.0")
+  @deprecated("Use Handler.create[KeyboardEvent] instead", "0.11.0")
   def createKeyboardHandler() = Handler.create[KeyboardEvent]
-  @deprecated("Use Handler.dragEvents instead", "0.11.0")
+  @deprecated("Use Handler.create[DragEvent] instead", "0.11.0")
   def createDragHandler() = Handler.create[DragEvent]
-  @deprecated("Use Handler.clipboardEvents instead", "0.11.0")
+  @deprecated("Use Handler.create[ClipboardEvent] instead", "0.11.0")
   def createClipboardHandler() = Handler.create[ClipboardEvent]
 
   @deprecated("Use Handler.create[String] instead", "0.11.0")
@@ -24,13 +24,13 @@ trait Handlers {
   def createHandler[T](defaultValues: T*): IO[Pipe[T, T]] = Handler.create[T](defaultValues: _*)
 }
 
-object Handlers extends Handlers
-
-trait AttributesCompat { self: Attributes =>
+trait AttributesExtra { self: Attributes =>
   lazy val `class` = className
 
   lazy val `for` = forId
+}
 
+trait AttributesCompat { self: Attributes =>
   @deprecated("Use `type`, tpe or typ instead", "0.11.0")
   lazy val inputType = tpe
 

@@ -5,16 +5,16 @@ import monix.reactive.Observable
 import org.scalajs.dom.{html, _}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
-import outwatch.dom.all._
+import outwatch.dom.dsl._
 
 object ScenarioTestSpec extends JSDomSuite {
 
   testAsync("A simple counter application should work as intended") {
     val node = for {
-      handlePlus <- Handler.mouseEvents
+      handlePlus <- Handler.create[MouseEvent]
       plusOne = handlePlus.map(_ => 1)
 
-      handleMinus <- Handler.mouseEvents
+      handleMinus <- Handler.create[MouseEvent]
       minusOne = handleMinus.map(_ => -1)
 
       count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
@@ -141,8 +141,8 @@ object ScenarioTestSpec extends JSDomSuite {
     def TextFieldComponent(labelText: String, outputStream: Sink[String]) = for {
 
       textFieldStream <- Handler.create[String]
-      clickStream <- Handler.mouseEvents
-      keyStream <- Handler.keyboardEvents
+      clickStream <- Handler.create[MouseEvent]
+      keyStream <- Handler.create[KeyboardEvent]
 
       buttonDisabled = textFieldStream
         .map(_.length < 2)

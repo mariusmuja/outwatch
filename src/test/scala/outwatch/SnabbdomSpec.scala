@@ -31,7 +31,7 @@ object SnabbdomSpec extends SimpleTestSuite {
 
   test("The Snabbdom Facade should correctly patch nodes with keys") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     val clicks = outwatch.Handler.create[Int](1).unsafeRunSync()
     val nodes = clicks.map { i =>

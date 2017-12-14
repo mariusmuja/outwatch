@@ -49,18 +49,17 @@ trait Tags
           with FormTags[TagBuilder.Tag, VTree]
           with SectionTags[TagBuilder.Tag, VTree]
           with TableTags[TagBuilder.Tag, VTree]
-          with TagsCompat
           with TagBuilder
           with TagHelpers
-object Tags extends Tags {
-  object all extends Tags with TagsExtra
-}
+
+@deprecated("Use dsl.tags instead", "0.11.0")
+object Tags extends Tags
+                    with TagsCompat
 
 trait TagsExtra
   extends DocumentTags[TagBuilder.Tag, VTree]
           with MiscTags[TagBuilder.Tag, VTree]
           with TagBuilder
-object TagsExtra extends TagsExtra
 
 // all Attributes
 
@@ -69,10 +68,15 @@ trait Attributes
   with ReflectedAttrs
   with Props
   with Events
-  with Styles
-  with AttributesCompat
+  with AttributesExtra
+  with AttributeHelpers
   with OutwatchAttributes
+
+@deprecated("Use dsl.attributes instead", "0.11.0")
 object Attributes extends Attributes
+                          with Styles
+                          with AttributesCompat
+                          with Handlers
 
 // Attrs
 
@@ -83,7 +87,6 @@ trait Attrs
   override protected def attr[V](key: String, codec: Codec[V, String]): AttrBuilder[V] =
     new AttrBuilder(key, CodecBuilder.encodeAttribute(codec))
 }
-object Attrs extends Attrs
 
 // Reflected attrs
 
@@ -101,10 +104,8 @@ trait ReflectedAttrs
   ) = new AttrBuilder(attrKey, CodecBuilder.encodeAttribute(attrCodec))
     //or: new PropertyBuilder(propKey, propCodec.encode)
 }
-object ReflectedAttrs extends ReflectedAttrs
 
 // Props
-
 trait Props
   extends props.Props[DomTypes.PropertyBuilder]
   with builders.PropBuilder[DomTypes.PropertyBuilder] {
@@ -112,17 +113,15 @@ trait Props
   override protected def prop[V, DomV](key: String, codec: Codec[V, DomV]): PropBuilder[V] =
     new PropBuilder(key, codec.encode)
 }
-object Props extends Props
+
 
 // Events
-
 trait Events
   extends HTMLElementEventProps[SimpleEmitterBuilder]
   with builders.EventPropBuilder[SimpleEmitterBuilder, dom.Event] {
 
   override def eventProp[V <: dom.Event](key: String): SimpleEmitterBuilder[V] =  EmitterBuilder[V](key)
 }
-object Events extends Events
 
 
 // Window / Document events
@@ -136,11 +135,11 @@ private[outwatch] abstract class ObservableEventPropBuilder(target: dom.EventTar
   }
 }
 
-object WindowEvents
+abstract class WindowEvents
   extends ObservableEventPropBuilder(dom.window)
   with WindowEventProps[Observable]
 
-object DocumentEvents
+abstract class DocumentEvents
   extends ObservableEventPropBuilder(dom.document)
   with DocumentEventProps[Observable]
 
@@ -155,15 +154,7 @@ private[outwatch] trait SimpleStyleBuilder extends builders.StyleBuilders[IO[Sty
 trait Styles
   extends styles.Styles[IO[Style]]
   with SimpleStyleBuilder
-object Styles extends Styles {
-  object all extends Styles with StylesExtra
-}
 
 trait StylesExtra
   extends styles.Styles2[IO[Style]]
   with SimpleStyleBuilder
-object StylesExtra extends StylesExtra
-
-// everything
-
-object all extends Attributes with Tags with HandlerFactories

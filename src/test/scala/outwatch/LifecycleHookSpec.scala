@@ -6,7 +6,7 @@ import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom._
 import outwatch.dom._
-import outwatch.dom.all._
+import outwatch.dom.dsl._
 
 import scala.collection.mutable
 

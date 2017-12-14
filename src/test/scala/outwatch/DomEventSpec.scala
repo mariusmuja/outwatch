@@ -6,13 +6,13 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{html, _}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
-import outwatch.dom.all._
+import outwatch.dom.dsl._
 
 object DomEventSpec extends JSDomSuite {
 
   test("EventStreams should emit and receive events correctly") {
 
-    val vtree = Handler.mouseEvents.flatMap { observable =>
+    val vtree = Handler.create[MouseEvent].flatMap { observable =>
 
       val buttonDisabled = observable.map(_ => true).startWith(Seq(false))
       
@@ -93,7 +93,7 @@ object DomEventSpec extends JSDomSuite {
 
   test("EventStreams should be able to set the value of a text field") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     val values = PublishSubject[String]
 
@@ -401,15 +401,15 @@ object DomEventSpec extends JSDomSuite {
 
   testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     var docClicked = false
     var winClicked = false
-    WindowEvents.onClick.subscribe { ev =>
+    events.window.onClick.subscribe { ev =>
       winClicked = true
       Continue
     }
-    DocumentEvents.onClick.subscribe { ev =>
+    events.document.onClick.subscribe { ev =>
       docClicked = true
       Continue
     }

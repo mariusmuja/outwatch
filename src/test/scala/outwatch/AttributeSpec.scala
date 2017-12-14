@@ -1,9 +1,8 @@
 package outwatch
 
 import minitest._
-import outwatch.dom.Styles.all.{opacity, transition}
 import outwatch.dom._
-import outwatch.dom.all._
+import outwatch.dom.dsl._
 
 import scala.scalajs.js
 

@@ -6,7 +6,7 @@ import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{document, html}
 import outwatch.dom._
-import outwatch.dom.all._
+import outwatch.dom.dsl._
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
 
@@ -41,6 +41,8 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("VDomModifiers should be separated correctly") {
+    import dsl.attributes
+
     val modifiers = Seq(
       Attribute("class", "red"),
       EmptyModifier,
@@ -51,9 +53,9 @@ object OutWatchDomSpec extends JSDomSuite {
       CompositeModifier(
         Seq(
           div(),
-          Attributes.`class` := "blue",
-          Attributes.onClick(1) --> Sink.create[Int](_ => IO.pure(Continue)),
-          Attributes.hidden <-- Observable(false)
+          attributes.`class` := "blue",
+          attributes.onClick(1) --> Sink.create[Int](_ => IO.pure(Continue)),
+          attributes.hidden <-- Observable(false)
         ).map(_.unsafeRunSync())
       )
     )
@@ -394,7 +396,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
   test("The HTML DSL should construct VTrees properly") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     val vtree = div(cls := "red", id := "msg",
       span("Hello")
@@ -405,7 +407,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
   test("The HTML DSL should construct VTrees with optional children properly") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     val vtree = div(cls := "red", id := "msg",
       Option(span("Hello")),
@@ -417,7 +419,7 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("The HTML DSL should construct VTrees with boolean attributes") {
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     def boolBuilder(name: String) = new AttrBuilder[Boolean](name, identity[Boolean])
     def stringBuilder(name: String) = new AttrBuilder[Boolean](name, _.toString)
@@ -439,7 +441,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
   test("The HTML DSL should patch into the DOM properly") {
     import outwatch.dom._
-    import outwatch.dom.all._
+    import outwatch.dom.dsl._
 
     val message = "Test"
     val vtree = div(cls := "blue", id := "test",

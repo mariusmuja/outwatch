@@ -1,6 +1,7 @@
 package outwatch.dom
 
 import outwatch.dom.helpers._
+import org.scalajs.dom._
 
 /** Trait containing the contents of the `Attributes` module, so they can be
   * mixed in to other objects if needed. This should contain "all" attributes
@@ -11,9 +12,6 @@ trait OutwatchAttributes
   with SnabbdomKeyAttributes
   with OutWatchLifeCycleAttributes
   with TypedInputEventProps
-  with AttributeHelpers
-
-object OutwatchAttributes extends OutwatchAttributes
 
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributes {
@@ -61,19 +59,17 @@ trait SnabbdomKeyAttributes {
   lazy val key = KeyBuilder
 }
 
-
-
 trait TypedInputEventProps {
-  import org.scalajs.dom
+  import dsl.attributes.events._
 
   /** The input event is fired when an element is checked. */
-  lazy val inputChecked = Events.onChange.checked[dom.html.Input]
+  lazy val inputChecked = onChange.checked[html.Input]
 
   /** The input event is fired when an element gets user input. */
-  lazy val inputNumber  = Events.onInput.numberValue[dom.html.Input]
+  lazy val inputNumber  = onInput.numberValue[html.Input]
 
   /** The input event is fired when an element gets user input. */
-  lazy val inputString  = Events.onInput.stringValue[dom.html.Input]
+  lazy val inputString  = onInput.stringValue[html.Input]
 }
 
 trait AttributeHelpers {
