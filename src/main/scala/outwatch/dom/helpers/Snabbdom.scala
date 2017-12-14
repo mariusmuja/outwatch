@@ -45,19 +45,17 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
   type jsDict[T] = js.Dictionary[T]
 
-  def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[DataObject.StyleValue], jsDict[Boolean]) = {
+  def toSnabbdom: (jsDict[Attr.Value], jsDict[Prop.Value], jsDict[DataObject.StyleValue]) = {
     val attrsDict = js.Dictionary[Attr.Value]()
     val propsDict = js.Dictionary[Prop.Value]()
-    val classToggleDict = js.Dictionary[Boolean]()
 
     attrs.foreach {
       case a: BasicAttr => attrsDict(a.title) = a.value
       case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
     }
     props.foreach { p => propsDict(p.title) = p.value }
-    classToggles.foreach{ c => classToggleDict(c.title) = c.toggle }
 
-    (attrsDict, propsDict, styles.toSnabbdom , classToggleDict)
+    (attrsDict, propsDict, styles.toSnabbdom)
   }
 
   private def merge[T](first: js.Dictionary[T], second: js.Dictionary[T]) = {
@@ -69,12 +67,11 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
   def updateDataObject(obj: DataObject): DataObject = {
 
-    val (attrs, props, style, classToggle) = toSnabbdom
+    val (attrs, props, style) = toSnabbdom
     DataObject(
       attrs = merge(obj.attrs, attrs),
       props = merge(obj.props, props),
       style = merge(obj.style, style),
-      `class` = merge(obj.`class`, classToggle),
       on = obj.on, hook = obj.hook, key = obj.key
     )
   }
@@ -189,9 +186,9 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
       keyOption.map(_.value).orUndefined
     }
 
-    val (attrs, props, style, classToggle) = properties.attributes.toSnabbdom
+    val (attrs, props, style) = properties.attributes.toSnabbdom
     DataObject(
-      attrs, props, style, classToggle, emitters.toSnabbdom,
+      attrs, props, style, emitters.toSnabbdom,
       properties.hooks.toSnabbdom(receivers),
       key
     )

@@ -55,14 +55,6 @@ final class PropBuilder[T](val name: String, encode: T => Prop.Value) extends At
   @inline private[outwatch] def assign(value: T) = Prop(name, encode(value))
 }
 
-// ClassToggles
-
-final class ClassToggleBuilder(
-  val name: String
-) extends AttributeBuilder[(String, Boolean), ClassToggle] {
-  @inline private[outwatch] def assign(value: (String, Boolean)) = ClassToggle(value._1, value._2)
-}
-
 // Styles
 final class BasicStyleBuilder[T](val name: String) extends AnyVal with AttributeBuilder[T, BasicStyle] {
   @inline private[outwatch] def assign(value: T) = BasicStyle(name, value.toString)

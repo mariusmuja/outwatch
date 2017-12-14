@@ -93,9 +93,6 @@ trait ReflectedAttrs
 
   override lazy val className = new AccumAttrBuilder[String]("class", _.toString, _ + " " + _)
 
-  // the name here doesn't matter, but should be different then any other attribute/prop name
-  def classToggle: ClassToggleBuilder = new ClassToggleBuilder("classToggle")
-
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,
     propKey: String,

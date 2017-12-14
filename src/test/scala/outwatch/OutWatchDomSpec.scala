@@ -751,20 +751,4 @@ object OutWatchDomSpec extends JSDomSuite {
     assertEquals(node.disabled, true)
   }
 
-  test("class attributes should be merged") {
-    val vNode = button(
-      classToggle := ("class1" -> true),
-      classToggle := ("class2" -> true),
-      "Submit"
-    )
-
-    val node = document.createElement("div")
-    document.body.appendChild(node)
-
-    OutWatch.renderInto(node, vNode).unsafeRunSync()
-
-    assertEquals(node.innerHTML, """<button class="class1 class2">Submit</button>""")
-
-  }
-
 }

@@ -97,8 +97,6 @@ object Attr {
   type Value = DataObject.AttrValue
 }
 
-final case class ClassToggle(title: String, toggle: Boolean) extends TitledAttribute
-
 final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
 object Prop {
   type Value = DataObject.PropValue
