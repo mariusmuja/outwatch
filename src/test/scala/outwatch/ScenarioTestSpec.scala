@@ -9,7 +9,6 @@ import outwatch.dom.dsl._
 object ScenarioTestSpec extends JSDomSuite {
 
   test("A simple counter application should work as intended") {
-
     implicit val scheduler = trampolineScheduler
 
     val node = for {
@@ -38,15 +37,15 @@ object ScenarioTestSpec extends JSDomSuite {
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
 
-    assertEquals(document.getElementById("counter").innerHTML, 0.toString)
+    document.getElementById("counter").innerHTML shouldBe 0.toString
 
     document.getElementById("minus").dispatchEvent(event)
 
-    assertEquals(document.getElementById("counter").innerHTML, (-1).toString)
+    document.getElementById("counter").innerHTML shouldBe (-1).toString
 
     for (i <- 0 to 10) yield {
       document.getElementById("plus").dispatchEvent(event)
-      assertEquals(document.getElementById("counter").innerHTML, i.toString)
+      document.getElementById("counter").innerHTML shouldBe i.toString
     }
     ()
   }
@@ -76,14 +75,14 @@ object ScenarioTestSpec extends JSDomSuite {
     document.getElementById("input").asInstanceOf[html.Input].value = name
     document.getElementById("input").dispatchEvent(evt)
 
-    assertEquals(document.getElementById("greeting").innerHTML, greetStart + name)
+    document.getElementById("greeting").innerHTML shouldBe greetStart + name
 
     val name2 = "Peter"
 
     document.getElementById("input").asInstanceOf[html.Input].value = name2
     document.getElementById("input").dispatchEvent(evt)
 
-    assertEquals(document.getElementById("greeting").innerHTML, greetStart + name2)
+    document.getElementById("greeting").innerHTML shouldBe greetStart + name2
   }
 
   test("A component should be referential transparent") {
@@ -115,9 +114,8 @@ object ScenarioTestSpec extends JSDomSuite {
 
     element2.getElementsByTagName("button").item(0).dispatchEvent(clickEvt)
 
-    assertEquals(element1.innerHTML, element2.innerHTML)
+    element1.innerHTML shouldBe element2.innerHTML
   }
-
 
   test("A todo application should work with components") {
 
@@ -200,39 +198,40 @@ object ScenarioTestSpec extends JSDomSuite {
     val submitButton = document.getElementById("submit")
     val list = document.getElementById("list")
 
-    assertEquals(list.childElementCount, 0)
+    list.childElementCount shouldBe 0
 
     val todo = "fold laundry"
     inputElement.value = todo
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 1)
+    list.childElementCount shouldBe 1
 
     val todo2 = "wash dishes"
     inputElement.value = todo2
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 2)
+    list.childElementCount shouldBe 2
 
     val todo3 = "clean windows"
     inputElement.value = todo3
     inputElement.dispatchEvent(inputEvt)
     submitButton.dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 3)
+    list.childElementCount shouldBe 3
 
     document.getElementById(todo2).dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 2)
+    list.childElementCount shouldBe 2
 
     document.getElementById(todo3).dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 1)
+    list.childElementCount shouldBe 1
 
     document.getElementById(todo).dispatchEvent(clickEvt)
 
-    assertEquals(list.childElementCount, 0)
+    list.childElementCount shouldBe 0
+
   }
 }

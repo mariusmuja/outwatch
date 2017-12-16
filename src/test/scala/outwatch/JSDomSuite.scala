@@ -20,7 +20,16 @@ trait EasySubscribe {
   }
 }
 
-trait JSDomSuite extends TestSuite[Unit] with EasySubscribe {
+trait TestDSL { self: TestSuite[_] =>
+
+  implicit class ShouldBe[T](received: => T) {
+    def shouldBe(expected: => T): Unit = assertEquals(received, expected)
+    def shouldNotBe(expected: => T): Unit = assert(received != expected)
+  }
+
+}
+
+trait JSDomSuite extends TestSuite[Unit] with EasySubscribe with TestDSL {
 
   implicit val scheduler = Scheduler.global
   val trampolineScheduler = TrampolineScheduler(scheduler, SynchronousExecution)

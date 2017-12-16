@@ -23,11 +23,11 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(onInsert --> sink)
 
-    assertEquals(switch, false)
+    switch shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
+    switch shouldBe true
   }
 
 
@@ -45,13 +45,13 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(onInsert --> sink)(onInsert --> sink2)
 
-    assertEquals(switch, false)
-    assertEquals(switch2, false)
+    switch shouldBe false
+    switch2 shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
-    assertEquals(switch2, true)
+    switch shouldBe true
+    switch2 shouldBe true
   }
 
 
@@ -65,11 +65,11 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(child <-- Observable(span(onDestroy --> sink), div("Hasdasd")))
 
-    assertEquals(switch, false)
+    switch shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
+    switch shouldBe true
   }
 
 
@@ -88,13 +88,13 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(child <-- Observable(span(onDestroy --> sink)(onDestroy --> sink2), div("Hasdasd")))
 
-    assertEquals(switch, false)
-    assertEquals(switch2, false)
+    switch shouldBe false
+    switch2 shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
-    assertEquals(switch2, true)
+    switch shouldBe true
+    switch2 shouldBe true
   }
 
 
@@ -108,11 +108,11 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(child <-- Observable(span(onUpdate --> sink, "Hello"), span(onUpdate --> sink, "Hey")))
 
-    assertEquals(switch, false)
+    switch shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
+    switch shouldBe true
   }
 
 
@@ -132,12 +132,12 @@ object LifecycleHookSpec extends JSDomSuite {
     val node = div(child <-- message, onUpdate --> sink1)(onUpdate --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
-    assertEquals(switch1, false)
-    assertEquals(switch2, false)
+    switch1 shouldBe false
+    switch2 shouldBe false
 
     message.onNext("wursi")
-    assertEquals(switch1, true)
-    assertEquals(switch2, true)
+    switch1 shouldBe true
+    switch2 shouldBe true
   }
 
 
@@ -151,11 +151,11 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(child <-- Observable(span("Hello")), span(onPrepatch --> sink, "Hey"))
 
-    assertEquals(switch, false)
+    switch shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
+    switch shouldBe true
   }
 
   test("Prepatch hooks should be called correctly on merged nodes") {
@@ -173,12 +173,13 @@ object LifecycleHookSpec extends JSDomSuite {
     val node = div(child <-- message, onPrepatch --> sink1)(onPrepatch --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
-    assertEquals(switch1, false)
-    assertEquals(switch2, false)
+    switch1 shouldBe false
+    switch2 shouldBe false
 
     message.onNext("wursi")
-    assertEquals(switch1, true)
-    assertEquals(switch2, true)
+
+    switch1 shouldBe true
+    switch2 shouldBe true
   }
 
   test("Postpatch hooks should be called") {
@@ -191,11 +192,11 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val node = div(child <-- Observable("message"), onPostpatch --> sink, "Hey")
 
-    assertEquals(switch, false)
+    switch shouldBe false
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(switch, true)
+    switch shouldBe true
   }
 
 
@@ -214,12 +215,13 @@ object LifecycleHookSpec extends JSDomSuite {
     val node = div(child <-- message, onPostpatch --> sink1)(onPostpatch --> sink2)
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
-    assertEquals(switch1, false)
-    assertEquals(switch2, false)
+    switch1 shouldBe false
+    switch2 shouldBe false
 
     message.onNext("wursi")
-    assertEquals(switch1, true)
-    assertEquals(switch2, true)
+
+    switch1 shouldBe true
+    switch2 shouldBe true
   }
 
 
@@ -240,15 +242,15 @@ object LifecycleHookSpec extends JSDomSuite {
       onDestroy --> destroySink
     )
 
-    assertEquals(hooks.toList, List())
+    hooks.toList shouldBe List.empty
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(hooks.toList, List("insert"))
+    hooks.toList shouldBe List("insert")
 
     message.onNext("next")
 
-    assertEquals(hooks.toList, List("insert", "prepatch", "update", "postpatch"))
+    hooks.toList shouldBe List("insert", "prepatch", "update", "postpatch")
   }
 
 
@@ -263,11 +265,11 @@ object LifecycleHookSpec extends JSDomSuite {
       onUpdate --> updateSink
     )
 
-    assertEquals(hooks.toList, List())
+    hooks.toList shouldBe List.empty
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    assertEquals(hooks.toList, List("insert"))
+    hooks.toList shouldBe  List("insert")
   }
 
   test("Static child nodes should not be destroyed and inserted when child stream emits") {
@@ -281,13 +283,13 @@ object LifecycleHookSpec extends JSDomSuite {
       child <-- message.map(span(_))
     )
 
-    assertEquals(hooks.toList, List())
+    hooks.toList shouldBe List.empty
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     message.onNext("next")
 
-    assert(!hooks.contains("destroy"), "Static child node destroyed")
+    hooks.contains("destroy") shouldBe false
   }
 
   test("Static child nodes should be only inserted once when children stream emits") {
@@ -301,7 +303,7 @@ object LifecycleHookSpec extends JSDomSuite {
       span("Hello", onInsert --> insertSink, onUpdate --> updateSink,onDestroy --> destroySink)
     )
 
-    assertEquals(hooks.toList, List())
+    hooks.toList shouldBe List.empty
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
@@ -309,8 +311,7 @@ object LifecycleHookSpec extends JSDomSuite {
 
     messageList.onNext(Seq("one", "two"))
 
-    val count = hooks.count(_ == "insert")
-    assert(count == 1, s"Static child node inserted $count times")
+    hooks.count(_ == "insert") shouldBe 1
   }
 
 }

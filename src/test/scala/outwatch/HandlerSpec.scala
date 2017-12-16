@@ -13,16 +13,16 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 15)
-    assertEquals(handlerValue, (("harals", 15)))
+    lensedValue shouldBe 15
+    handlerValue shouldBe (("harals", 15))
 
     handler.observer.onNext(("peter", 12))
-    assertEquals(lensedValue, 12)
-    assertEquals(handlerValue, (("peter", 12)))
+    lensedValue shouldBe 12
+    handlerValue shouldBe (("peter", 12))
 
     lensed.observer.onNext(-1)
-    assertEquals(lensedValue, -1)
-    assertEquals(handlerValue, (("peter", -1)))
+    lensedValue shouldBe -1
+    handlerValue shouldBe (("peter", -1))
   }
 
   test("Handler should mapSource") {
@@ -36,12 +36,12 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 14)
-    assertEquals(handlerValue, 15)
+    lensedValue shouldBe 14
+    handlerValue shouldBe 15
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 11)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 11
+    handlerValue shouldBe 12
   }
 
   test("Handler should transformSource") {
@@ -55,12 +55,12 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 14)
-    assertEquals(handlerValue, 15)
+    lensedValue shouldBe 14
+    handlerValue shouldBe 15
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 11)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 11
+    handlerValue shouldBe 12
   }
 
   test("Handler should mapSink") {
@@ -74,12 +74,12 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 16)
-    assertEquals(handlerValue, 16)
+    lensedValue shouldBe 16
+    handlerValue shouldBe 16
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 12)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 12
+    handlerValue shouldBe 12
   }
 
   test("Handler should transformSink") {
@@ -93,12 +93,12 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 16)
-    assertEquals(handlerValue, 16)
+    lensedValue shouldBe 16
+    handlerValue shouldBe 16
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 12)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 12
+    handlerValue shouldBe 12
   }
 
   test("Handler should imap") {
@@ -112,12 +112,12 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 15)
-    assertEquals(handlerValue, 16)
+    lensedValue shouldBe 15
+    handlerValue shouldBe 16
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 11)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 11
+    handlerValue shouldBe 12
   }
 
   test("Handler should transformHandler") {
@@ -131,11 +131,11 @@ object HandlerSpec extends JSDomSuite {
     lensed(lensedValue = _)
 
     lensed.observer.onNext(15)
-    assertEquals(lensedValue, 15)
-    assertEquals(handlerValue, 16)
+    lensedValue shouldBe 15
+    handlerValue shouldBe 16
 
     handler.observer.onNext(12)
-    assertEquals(lensedValue, 11)
-    assertEquals(handlerValue, 12)
+    lensedValue shouldBe 11
+    handlerValue shouldBe 12
   }
 }

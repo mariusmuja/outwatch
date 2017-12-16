@@ -13,20 +13,20 @@ object DomEventSpec extends JSDomSuite {
     val vtree = Handler.create[MouseEvent].flatMap { observable =>
 
       val buttonDisabled = observable.map(_ => true).startWith(Seq(false))
-      
+
       div(id := "click", onClick --> observable,
         button(id := "btn", disabled <-- buttonDisabled)
       )
     }
 
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
-    assertEquals(document.getElementById("btn").hasAttribute("disabled"), false)
+    document.getElementById("btn").hasAttribute("disabled") shouldBe false
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
-    assertEquals(document.getElementById("btn").getAttribute("disabled"), "")
+    document.getElementById("btn").getAttribute("disabled") shouldBe ""
   }
 
   test("EventStreams should be converted to a generic emitter correctly") {
@@ -41,17 +41,20 @@ object DomEventSpec extends JSDomSuite {
 
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
-    assertEquals(document.getElementById("child").innerHTML, "")
+    document.getElementById("child").innerHTML shouldBe ""
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
-
     document.getElementById("click").dispatchEvent(event)
-    assertEquals(document.getElementById("child").innerHTML, message)
+
+    document.getElementById("child").innerHTML shouldBe message
 
     //dispatch another event
     document.getElementById("click").dispatchEvent(event)
-    assertEquals(document.getElementById("child").innerHTML, message)
+
+    document.getElementById("child").innerHTML shouldBe message
+
+
   }
 
   test("EventStreams should be converted to a generic stream emitter correctly") {
@@ -66,27 +69,28 @@ object DomEventSpec extends JSDomSuite {
 
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
-    assertEquals(document.getElementById("child").innerHTML, "")
+    document.getElementById("child").innerHTML shouldBe ""
 
     val firstMessage = "First"
     messages.observer.onNext(firstMessage)
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
-
     document.getElementById("click").dispatchEvent(event)
-    assertEquals(document.getElementById("child").innerHTML, firstMessage)
+
+    document.getElementById("child").innerHTML shouldBe firstMessage
 
     //dispatch another event
     document.getElementById("click").dispatchEvent(event)
-    assertEquals(document.getElementById("child").innerHTML, firstMessage)
+
+    document.getElementById("child").innerHTML shouldBe firstMessage
 
     val secondMessage = "Second"
     messages.observer.onNext(secondMessage)
 
     document.getElementById("click").dispatchEvent(event)
-    assertEquals(document.getElementById("child").innerHTML, secondMessage)
 
+    document.getElementById("child").innerHTML shouldBe secondMessage
   }
 
   test("EventStreams should be able to set the value of a text field") {
@@ -101,21 +105,21 @@ object DomEventSpec extends JSDomSuite {
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
 
-    assertEquals(patched.value, "")
+    patched.value shouldBe ""
 
     val value1 = "Hello"
     values.onNext(value1)
 
-    assertEquals(patched.value, value1)
+    patched.value shouldBe value1
 
     val value2 = "World"
     values.onNext(value2)
 
-    assertEquals(patched.value, value2)
+    patched.value shouldBe value2
 
     values.onNext("")
 
-    assertEquals(patched.value, "")
+    patched.value shouldBe ""
   }
 
   test("EventStreams should preserve user input after setting defaultValue") {
@@ -125,17 +129,17 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
-    assertEquals(patched.value, "")
+    patched.value shouldBe ""
 
     val value1 = "Hello"
     defaultValues.onNext(value1)
-    assertEquals(patched.value, value1)
+    patched.value shouldBe value1
 
     val userInput = "user input"
     patched.value = userInput
 
     defaultValues.onNext("GoodByte")
-    assertEquals(patched.value, userInput)
+    patched.value shouldBe userInput
   }
 
   test("EventStreams should set input value to the same value after user change") {
@@ -145,16 +149,16 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
 
     val patched = document.getElementById("input").asInstanceOf[html.Input]
-    assertEquals(patched.value, "")
+    patched.value shouldBe ""
 
     val value1 = "Hello"
     values.onNext(value1)
-    assertEquals(patched.value, value1)
+    patched.value shouldBe value1
 
     patched.value = "user input"
 
     values.onNext(value1)
-    assertEquals(patched.value, value1)
+    patched.value shouldBe value1
   }
 
   test("EventStreams should be bindable to a list of children") {
@@ -169,36 +173,36 @@ object DomEventSpec extends JSDomSuite {
 
     val list = document.getElementById("list")
 
-    assertEquals(list.childElementCount, 0)
+    list.childElementCount shouldBe 0
 
     val first = "Test"
 
     state.onNext(Seq(span(first)))
 
-    assertEquals(list.childElementCount, 1)
-    assertEquals(list.innerHTML.contains(first), true)
+    list.childElementCount shouldBe 1
+    list.innerHTML.contains(first) shouldBe true
 
     val second = "Hello"
     state.onNext(Seq(span(first), span(second)))
 
-    assertEquals(list.childElementCount, 2)
-    assertEquals(list.innerHTML.contains(first), true)
-    assertEquals(list.innerHTML.contains(second), true)
+    list.childElementCount shouldBe 2
+    list.innerHTML.contains(first) shouldBe true
+    list.innerHTML.contains(second) shouldBe true
 
     val third = "World"
 
     state.onNext(Seq(span(first), span(second), span(third)))
 
-    assertEquals(list.childElementCount, 3)
-    assertEquals(list.innerHTML.contains(first), true)
-    assertEquals(list.innerHTML.contains(second), true)
-    assertEquals(list.innerHTML.contains(third), true)
+    list.childElementCount shouldBe 3
+    list.innerHTML.contains(first) shouldBe true
+    list.innerHTML.contains(second) shouldBe true
+    list.innerHTML.contains(third) shouldBe true
 
     state.onNext(Seq(span(first), span(third)))
 
-    assertEquals(list.childElementCount, 2)
-    assertEquals(list.innerHTML.contains(first), true)
-    assertEquals(list.innerHTML.contains(third), true)
+    list.childElementCount shouldBe 2
+    list.innerHTML.contains(first) shouldBe true
+    list.innerHTML.contains(third) shouldBe true
   }
 
   test("EventStreams should be able to handle two events of the same type") {
@@ -222,8 +226,8 @@ object DomEventSpec extends JSDomSuite {
 
     document.getElementById("click").dispatchEvent(event)
 
-    assertEquals(document.getElementById("first").innerHTML, messages._1)
-    assertEquals(document.getElementById("second").innerHTML, messages._2)
+    document.getElementById("first").innerHTML shouldBe messages._1
+    document.getElementById("second").innerHTML shouldBe messages._2
   }
 
   test("EventStreams should be able to be transformed by a function in place") {
@@ -244,9 +248,10 @@ object DomEventSpec extends JSDomSuite {
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
 
+
     document.getElementById("click").dispatchEvent(event)
 
-    assertEquals(document.getElementById("num").innerHTML, number.toString)
+    document.getElementById("num").innerHTML shouldBe number.toString
   }
 
 
@@ -263,7 +268,6 @@ object DomEventSpec extends JSDomSuite {
       div(
         button(id := "click", onClick.transform(transformer) --> stream),
         span(id := "num", children <-- state.map(nums => nums.map(num => span(num.toString))))
-
       )
     }
 
@@ -275,7 +279,7 @@ object DomEventSpec extends JSDomSuite {
 
     document.getElementById("click").dispatchEvent(event)
 
-    assertEquals(document.getElementById("num").innerHTML, "<span>1</span><span>2</span>")
+    document.getElementById("num").innerHTML shouldBe "<span>1</span><span>2</span>"
   }
 
 
@@ -294,9 +298,10 @@ object DomEventSpec extends JSDomSuite {
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)
 
+
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    assertEquals(document.getElementById("num").innerHTML, number.toString)
+    document.getElementById("num").innerHTML shouldBe number.toString
   }
 
 
@@ -318,7 +323,7 @@ object DomEventSpec extends JSDomSuite {
 
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    assertEquals(document.getElementById("toggled").classList.contains(someClass), true)
+    document.getElementById("toggled").classList.contains(someClass) shouldBe true
   }
 
 
@@ -361,7 +366,7 @@ object DomEventSpec extends JSDomSuite {
 
     submitButton.dispatchEvent(clickEvt)
 
-    assertEquals(document.getElementById("items").childNodes.length, 1)
+    document.getElementById("items").childNodes.length shouldBe 1
   }
 
 
@@ -381,18 +386,18 @@ object DomEventSpec extends JSDomSuite {
     val onButton = document.getElementById("on_button")
     val offButton = document.getElementById("off_button")
 
-    assertEquals(checkbox.checked, false)
+    checkbox.checked shouldBe false
 
     val clickEvt = document.createEvent("Events")
     initEvent(clickEvt)("click", true, true)
 
     onButton.dispatchEvent(clickEvt)
 
-    assertEquals(checkbox.checked, true)
+    checkbox.checked shouldBe true
 
     offButton.dispatchEvent(clickEvt)
 
-    assertEquals(checkbox.checked, false)
+    checkbox.checked shouldBe false
   }
 
 
@@ -417,8 +422,8 @@ object DomEventSpec extends JSDomSuite {
 
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    assertEquals(winClicked, true)
-    assertEquals(docClicked, true)
+    winClicked shouldBe true
+    docClicked shouldBe true
   }
 
 }

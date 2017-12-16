@@ -30,13 +30,13 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val SeparatedProperties(att, hooks, keys) = properties.foldRight(SeparatedProperties())((p, sp) => p :: sp)
 
-    assertEquals(hooks.insertHooks.length, 2)
-    assertEquals(hooks.prePatchHooks.length, 1)
-    assertEquals(hooks.updateHooks.length,1)
-    assertEquals(hooks.postPatchHooks.length,1)
-    assertEquals(hooks.destroyHooks.length, 1)
-    assertEquals(att.attrs.length, 1)
-    assertEquals(keys.length, 0)
+    hooks.insertHooks.length shouldBe 2
+    hooks.prePatchHooks.length shouldBe 1
+    hooks.updateHooks.length shouldBe 1
+    hooks.postPatchHooks.length shouldBe 1
+    hooks.destroyHooks.length shouldBe 1
+    att.attrs.length shouldBe 1
+    keys.length shouldBe 0
   }
 
   test("VDomModifiers should be separated correctly") {
@@ -62,12 +62,12 @@ object OutWatchDomSpec extends JSDomSuite {
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
       SeparatedModifiers.from(modifiers)
 
-    assertEquals(emitters.emitters.length, 2)
-    assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attrs.length, 2)
-    assertEquals(childNodes.length, 3)
-    assertEquals(streamStatus.numChild, 0)
-    assertEquals(streamStatus.numChildren, 0)
+    emitters.emitters.length shouldBe 2
+    receivers.length shouldBe 2
+    properties.attributes.attrs.length shouldBe 2
+    childNodes.length shouldBe 3
+    streamStatus.numChild shouldBe 0
+    streamStatus.numChildren shouldBe 0
   }
 
   test("VDomModifiers should be separated correctly with children") {
@@ -86,12 +86,12 @@ object OutWatchDomSpec extends JSDomSuite {
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
       SeparatedModifiers.from(modifiers)
 
-    assertEquals(emitters.emitters.length, 3)
-    assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attrs.length, 1)
-    assertEquals(childNodes.length, 2)
-    assertEquals(streamStatus.numChild, 0)
-    assertEquals(streamStatus.numChildren, 0)
+    emitters.emitters.length shouldBe 3
+    receivers.length shouldBe 2
+    properties.attributes.attrs.length shouldBe 1
+    childNodes.length shouldBe 2
+    streamStatus.numChild shouldBe 0
+    streamStatus.numChildren shouldBe 0
   }
 
   test("VDomModifiers should be separated correctly with string children") {
@@ -110,10 +110,10 @@ object OutWatchDomSpec extends JSDomSuite {
     val SeparatedModifiers(properties, emitters, receivers, Children.StringModifiers(stringMods)) =
       SeparatedModifiers.from(modifiers)
 
-    assertEquals(emitters.emitters.length, 3)
-    assertEquals(receivers.length, 2)
-    assertEquals(properties.attributes.attrs.length, 1)
-    assertEquals(stringMods.map(_.string).toSet, Set("text", "text2"))
+    emitters.emitters.length shouldBe 3
+    receivers.length shouldBe 2
+    properties.attributes.attrs.length shouldBe 1
+    stringMods.map(_.string).toSet shouldBe Set("text", "text2")
   }
 
   test("VDomModifiers should be separated correctly with children and properties") {
@@ -136,18 +136,18 @@ object OutWatchDomSpec extends JSDomSuite {
     val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
       SeparatedModifiers.from(modifiers)
 
-    assertEquals(emitters.emitters.map(_.eventType), List("click", "input", "keyup"))
-    assertEquals(properties.hooks.insertHooks.length, 1)
-    assertEquals(properties.hooks.prePatchHooks.length, 1)
-    assertEquals(properties.hooks.updateHooks.length, 1)
-    assertEquals(properties.hooks.postPatchHooks.length, 1)
-    assertEquals(properties.hooks.destroyHooks.length, 0)
-    assertEquals(properties.attributes.attrs.length, 1)
-    assertEquals(receivers.length, 2)
-    assertEquals(properties.keys.length, 0)
-    assertEquals(childNodes.length, 2)
-    assertEquals(streamStatus.numChild, 0)
-    assertEquals(streamStatus.numChildren, 1)
+    emitters.emitters.map(_.eventType) shouldBe List("click", "input", "keyup")
+    properties.hooks.insertHooks.length shouldBe 1
+    properties.hooks.prePatchHooks.length shouldBe 1
+    properties.hooks.updateHooks.length shouldBe 1
+    properties.hooks.postPatchHooks.length shouldBe 1
+    properties.hooks.destroyHooks.length shouldBe 0
+    properties.attributes.attrs.length shouldBe 1
+    receivers.length shouldBe 2
+    properties.keys.length shouldBe 0
+    childNodes.length shouldBe 2
+    streamStatus.numChild shouldBe 0
+    streamStatus.numChildren shouldBe 1
   }
 
   val fixture = new {
@@ -193,11 +193,11 @@ object OutWatchDomSpec extends JSDomSuite {
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    assertEquals(list.isEmpty, true)
+    list.isEmpty shouldBe true
 
     OutWatch.renderInto(node, vtree).unsafeRunSync()
 
-    assertEquals(list.toSet, Set("child1", "child2", "children1", "children2", "attr1", "attr2"))
+    list.toSet shouldBe Set("child1", "child2", "children1", "children2", "attr1", "attr2")
   }
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
@@ -211,21 +211,21 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers =  SeparatedModifiers.from(mods)
     val Children.VNodes(childNodes, streamStatus) = modifiers.children
 
-    assertEquals(childNodes.size, 3)
-    assertEquals(streamStatus.numChild, 0)
-    assertEquals(streamStatus.numChildren, 1)
+    childNodes.size shouldBe 3
+    streamStatus.numChild shouldBe 0
+    streamStatus.numChildren shouldBe 1
 
     val proxy = modifiers.toSnabbdom("div")
-    assertEquals(proxy.key.isDefined, true)
+    proxy.key.isDefined shouldBe true
 
-    assertEquals(proxy.children.get.length, 2)
+    proxy.children.get.length shouldBe 2
 
     val key1 = proxy.children.get(0).key
     val key2 = proxy.children.get(1).key
 
-    assertEquals(key1.isDefined, true)
-    assertEquals(key2.isDefined, true)
-    assert(key1.get != key2.get)
+    key1.isDefined shouldBe true
+    key2.isDefined shouldBe true
+    key1.get shouldNotBe key2.get
   }
 
   test("VDomModifiers should keep existing key for child nodes") {
@@ -238,14 +238,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers =  SeparatedModifiers.from(mods)
     val Children.VNodes(childNodes, streamStatus) = modifiers.children
 
-    assertEquals(childNodes.size, 2)
-    assertEquals(streamStatus.numChild, 0)
-    assertEquals(streamStatus.numChildren, 1)
+    childNodes.size shouldBe 2
+    streamStatus.numChild shouldBe 0
+    streamStatus.numChildren shouldBe 1
 
     val proxy = modifiers.toSnabbdom("div")
-    assertEquals(proxy.key.toOption, Some(1234))
+    proxy.key.toOption shouldBe Some(1234)
 
-    assertEquals(proxy.children.get(0).key.toOption, Some(5678))
+    proxy.children.get(0).key.toOption shouldBe Some(5678)
   }
 
 
@@ -259,7 +259,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val proxy = fixture.proxy
 
-    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(proxy))
+    JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(proxy)
   }
 
   test("VTrees should be correctly created with the HyperscriptHelper") {
@@ -268,7 +268,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val child = span(message)
     val vtree = div(IO.pure(attributes.head), IO.pure(attributes(1)), child)
 
-    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
+    JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(fixture.proxy)
   }
 
 
@@ -293,14 +293,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    assertEquals(ioCounter, 0)
-    assertEquals(handlerCounter, 0)
+    ioCounter shouldBe 0
+    handlerCounter shouldBe 0
     OutWatch.renderInto(node, vtree).unsafeRunSync()
-    assertEquals(ioCounter, 1)
-    assertEquals(handlerCounter, 0)
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 0
     stringHandler.observer.onNext("pups")
-    assertEquals(ioCounter, 1)
-    assertEquals(handlerCounter, 1)
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 1
   }
 
   test("VTrees should run its modifiers once in CompositeModifier!") {
@@ -324,14 +324,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val node = document.createElement("div")
     document.body.appendChild(node)
 
-    assertEquals(ioCounter, 0)
-    assertEquals(handlerCounter, 0)
+    ioCounter shouldBe 0
+    handlerCounter shouldBe 0
     OutWatch.renderInto(node, vtree).unsafeRunSync()
-    assertEquals(ioCounter, 1)
-    assertEquals(handlerCounter, 0)
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 0
     stringHandler.observer.onNext("pups")
-    assertEquals(ioCounter, 1)
-    assertEquals(handlerCounter, 1)
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 1
   }
 
   test("VTrees should be correctly patched into the DOM") {
@@ -350,9 +350,9 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val patchedNode = document.getElementById(id)
 
-    assertEquals(patchedNode.childElementCount, 1)
-    assertEquals(patchedNode.classList.contains(cls), true)
-    assertEquals(patchedNode.children(0).innerHTML, message)
+    patchedNode.childElementCount shouldBe 1
+    patchedNode.classList.contains(cls) shouldBe true
+    patchedNode.children(0).innerHTML shouldBe message
 
   }
 
@@ -386,11 +386,11 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val domNode = document.getElementById("page")
 
-    assertEquals(domNode.textContent, "1")
+    domNode.textContent shouldBe "1"
 
     pageHandler.onNext(2)
 
-    assertEquals(domNode.textContent, "2")
+    domNode.textContent shouldBe "2"
   }
 
   test("The HTML DSL should construct VTrees properly") {
@@ -401,7 +401,7 @@ object OutWatchDomSpec extends JSDomSuite {
       span("Hello")
     )
 
-    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
+    JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(fixture.proxy)
   }
 
   test("The HTML DSL should construct VTrees with optional children properly") {
@@ -413,8 +413,7 @@ object OutWatchDomSpec extends JSDomSuite {
       Option.empty[VDomModifier]
     )
 
-    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(fixture.proxy))
-
+    JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(fixture.proxy)
   }
 
   test("The HTML DSL should construct VTrees with boolean attributes") {
@@ -434,7 +433,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val attrs = js.Dictionary[dom.Attr.Value]("a" -> true, "b" -> true, "c" -> false, "d" -> "true", "e" -> "true", "f" -> "false")
     val expected = hFunction("div", DataObject(attrs, js.Dictionary()))
 
-    assertEquals(JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()), JSON.stringify(expected))
+    JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(expected)
 
   }
 
@@ -459,11 +458,11 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val patchedNode = document.getElementById("test")
 
-    assertEquals(patchedNode.childElementCount, 2)
-    assertEquals(patchedNode.classList.contains("blue"), true)
-    assertEquals(patchedNode.children(0).innerHTML, message)
+    patchedNode.childElementCount shouldBe 2
+    patchedNode.classList.contains("blue") shouldBe true
+    patchedNode.children(0).innerHTML shouldBe message
 
-    assertEquals(document.getElementById("list").childElementCount, 3)
+    document.getElementById("list").childElementCount shouldBe 3
   }
 
   test("The HTML DSL should change the value of a textfield") {
@@ -480,17 +479,17 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val field = document.getElementById("input").asInstanceOf[html.Input]
 
-    assertEquals(field.value, "")
+    field.value shouldBe ""
 
     val message = "Hello"
     messages.onNext(message)
-    assertEquals(field.value, message)
+
+    field.value shouldBe message
 
     val message2 = "World"
     messages.onNext(message2)
 
-    assertEquals(field.value, message2)
-
+    field.value shouldBe message2
   }
 
   test("The HTML DSL render child nodes in correct order") {
@@ -510,7 +509,7 @@ object OutWatchDomSpec extends JSDomSuite {
     messagesA.onNext("1")
     messagesB.onNext("2")
 
-    assertEquals(node.innerHTML, "<div><span>A</span><span>1</span><span>B</span><span>2</span></div>")
+    node.innerHTML shouldBe "<div><span>A</span><span>1</span><span>B</span><span>2</span></div>"
   }
 
   test("The HTML DSL should render child string-nodes in correct order") {
@@ -527,10 +526,13 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    messagesA.onNext("1")
-    messagesB.onNext("2")
+    node.innerHTML shouldBe "<div>AB</div>"
 
-    assertEquals(node.innerHTML, "<div>A1B2</div>")
+    messagesA.onNext("1")
+    node.innerHTML shouldBe "<div>A1B</div>"
+
+    messagesB.onNext("2")
+    node.innerHTML shouldBe "<div>A1B2</div>"
   }
 
   test("The HTML DSL should render multiple child string-nodes correctly") {
@@ -547,9 +549,11 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    messagesA.onNext("1")
+    messagesB.onNext("2")
+    node.innerHTML shouldBe "<div>AB2</div>"
 
-    assertEquals(node.innerHTML, "<div>A1B</div>")
+    messagesA.onNext("1")
+    node.innerHTML shouldBe "<div>A1B2</div>"
   }
 
   test("The HTML DSL should render child string-nodes in correct order, mixed with children") {
@@ -568,16 +572,16 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    assertEquals(node.innerHTML, "<div>AB</div>")
+    node.innerHTML shouldBe "<div>AB</div>"
 
     messagesA.onNext("1")
-    assertEquals(node.innerHTML, "<div>A1B</div>")
+    node.innerHTML shouldBe "<div>A1B</div>"
 
     messagesB.onNext("2")
-    assertEquals(node.innerHTML, "<div>A1B2</div>")
+    node.innerHTML shouldBe "<div>A1B2</div>"
 
     messagesC.onNext(Seq(div("5"), div("7")))
-    assertEquals(node.innerHTML, "<div>A1<div>5</div><div>7</div>B2</div>")
+    node.innerHTML shouldBe "<div>A1<div>5</div><div>7</div>B2</div>"
   }
 
   test("The HTML DSL should update merged nodes children correctly") {
@@ -590,13 +594,13 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext(Seq(div("otherMessage")))
-    assertEquals(node.children(0).innerHTML, "<div>otherMessage</div>")
+    node.children(0).innerHTML shouldBe "<div>otherMessage</div>"
 
     messages.onNext(Seq(div("message")))
-    assertEquals(node.children(0).innerHTML, "<div>message</div><div>otherMessage</div>")
+    node.children(0).innerHTML shouldBe "<div>message</div><div>otherMessage</div>"
 
     otherMessages.onNext(Seq(div("genus")))
-    assertEquals(node.children(0).innerHTML, "<div>message</div><div>genus</div>")
+    node.children(0).innerHTML shouldBe "<div>message</div><div>genus</div>"
   }
 
   test("The HTML DSL should update merged nodes separate children correctly") {
@@ -608,16 +612,16 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    assertEquals(node.children(0).innerHTML, "")
+    node.children(0).innerHTML shouldBe ""
 
     otherMessages.onNext("otherMessage")
-    assertEquals(node.children(0).innerHTML, "otherMessage")
+    node.children(0).innerHTML shouldBe "otherMessage"
 
     messages.onNext("message")
-    assertEquals(node.children(0).innerHTML, "messageotherMessage")
+    node.children(0).innerHTML shouldBe "messageotherMessage"
 
     otherMessages.onNext("genus")
-    assertEquals(node.children(0).innerHTML, "messagegenus")
+    node.children(0).innerHTML shouldBe "messagegenus"
   }
 
   test("The HTML DSL should update reused vnodes correctly") {
@@ -630,12 +634,12 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, container).unsafeRunSync()
 
     messages.onNext("message")
-    assertEquals(node.children(0).children(0).innerHTML, "message")
-    assertEquals(node.children(0).children(1).innerHTML, "message")
+    node.children(0).children(0).innerHTML shouldBe "message"
+    node.children(0).children(1).innerHTML shouldBe "message"
 
     messages.onNext("bumo")
-    assertEquals(node.children(0).children(0).innerHTML, "bumo")
-    assertEquals(node.children(0).children(1).innerHTML, "bumo")
+    node.children(0).children(0).innerHTML shouldBe "bumo"
+    node.children(0).children(1).innerHTML shouldBe "bumo"
   }
 
   test("The HTML DSL should update merged nodes correctly (render reuse)") {
@@ -654,16 +658,16 @@ object OutWatchDomSpec extends JSDomSuite {
 
     messages.onNext("gurkon")
     otherMessages.onNext("otherMessage")
-    assertEquals(node1.children(0).innerHTML, "gurkon")
-    assertEquals(node2.children(0).innerHTML, "gurkonotherMessage")
+    node1.children(0).innerHTML shouldBe "gurkon"
+    node2.children(0).innerHTML shouldBe "gurkonotherMessage"
 
     messages.onNext("message")
-    assertEquals(node1.children(0).innerHTML, "message")
-    assertEquals(node2.children(0).innerHTML, "messageotherMessage")
+    node1.children(0).innerHTML shouldBe "message"
+    node2.children(0).innerHTML shouldBe "messageotherMessage"
 
     otherMessages.onNext("genus")
-    assertEquals(node1.children(0).innerHTML, "message")
-    assertEquals(node2.children(0).innerHTML, "messagegenus")
+    node1.children(0).innerHTML shouldBe "message"
+    node2.children(0).innerHTML shouldBe "messagegenus"
   }
 
   test("The HTML DSL should update merged node attributes correctly") {
@@ -671,19 +675,18 @@ object OutWatchDomSpec extends JSDomSuite {
     val otherMessages = PublishSubject[String]
     val vNode = div(data.noise <-- messages)(data.noise <-- otherMessages)
 
-
     val node = document.createElement("div")
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("otherMessage")
-    assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
+    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
 
     messages.onNext("message") // should be ignored
-    assertEquals(node.children(0).getAttribute("data-noise"), "otherMessage")
+    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
 
     otherMessages.onNext("genus")
-    assertEquals(node.children(0).getAttribute("data-noise"), "genus")
+    node.children(0).getAttribute("data-noise") shouldBe "genus"
   }
 
   test("The HTML DSL should update merged node styles written with style() correctly") {
@@ -696,13 +699,13 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     messages.onNext("blue") // should be ignored
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     otherMessages.onNext("green")
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"
   }
 
   test("The HTML DSL should update merged node styles correctly") {
@@ -715,13 +718,13 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     otherMessages.onNext("red")
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     messages.onNext("blue") // should be ignored
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "red")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     otherMessages.onNext("green")
-    assertEquals(node.children(0).asInstanceOf[html.Element].style.color, "green")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"
   }
 
   test("The HTML DSL should render composite VNodes properly") {
@@ -732,7 +735,7 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    assertEquals(node.innerHTML, "<div><span>one</span><span>two</span><span>three</span></div>")
+    node.innerHTML shouldBe "<div><span>one</span><span>two</span><span>three</span></div>"
   }
 
   test("The HTML DSL should render nodes with only attribute receivers properly") {
@@ -745,7 +748,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     classes.onNext("active")
 
-    assertEquals(node.innerHTML, """<button class="active">Submit</button>""")
+    node.innerHTML shouldBe """<button class="active">Submit</button>"""
   }
 
 
@@ -758,7 +761,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     OutWatch.renderReplace(node, vNode).unsafeRunSync()
 
-    assertEquals(node.innerHTML, "<main></main>")
+    node.innerHTML shouldBe "<main></main>"
   }
 
 
@@ -769,13 +772,13 @@ object OutWatchDomSpec extends JSDomSuite {
     val node = document.createElement("option").asInstanceOf[html.Option]
     document.body.appendChild(node)
 
-    assertEquals(node.selected, false)
-    assertEquals(node.disabled, false)
+    node.selected shouldBe false
+    node.disabled shouldBe false
 
     OutWatch.renderReplace(node, vNode).unsafeRunSync()
 
-    assertEquals(node.selected, true)
-    assertEquals(node.disabled, true)
+    node.selected shouldBe true
+    node.disabled shouldBe true
   }
 
 }

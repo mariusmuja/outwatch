@@ -14,7 +14,7 @@ object AttributeSpec extends JSDomSuite {
       cls := "class2"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(node.data.attrs.toMap, Map("class" -> "class1 class2"))
+    node.data.attrs.toMap shouldBe Map("class" -> "class1 class2")
   }
 
   test("custom attributes should be able to be accumulated") {
@@ -24,7 +24,7 @@ object AttributeSpec extends JSDomSuite {
       attr("id").accum(",") := "foo2"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(node.data.attrs.toList, List("id" -> "foo1,foo2"))
+    node.data.attrs.toList shouldBe List("id" -> "foo1,foo2")
   }
 
   test("data attributes should be able to be accumulated") {
@@ -34,7 +34,7 @@ object AttributeSpec extends JSDomSuite {
       data.foo.accum(",") := "foo2"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(node.data.attrs.toList, List("data-foo" -> "foo1,foo2"))
+    node.data.attrs.toList shouldBe List("data-foo" -> "foo1,foo2")
   }
 
   test("data attribute should correctly render only data") {
@@ -43,13 +43,7 @@ object AttributeSpec extends JSDomSuite {
       data.geuli.gurk := "barz"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toMap,
-      Map(
-        "data-geul" -> "bar",
-        "data-geuli-gurk" -> "barz"
-      )
-    )
+    node.data.attrs.toMap shouldBe Map("data-geul" -> "bar", "data-geuli-gurk" -> "barz")
   }
 
   test("data attribute should correctly render expanded data with dynamic content") {
@@ -58,13 +52,8 @@ object AttributeSpec extends JSDomSuite {
       dataAttr("geuli-gurk") := "barz"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toMap,
-      Map(
-        "data-geul" -> "bar",
-        "data-geuli-gurk" -> "barz"
-      )
-    )
+
+    node.data.attrs.toMap shouldBe Map("data-geul" -> "bar", "data-geuli-gurk" -> "barz")
   }
 
 //  it should "not compile data.without suffix" in {
@@ -85,30 +74,19 @@ object AttributeSpec extends JSDomSuite {
       disabled := false
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toList,
-      List(
-        "foo" -> "foo",
-        "boo" -> true,
-        "yoo" -> "yes",
-        "contenteditable" -> "false",
-        "autocomplete" -> "off",
-        "disabled" -> false
-      )
+
+    node.data.attrs.toList shouldBe List(
+      "foo" -> "foo",
+      "boo" -> true,
+      "yoo" -> "yes",
+      "contenteditable" -> "false",
+      "autocomplete" -> "off",
+      "disabled" -> false
     )
-    assertEquals(
-      node.data.props.toList,
-      List(
-        "bar" -> "bar",
-        "num" -> 12
-      )
-    )
-    assertEquals(
-      node.data.style.toList,
-      List(
-        "baz" -> "baz"
-      )
-    )
+
+    node.data.props.toList shouldBe List("bar" -> "bar", "num" -> 12)
+
+    node.data.style.toList shouldBe List("baz" -> "baz")
   }
 
   test("optional attributes should correctly render") {
@@ -117,9 +95,7 @@ object AttributeSpec extends JSDomSuite {
       data.bar :=? Option.empty[String]
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toMap, Map("data-foo" -> "bar")
-    )
+    node.data.attrs.toMap shouldBe Map("data-foo" -> "bar")
   }
 
   test("apply on vtree should correctly merge attributes") {
@@ -131,13 +107,11 @@ object AttributeSpec extends JSDomSuite {
       data.a.tomate := "gisela"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toMap,
-      Map(
-        "data-a" -> "buh",
-        "data-a-gurke" -> "franz",
-        "data-a-tomate" -> "gisela"
-      )
+
+    node.data.attrs.toMap shouldBe Map(
+      "data-a" -> "buh",
+      "data-a-gurke" -> "franz",
+      "data-a-tomate" -> "gisela"
     )
   }
 
@@ -150,14 +124,12 @@ object AttributeSpec extends JSDomSuite {
       border := "1px solid black"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.style.toMap,
-      Map(
-        ("color", "blue"),
-        ("font-size", "5px"),
-        ("border", "1px solid black")
-      )
+    node.data.style.toMap shouldBe Map(
+      ("color", "blue"),
+      ("font-size", "5px"),
+      ("border", "1px solid black")
     )
+
   }
 
   test("apply on vtree should correctly merge styles") {
@@ -169,35 +141,29 @@ object AttributeSpec extends JSDomSuite {
       border := "1px solid black"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.style.toMap,
-      Map(
-        ("color", "blue"),
-        ("font-size", "5px"),
-        ("border", "1px solid black")
-      )
+    node.data.style.toMap shouldBe Map(
+      ("color", "blue"),
+      ("font-size", "5px"),
+      ("border", "1px solid black")
     )
   }
 
   test("apply on vtree should correctly merge keys") {
     val node = input( key := "bumm")( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
-    assertEquals(node.data.key.toList, List("klapp"))
+    node.data.key.toList shouldBe List("klapp")
 
     val node2 = input()( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
-    assertEquals(node2.data.key.toList, List("klapp"))
+    node2.data.key.toList shouldBe List("klapp")
 
     val node3 = input( key := "bumm")().map(_.toSnabbdom).unsafeRunSync()
-    assertEquals(node3.data.key.toList, List("bumm"))
+    node3.data.key.toList shouldBe List("bumm")
   }
 
   test("style attribute should render correctly") {
     val node = input(color.red).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.style.toMap,
-      Map(
-        "color" -> "red"
-      )
+    node.data.style.toMap shouldBe Map(
+      "color" -> "red"
     )
   }
 
@@ -210,10 +176,10 @@ object AttributeSpec extends JSDomSuite {
       opacity.destroy := 0
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(node.data.style("opacity"), "0")
-    assertEquals(node.data.style("delayed").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "1"))
-    assertEquals(node.data.style("remove").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "0"))
-    assertEquals(node.data.style("destroy").asInstanceOf[js.Dictionary[String]].toMap, Map("opacity" -> "0"))
+    node.data.style("opacity") shouldBe "0"
+    node.data.style("delayed").asInstanceOf[js.Dictionary[String]].toMap shouldBe Map("opacity" -> "1")
+    node.data.style("remove").asInstanceOf[js.Dictionary[String]].toMap shouldBe Map("opacity" -> "0")
+    node.data.style("destroy").asInstanceOf[js.Dictionary[String]].toMap shouldBe Map("opacity" -> "0")
   }
 
   test("style accum should convert correctly") {
@@ -222,11 +188,8 @@ object AttributeSpec extends JSDomSuite {
       transition.accum(",") := "opacity .2s ease-in-out"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.style.toMap,
-      Map(
-        "transition" -> "transform .2s ease-in-out,opacity .2s ease-in-out"
-      )
+    node.data.style.toMap shouldBe Map(
+      "transition" -> "transform .2s ease-in-out,opacity .2s ease-in-out"
     )
   }
 }

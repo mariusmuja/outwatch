@@ -18,14 +18,14 @@ object SnabbdomSpec extends JSDomSuite {
 
     patch(node, vNode)
 
-    assertEquals(document.getElementById("msg").innerHTML, message)
+    document.getElementById("msg").innerHTML shouldBe message
 
     val newMessage = "Hello Snabbdom!"
     val newNode = hFunction("div#new", DataObject(js.Dictionary(), js.Dictionary()), newMessage)
 
     patch(vNode, newNode)
 
-    assertEquals(document.getElementById("new").innerHTML, newMessage)
+    document.getElementById("new").innerHTML shouldBe newMessage
   }
 
   test("The Snabbdom Facade should correctly patch nodes with keys") {
@@ -54,14 +54,13 @@ object SnabbdomSpec extends JSDomSuite {
     initEvent(clickEvt)("click", true, true)
 
     def inputElement() = document.getElementById("input").asInstanceOf[html.Input]
-
     val btn = document.getElementById("btn")
 
     inputElement().value = "Something"
     inputElement().dispatchEvent(inputEvt)
     btn.dispatchEvent(clickEvt)
 
-    assertEquals(inputElement().value, "")
+    inputElement().value shouldBe ""
   }
 
   test("The Snabbdom Facade should correctly handle boolean attributes") {
@@ -75,7 +74,6 @@ object SnabbdomSpec extends JSDomSuite {
     patch(node, vNode)
 
     val expected = s"""<span id="msg" bool1="" string1="true" string0="false">$message</span>"""
-    assertEquals(document.getElementById("msg").outerHTML, expected)
+    document.getElementById("msg").outerHTML shouldBe expected
   }
-
 }
