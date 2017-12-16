@@ -25,28 +25,33 @@ object AttributeBuilder {
 
 // Attr
 
-final class AttrBuilder[T](val name: String, encode: T => Attr.Value) extends AttributeBuilder[T, Attr] {
-  @inline private[outwatch] def assign(value: T) = BasicAttr(name, encode(value))
-
+trait AccumulateAttrOps[T] { self: AttributeBuilder[T, BasicAttr] =>
   def accum(s: String): AccumAttrBuilder[T] = accum(_ + s + _)
-  def accum(reducer: (Attr.Value, Attr.Value) => Attr.Value) = new AccumAttrBuilder[T](name, encode, reducer)
+  def accum(reducer: (Attr.Value, Attr.Value) => Attr.Value) = new AccumAttrBuilder[T](name, this, reducer)
 }
 
-
-final class AccumAttrBuilder[T](
-  val name: String,
-  encode: T => Attr.Value,
-  reduce: (Attr.Value, Attr.Value) => Attr.Value
-) extends AttributeBuilder[T, Attr] {
-  @inline private[outwatch] def assign(value: T) = AccumAttr(name, encode(value), reduce)
+final class AttrBuilder[T](val name: String, encode: T => Attr.Value) extends AttributeBuilder[T, BasicAttr]
+                                                                              with AccumulateAttrOps[T] {
+  @inline private[outwatch] def assign(value: T) = BasicAttr(name, encode(value))
 }
 
-final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic with AttributeBuilder[T, Attr] {
+final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic
+                                                                    with AttributeBuilder[T, BasicAttr]
+                                                                    with AccumulateAttrOps[T] {
   lazy val name: String = parts.reverse.mkString("-")
 
   def selectDynamic(s: String) = new DynamicAttributeBuilder[T](s :: parts)
 
   @inline private[outwatch] def assign(value: T) = BasicAttr(name, value.toString)
+}
+
+
+final class AccumAttrBuilder[T](
+  val name: String,
+  builder: AttributeBuilder[T, Attr],
+  reduce: (Attr.Value, Attr.Value) => Attr.Value
+) extends AttributeBuilder[T, AccumAttr] {
+  @inline private[outwatch] def assign(value: T) = AccumAttr(name, builder.assign(value).value, reduce)
 }
 
 // Props

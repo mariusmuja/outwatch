@@ -14,12 +14,27 @@ object AttributeSpec extends JSDomSuite {
       cls := "class2"
     ).map(_.toSnabbdom).unsafeRunSync()
 
-    assertEquals(
-      node.data.attrs.toMap,
-      Map(
-        "class" -> "class1 class2"
-      )
-    )
+    assertEquals(node.data.attrs.toMap, Map("class" -> "class1 class2"))
+  }
+
+  test("custom attributes should be able to be accumulated") {
+
+    val node = input(
+      attr("id").accum(",") := "foo1",
+      attr("id").accum(",") := "foo2"
+    ).map(_.toSnabbdom).unsafeRunSync()
+
+    assertEquals(node.data.attrs.toList, List("id" -> "foo1,foo2"))
+  }
+
+  test("data attributes should be able to be accumulated") {
+
+    val node = input(
+      data.foo.accum(",") := "foo1",
+      data.foo.accum(",") := "foo2"
+    ).map(_.toSnabbdom).unsafeRunSync()
+
+    assertEquals(node.data.attrs.toList, List("data-foo" -> "foo1,foo2"))
   }
 
   test("data attribute should correctly render only data") {

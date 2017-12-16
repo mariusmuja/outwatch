@@ -94,7 +94,11 @@ trait ReflectedAttrs
   extends reflectedAttrs.ReflectedAttrs[DomTypes.AttributeBuilder]
   with builders.ReflectedAttrBuilder[DomTypes.AttributeBuilder] {
 
-  override lazy val className = new AccumAttrBuilder[String]("class", _.toString, _ + " " + _)
+  // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
+  override lazy val className = new AccumAttrBuilder[String]("class",
+    stringReflectedAttr(attrKey = "class", propKey = "className"),
+    _ + " " + _
+  )
 
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,

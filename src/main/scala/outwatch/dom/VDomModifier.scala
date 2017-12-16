@@ -92,7 +92,9 @@ sealed trait TitledAttribute extends Attribute {
 }
 
 
-sealed trait Attr extends TitledAttribute
+sealed trait Attr extends TitledAttribute {
+  val value: Attr.Value
+}
 object Attr {
   type Value = DataObject.AttrValue
 }
