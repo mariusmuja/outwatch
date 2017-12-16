@@ -87,7 +87,7 @@ object Children {
   private[outwatch] case class StreamStatus(numChild: Int = 0, numChildren: Int = 0) {
     def hasChildOrChildren: Boolean = (numChild + numChildren) > 0
 
-    def hasMultipleChildren: Boolean = numChildren > 1
+    def hasMultipleChildOrChildren: Boolean = (numChild + numChildren) > 1
   }
 }
 
@@ -163,10 +163,13 @@ private[outwatch] final case class Receivers(
     val childStreamReceivers = if (childStreamStatus.hasChildOrChildren) {
       childNodes.foldRight(Observable(List.empty[IO[StaticVNode]])) {
         case (vn: StaticVNode, obs) => obs.combineLatestMap(BehaviorSubject(IO.pure(vn)))((nodes, n) => n :: nodes)
-        case (csr: ChildStreamReceiver, obs) => obs.combineLatestMap(csr.childStream)((nodes, n) => n :: nodes)
+        case (csr: ChildStreamReceiver, obs) =>
+          obs.combineLatestMap(
+            if (childStreamStatus.hasMultipleChildOrChildren) csr.childStream.startWith(Seq(IO.pure(StringVNode("")))) else csr.childStream
+          )((nodes, n) => n :: nodes)
         case (csr: ChildrenStreamReceiver, obs) =>
           obs.combineLatestMap(
-            if (childStreamStatus.hasMultipleChildren) csr.childrenStream.startWith(Seq(Seq.empty)) else csr.childrenStream
+            if (childStreamStatus.hasMultipleChildOrChildren) csr.childrenStream.startWith(Seq(Seq.empty)) else csr.childrenStream
           )((nodes, n) => n.toList ++ nodes)
       }
     } else {

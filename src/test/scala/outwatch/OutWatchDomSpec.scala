@@ -533,6 +533,25 @@ object OutWatchDomSpec extends JSDomSuite {
     assertEquals(node.innerHTML, "<div>A1B2</div>")
   }
 
+  test("The HTML DSL should render multiple child string-nodes correctly") {
+    val messagesA = PublishSubject[String]
+    val messagesB = PublishSubject[String]
+    val vNode = div(
+      "A",
+      child <-- messagesA,
+      "B",
+      child <-- messagesB
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
+
+    messagesA.onNext("1")
+
+    assertEquals(node.innerHTML, "<div>A1B</div>")
+  }
+
   test("The HTML DSL should render child string-nodes in correct order, mixed with children") {
     val messagesA = PublishSubject[String]
     val messagesB = PublishSubject[String]
@@ -549,10 +568,15 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    messagesA.onNext("1")
-    messagesB.onNext("2")
-    messagesC.onNext(Seq(div("5"), div("7")))
+    assertEquals(node.innerHTML, "<div>AB</div>")
 
+    messagesA.onNext("1")
+    assertEquals(node.innerHTML, "<div>A1B</div>")
+
+    messagesB.onNext("2")
+    assertEquals(node.innerHTML, "<div>A1B2</div>")
+
+    messagesC.onNext(Seq(div("5"), div("7")))
     assertEquals(node.innerHTML, "<div>A1<div>5</div><div>7</div>B2</div>")
   }
 
@@ -584,8 +608,10 @@ object OutWatchDomSpec extends JSDomSuite {
     document.body.appendChild(node)
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
-    otherMessages.onNext("otherMessage")
     assertEquals(node.children(0).innerHTML, "")
+
+    otherMessages.onNext("otherMessage")
+    assertEquals(node.children(0).innerHTML, "otherMessage")
 
     messages.onNext("message")
     assertEquals(node.children(0).innerHTML, "messageotherMessage")
