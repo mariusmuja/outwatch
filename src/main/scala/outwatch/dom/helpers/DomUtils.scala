@@ -6,10 +6,28 @@ import outwatch.dom._
 
 import scala.collection.breakOut
 
-private[outwatch] case class StreamStatus(numChild: Int = 0, numChildren: Int = 0) {
-  def hasChildOrChildren: Boolean = (numChild + numChildren) > 0
+object SeparatedModifiers {
+  private[outwatch] def from(modifiers: Seq[Modifier]): SeparatedModifiers = {
+    modifiers.foldRight(SeparatedModifiers())((m, sm) => m :: sm)
+  }
+}
 
-  def hasMultipleChildren: Boolean = numChildren > 1
+private[outwatch] final case class SeparatedModifiers(
+  properties: SeparatedProperties = SeparatedProperties(),
+  emitters: SeparatedEmitters = SeparatedEmitters(),
+  attributeReceivers: List[AttributeStreamReceiver] = Nil,
+  children: Children = Children.Empty
+) extends SnabbdomModifiers { self =>
+
+  def ::(m: Modifier): SeparatedModifiers = m match {
+    case pr: Property => copy(properties = pr :: properties)
+    case vn: ChildVNode => copy(children = vn :: children)
+    case em: Emitter => copy(emitters = em :: emitters)
+    case rc: AttributeStreamReceiver => copy(attributeReceivers = rc :: attributeReceivers)
+    case cm: CompositeModifier => cm.modifiers.foldRight(self)((m, sm) => m :: sm)
+    case sm: StringModifier => copy(children = sm :: children)
+    case EmptyModifier => self
+  }
 }
 
 private[outwatch] trait Children {
@@ -66,6 +84,11 @@ object Children {
     }
   }
 
+  private[outwatch] case class StreamStatus(numChild: Int = 0, numChildren: Int = 0) {
+    def hasChildOrChildren: Boolean = (numChild + numChildren) > 0
+
+    def hasMultipleChildren: Boolean = numChildren > 1
+  }
 }
 
 private[outwatch] final case class SeparatedProperties(
@@ -90,7 +113,7 @@ private[outwatch] final case class SeparatedStyles(
 private[outwatch] final case class SeparatedAttributes(
   attrs: List[Attr] = Nil,
   props: List[Prop] = Nil,
-  styles: SeparatedStyles = SeparatedStyles(),
+  styles: SeparatedStyles = SeparatedStyles()
 ) extends SnabbdomAttributes {
   @inline def ::(a: Attribute): SeparatedAttributes = a match {
     case a : Attr => copy(attrs = a :: attrs)
@@ -127,38 +150,13 @@ private[outwatch] final case class SeparatedEmitters(
   def ::(e: Emitter): SeparatedEmitters = copy(emitters = e :: emitters)
 }
 
-private[outwatch] final case class SeparatedModifiers(
-  properties: SeparatedProperties = SeparatedProperties(),
-  emitters: SeparatedEmitters = SeparatedEmitters(),
-  attributeReceivers: List[AttributeStreamReceiver] = Nil,
-  children: Children = Children.Empty
-) extends SnabbdomModifiers { self =>
-
-  def ::(m: Modifier): SeparatedModifiers = m match {
-    case pr: Property => copy(properties = pr :: properties)
-    case vn: ChildVNode => copy(children = vn :: children)
-    case em: Emitter => copy(emitters = em :: emitters)
-    case rc: AttributeStreamReceiver => copy(attributeReceivers = rc :: attributeReceivers)
-    case cm: CompositeModifier => cm.modifiers.foldRight(self)((m, sm) => m :: sm)
-    case sm: StringModifier => copy(children = sm :: children)
-    case EmptyModifier => self
-  }
-}
-
-object SeparatedModifiers {
-  private[outwatch] def from(modifiers: Seq[Modifier]): SeparatedModifiers = {
-    modifiers.foldRight(SeparatedModifiers())((m, sm) => m :: sm)
-  }
-}
-
-
 private[outwatch] final case class Receivers(
   children: Children,
   attributeStreamReceivers: List[AttributeStreamReceiver]
 ) {
   private val (childNodes, childStreamStatus) = children match {
     case Children.VNodes(nodes, streamStatus) => (nodes, streamStatus)
-    case _ => (Nil, StreamStatus())
+    case _ => (Nil, Children.StreamStatus())
   }
 
   lazy val observable: Observable[(Seq[Attribute], Seq[IO[StaticVNode]])] = {
@@ -170,22 +168,24 @@ private[outwatch] final case class Receivers(
           obs.combineLatestMap(
             if (childStreamStatus.hasMultipleChildren) csr.childrenStream.startWith(Seq(Seq.empty)) else csr.childrenStream
           )((nodes, n) => n.toList ++ nodes)
-      }.dropWhile(_.isEmpty)
+      }
     } else {
       Observable(Seq.empty)
     }
 
     // only use last encountered observable per attribute
-    val attributeReceivers: Observable[Seq[Attribute]] = Observable.combineLatestList(
-      attributeStreamReceivers
-        .groupBy(_.attribute)
-        .values
-        .map(_.last.attributeStream)(breakOut): _*
-    )
+    val attributeReceivers: Observable[Seq[Attribute]] = if (attributeStreamReceivers.isEmpty) {
+      Observable(Seq.empty)
+    } else {
+      Observable.combineLatestList(
+        attributeStreamReceivers
+          .groupBy(_.attribute)
+          .values
+          .map(_.last.attributeStream)(breakOut): _*
+      )
+    }
 
-    attributeReceivers.startWith(Seq(Seq.empty)).combineLatest(
-      childStreamReceivers.startWith(Seq(Seq.empty))
-    ).dropWhile { case (a, c) => a.isEmpty && c.isEmpty }
+    attributeReceivers.combineLatest(childStreamReceivers)
   }
 
   lazy val nonEmpty: Boolean = {

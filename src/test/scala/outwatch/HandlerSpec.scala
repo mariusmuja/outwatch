@@ -1,19 +1,6 @@
 package outwatch
 
-import minitest._
-import monix.execution.Ack.Continue
-import monix.execution.Cancelable
-import monix.execution.Scheduler.Implicits.global
-import monix.reactive.Observable
-
-object HandlerSpec extends SimpleTestSuite {
-  
-  implicit class Subscriber[T](obs: Observable[T]) {
-    def apply(next: T => Unit): Cancelable = obs.subscribe { t =>
-      next(t)
-      Continue
-    }
-  }
+object HandlerSpec extends JSDomSuite {
   
   test("Handler should lens") {
     val handler = Handler.create[(String, Int)].unsafeRunSync()

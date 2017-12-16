@@ -1,7 +1,7 @@
 package outwatch.dom
 
 import cats.effect.IO
-import monix.execution.Ack
+import monix.execution.{Ack, Scheduler}
 import monix.reactive.Observer
 import org.scalajs.dom._
 import outwatch.dom.helpers.SeparatedModifiers
@@ -134,7 +134,7 @@ private[outwatch] final case class DestroyHook(observer: Observer[Element]) exte
 
 // Child Nodes
 private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
-  def toSnabbdom: VNodeProxy
+  def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
 
 private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends ChildVNode
@@ -143,7 +143,7 @@ private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observ
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {
-  override def toSnabbdom: VNodeProxy = VNodeProxy.fromString(string)
+  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = VNodeProxy.fromString(string)
 }
 
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
@@ -153,9 +153,8 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifi
 
   def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy( modifiers = modifiers ++ args))
 
-  override def toSnabbdom: VNodeProxy = {
-    val separatedModifiers = SeparatedModifiers.from(modifiers)
-    separatedModifiers.toSnabbdom(nodeType)
+  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
+    SeparatedModifiers.from(modifiers).toSnabbdom(nodeType)
   }
 }
 

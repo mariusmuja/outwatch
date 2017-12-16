@@ -1,4 +1,4 @@
-import monix.reactive.Observable
+import outwatch.dom.Observable
 
 package object outwatch {
   type Pipe[-I, +O] = Observable[O] with Sink[I]

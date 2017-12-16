@@ -1,12 +1,11 @@
 package outwatch
 
-import minitest._
 import outwatch.dom._
 import outwatch.dom.dsl._
 
 import scala.scalajs.js
 
-object AttributeSpec extends SimpleTestSuite {
+object AttributeSpec extends JSDomSuite {
 
 
   test("class attributes should be merged") {

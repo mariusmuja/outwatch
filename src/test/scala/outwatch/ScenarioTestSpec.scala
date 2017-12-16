@@ -1,6 +1,5 @@
 package outwatch
 
-import monix.eval.Task
 import monix.reactive.Observable
 import org.scalajs.dom.{html, _}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
@@ -9,7 +8,10 @@ import outwatch.dom.dsl._
 
 object ScenarioTestSpec extends JSDomSuite {
 
-  testAsync("A simple counter application should work as intended") {
+  test("A simple counter application should work as intended") {
+
+    implicit val scheduler = trampolineScheduler
+
     val node = for {
       handlePlus <- Handler.create[MouseEvent]
       plusOne = handlePlus.map(_ => 1)
@@ -40,24 +42,13 @@ object ScenarioTestSpec extends JSDomSuite {
 
     document.getElementById("minus").dispatchEvent(event)
 
-    (for {
-      _ <- Task {
-        assertEquals(document.getElementById("counter").innerHTML, (-1).toString)
-      }
-      _ <- Task.sequence(
-        for (i <- 0 to 10) yield {
-          for {
-            _ <- Task {
-              document.getElementById("plus").dispatchEvent(event)
-            }
-            _ <- Task {
-              assertEquals(document.getElementById("counter").innerHTML, i.toString)
-            }
-          } yield ()
-        }
-      )
+    assertEquals(document.getElementById("counter").innerHTML, (-1).toString)
 
-    } yield()).runAsync
+    for (i <- 0 to 10) yield {
+      document.getElementById("plus").dispatchEvent(event)
+      assertEquals(document.getElementById("counter").innerHTML, i.toString)
+    }
+    ()
   }
 
   test("A simple name application should work as intended") {
@@ -128,9 +119,9 @@ object ScenarioTestSpec extends JSDomSuite {
   }
 
 
-//  private val delay = FiniteDuration(20,"ms")
+  test("A todo application should work with components") {
 
-  testAsync("A todo application should work with components") {
+    implicit val scheduler = trampolineScheduler
 
     def TodoComponent(title: String, deleteStream: Sink[String]) =
       li(
@@ -211,66 +202,37 @@ object ScenarioTestSpec extends JSDomSuite {
 
     assertEquals(list.childElementCount, 0)
 
+    val todo = "fold laundry"
+    inputElement.value = todo
+    inputElement.dispatchEvent(inputEvt)
+    submitButton.dispatchEvent(clickEvt)
 
-    (for {
-      todo <- Task {
-        val todo = "fold laundry"
-        inputElement.value = todo
-        inputElement.dispatchEvent(inputEvt)
-        submitButton.dispatchEvent(clickEvt)
-        todo
-      }
+    assertEquals(list.childElementCount, 1)
 
-      _ <- Task{
-        assertEquals(list.childElementCount, 1)
-      }.executeWithFork//.delayExecution(delay)
+    val todo2 = "wash dishes"
+    inputElement.value = todo2
+    inputElement.dispatchEvent(inputEvt)
+    submitButton.dispatchEvent(clickEvt)
 
-      todo2 <- Task {
-        val todo2 = "wash dishes"
-        inputElement.value = todo2
-        inputElement.dispatchEvent(inputEvt)
-        submitButton.dispatchEvent(clickEvt)
-        todo2
-      }
-      _ <- Task{
-        assertEquals(list.childElementCount, 2)
-      }.executeWithFork//.delayExecution(delay)
+    assertEquals(list.childElementCount, 2)
 
-      todo3 <- Task {
-        val todo3 = "clean windows"
-        inputElement.value = todo3
-        inputElement.dispatchEvent(inputEvt)
-        submitButton.dispatchEvent(clickEvt)
-        todo3
-      }
-      _ <- Task {
-        assertEquals(list.childElementCount, 3)
-      }.executeWithFork//.delayExecution(delay)
+    val todo3 = "clean windows"
+    inputElement.value = todo3
+    inputElement.dispatchEvent(inputEvt)
+    submitButton.dispatchEvent(clickEvt)
 
-      _ <- Task {
-        document.getElementById(todo2).dispatchEvent(clickEvt)
-      }
+    assertEquals(list.childElementCount, 3)
 
-      _ <- Task {
-        assertEquals(list.childElementCount, 2)
-      }.executeWithFork//.delayExecution(delay)
+    document.getElementById(todo2).dispatchEvent(clickEvt)
 
-      _ <- Task {
-        document.getElementById(todo3).dispatchEvent(clickEvt)
-      }
-      _ <- Task {
-        assertEquals(list.childElementCount, 1)
-      }.executeWithFork//.delayExecution(delay)
+    assertEquals(list.childElementCount, 2)
 
-      _ <- Task {
-        document.getElementById(todo).dispatchEvent(clickEvt)
-      }
-      _ <- Task {
-        assertEquals(list.childElementCount, 0)
-      }.executeWithFork//.delayExecution(delay)
+    document.getElementById(todo3).dispatchEvent(clickEvt)
 
+    assertEquals(list.childElementCount, 1)
 
-    } yield ()).runAsync
+    document.getElementById(todo).dispatchEvent(clickEvt)
 
+    assertEquals(list.childElementCount, 0)
   }
 }

@@ -1,6 +1,5 @@
 package outwatch
 
-import minitest.SimpleTestSuite
 import org.scalajs.dom.{document, html}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
 import snabbdom._
@@ -8,7 +7,7 @@ import snabbdom._
 import scala.scalajs.js
 
 
-object SnabbdomSpec extends SimpleTestSuite {
+object SnabbdomSpec extends JSDomSuite {
 
   test("The Snabbdom Facade should correctly patch the DOM") {
     val message = "Hello World"

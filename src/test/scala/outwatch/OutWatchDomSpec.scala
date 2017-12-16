@@ -17,7 +17,6 @@ import scala.scalajs.js.JSON
 
 object OutWatchDomSpec extends JSDomSuite {
 
-
   test("Properties should be separated correctly") {
     val properties = Seq(
       Attribute("hidden", "true"),

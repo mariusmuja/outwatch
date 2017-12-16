@@ -1,7 +1,5 @@
 package outwatch
 
-import monix.eval.Task
-import monix.execution.Ack.Continue
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{html, _}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
@@ -397,22 +395,16 @@ object DomEventSpec extends JSDomSuite {
     assertEquals(checkbox.checked, false)
   }
 
-//  private val delay = FiniteDuration(20,"ms")
 
-  testAsync("DomWindowEvents and DomDocumentEvents should trigger correctly") {
-    import outwatch.dom._
+  test("DomWindowEvents and DomDocumentEvents should trigger correctly") {
     import outwatch.dom.dsl._
+
+    implicit val scheduler = trampolineScheduler
 
     var docClicked = false
     var winClicked = false
-    events.window.onClick.subscribe { ev =>
-      winClicked = true
-      Continue
-    }
-    events.document.onClick.subscribe { ev =>
-      docClicked = true
-      Continue
-    }
+    events.window.onClick(ev => winClicked = true)
+    events.document.onClick(ev => docClicked = true)
 
     val node = div(
       button(id := "input", tpe := "checkbox")
@@ -425,14 +417,8 @@ object DomEventSpec extends JSDomSuite {
 
     document.getElementById("input").dispatchEvent(inputEvt)
 
-    (for {
-      _ <- Task {
-        assertEquals(winClicked, true)
-      }.executeWithFork//.delayExecution(delay)
-      _ <- Task {
-        assertEquals(docClicked, true)
-      }.executeWithFork//.delayExecution(delay)
-    } yield ()).runAsync
+    assertEquals(winClicked, true)
+    assertEquals(docClicked, true)
   }
 
 }

@@ -9,19 +9,19 @@ trait StaticVNodeRender[T] {
 
 object StaticVNodeRender {
 
-  implicit object NodeRenderer extends StaticVNodeRender[VNode] {
+  implicit object VNodeRender extends StaticVNodeRender[VNode] {
     def render(value: VNode): IO[StaticVNode] = value
   }
 
-  implicit object StringRenderer extends StaticVNodeRender[String] {
+  implicit object StringRender extends StaticVNodeRender[String] {
     def render(value: String): IO[StaticVNode] = IO.pure(StringVNode(value))
   }
 
-  implicit object IntRenderer extends StaticVNodeRender[Int] {
+  implicit object IntRender extends StaticVNodeRender[Int] {
     def render(value: Int): IO[StaticVNode] = IO.pure(StringVNode(value.toString))
   }
 
-  implicit object DoubleRenderer extends StaticVNodeRender[Double] {
+  implicit object DoubleRender extends StaticVNodeRender[Double] {
     def render(value: Double): IO[StaticVNode] = IO.pure(StringVNode(value.toString))
   }
 
