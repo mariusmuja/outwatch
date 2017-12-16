@@ -56,12 +56,18 @@ final class PropBuilder[T](val name: String, encode: T => Prop.Value) extends At
 }
 
 // Styles
-final class BasicStyleBuilder[T](val name: String) extends AnyVal with AttributeBuilder[T, BasicStyle] {
-  @inline private[outwatch] def assign(value: T) = BasicStyle(name, value.toString)
 
-  def accum: AccumStyleBuilder[T, BasicStyle] = accum(",")
-  def accum(s: String): AccumStyleBuilder[T, BasicStyle] = accum(_ + s + _)
-  def accum(reducer: (String, String) => String) = new AccumStyleBuilder[T, BasicStyle](name, this, reducer)
+trait AccumulateStyleOps[T] extends Any { self: AttributeBuilder[T, BasicStyle] =>
+
+  def accum: AccumStyleBuilder[T] = accum(",")
+  def accum(s: String): AccumStyleBuilder[T] = accum(_ + s + _)
+  def accum(reducer: (String, String) => String) = new AccumStyleBuilder[T](name, reducer)
+}
+
+final class BasicStyleBuilder[T](val name: String) extends AnyVal
+                                                           with AttributeBuilder[T, BasicStyle]
+                                                           with AccumulateStyleOps[T] {
+  @inline private[outwatch] def assign(value: T) = BasicStyle(name, value.toString)
 
   def delayed: DelayedStyleBuilder[T] = new DelayedStyleBuilder[T](name)
   def remove: RemoveStyleBuilder[T] = new RemoveStyleBuilder[T](name)
@@ -80,11 +86,10 @@ final class DestroyStyleBuilder[T](val name: String) extends AnyVal with Attribu
   @inline private[outwatch] def assign(value: T) = DestroyStyle(name, value.toString)
 }
 
-final class AccumStyleBuilder[T, S <: BasicStyle](val name: String, builder: AttributeBuilder[T, S], reducer: (String, String) => String)
+final class AccumStyleBuilder[T](val name: String, reducer: (String, String) => String)
   extends AttributeBuilder[T, AccumStyle] {
-  @inline private[outwatch] def assign(value: T) = AccumStyle(name, builder.assign(value), reducer)
+  @inline private[outwatch] def assign(value: T) = AccumStyle(name, value.toString, reducer)
 }
-
 // Keys
 
 object KeyBuilder {

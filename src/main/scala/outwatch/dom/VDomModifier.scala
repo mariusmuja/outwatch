@@ -102,8 +102,9 @@ object Prop {
   type Value = DataObject.PropValue
 }
 
-sealed trait Style extends TitledAttribute
-
+sealed trait Style extends TitledAttribute {
+  val value: String
+}
 
 final case class BasicAttr(title: String, value: Attr.Value) extends Attr
 
@@ -113,15 +114,13 @@ final case class BasicAttr(title: String, value: Attr.Value) extends Attr
 final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
 
 
-sealed trait SimpleStyle extends Style {
-  val value: String
-}
-final case class AccumStyle(title: String, style: BasicStyle, accum: (String, String) => String) extends Style
 
-final case class BasicStyle(title: String, value: String) extends SimpleStyle
-final case class DelayedStyle(title: String, value: String) extends SimpleStyle
-final case class RemoveStyle(title: String, value: String) extends SimpleStyle
-final case class DestroyStyle(title: String, value: String) extends SimpleStyle
+final case class AccumStyle(title: String, value: String, accum: (String, String) => String) extends Style
+
+final case class BasicStyle(title: String, value: String) extends Style
+final case class DelayedStyle(title: String, value: String) extends Style
+final case class RemoveStyle(title: String, value: String) extends Style
+final case class DestroyStyle(title: String, value: String) extends Style
 
 // Hooks
 
