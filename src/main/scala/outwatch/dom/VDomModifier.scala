@@ -20,11 +20,10 @@ Modifier
           AccumAttr
         Prop
         Style
-          SimpleStyle
-            BasicStyle
-            DelayedStyle
-            RemoveStyle
-            DestroyStyle
+          BasicStyle
+          DelayedStyle
+          RemoveStyle
+          DestroyStyle
           AccumStyle
       EmptyAttribute
     Hook

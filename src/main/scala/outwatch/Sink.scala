@@ -5,7 +5,8 @@ import monix.execution.Scheduler
 import monix.execution.{Ack, Cancelable}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
-import monix.reactive.{Observable, Observer}
+import monix.reactive.Observer
+import outwatch.dom.Observable
 
 import scala.concurrent.Future
 

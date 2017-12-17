@@ -2,7 +2,6 @@ package outwatch
 
 import cats.effect.IO
 import monix.execution.Ack.Continue
-import monix.reactive.Observable
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{document, html}
 import outwatch.dom._

@@ -5,8 +5,8 @@ import monix.execution.Ack.Continue
 import monix.execution.ExecutionModel.SynchronousExecution
 import monix.execution.schedulers.TrampolineScheduler
 import monix.execution.{Cancelable, Scheduler}
-import monix.reactive.Observable
 import org.scalajs.dom.document
+import outwatch.dom.Observable
 
 import scala.concurrent.Future
 

@@ -3,10 +3,10 @@ package outwatch.http
 import cats.Eval.always
 import cats.effect.IO
 import monix.execution.Scheduler
-import monix.reactive.Observable
 import org.scalajs.dom.ext.Ajax.InputData
 import org.scalajs.dom.ext.{Ajax, AjaxException}
 import org.scalajs.dom.{Blob, XMLHttpRequest}
+import outwatch.dom.Observable
 
 import scala.concurrent.Future
 import scala.scalajs.js
