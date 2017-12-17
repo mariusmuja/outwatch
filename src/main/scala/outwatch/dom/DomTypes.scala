@@ -51,10 +51,10 @@ trait Tags
           with TableTags[TagBuilder.Tag, VTree]
           with TagBuilder
           with TagHelpers
+          with TagsCompat
 
 @deprecated("Use dsl.tags instead", "0.11.0")
 object Tags extends Tags
-                    with TagsCompat
 
 trait TagsExtra
   extends DocumentTags[TagBuilder.Tag, VTree]
@@ -68,15 +68,12 @@ trait Attributes
   with ReflectedAttrs
   with Props
   with Events
-  with AttributesExtra
   with AttributeHelpers
   with OutwatchAttributes
+  with AttributesCompat
 
 @deprecated("Use dsl.attributes instead", "0.11.0")
 object Attributes extends Attributes
-                          with Styles
-                          with AttributesCompat
-                          with Handlers
 
 // Attrs
 

@@ -3,7 +3,6 @@ package outwatch.dom
 object dsl extends Attributes with Tags with Styles {
   object tags extends Tags {
     object extra extends TagsExtra
-    object custom extends TagHelpers
     object all extends Tags with TagsExtra
   }
   object attributes extends Attributes {
@@ -11,7 +10,6 @@ object dsl extends Attributes with Tags with Styles {
     object reflected extends ReflectedAttrs
     object props extends Props
     object events extends Events
-    object custom extends AttributeHelpers
     object outwatch extends OutwatchAttributes
     object lifecycle extends OutWatchLifeCycleAttributes
   }

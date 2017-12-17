@@ -1,7 +1,6 @@
 package outwatch.dom
 
 import outwatch.dom.helpers._
-import org.scalajs.dom._
 
 /** Trait containing the contents of the `Attributes` module, so they can be
   * mixed in to other objects if needed. This should contain "all" attributes
@@ -11,7 +10,6 @@ trait OutwatchAttributes
   extends OutWatchChildAttributes
   with SnabbdomKeyAttributes
   with OutWatchLifeCycleAttributes
-  with TypedInputEventProps
 
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributes {
@@ -59,20 +57,11 @@ trait SnabbdomKeyAttributes {
   lazy val key = KeyBuilder
 }
 
-trait TypedInputEventProps {
-  import dsl.attributes.events._
+trait AttributeHelpers { self: Attributes =>
+  lazy val `class` = className
 
-  /** The input event is fired when an element is checked. */
-  lazy val inputChecked = onChange.checked[html.Input]
+  lazy val `for` = forId
 
-  /** The input event is fired when an element gets user input. */
-  lazy val inputNumber  = onInput.numberValue[html.Input]
-
-  /** The input event is fired when an element gets user input. */
-  lazy val inputString  = onInput.stringValue[html.Input]
-}
-
-trait AttributeHelpers {
   lazy val data = new DynamicAttributeBuilder[Any]("data" :: Nil)
 
   def attr[T](key: String, convert: T => Attr.Value = (t: T) => t.toString : Attr.Value) = new AttrBuilder[T](key, convert)
@@ -80,6 +69,6 @@ trait AttributeHelpers {
   def style[T](key: String) = new BasicStyleBuilder[T](key)
 }
 
-trait TagHelpers {
-  def tag(name: String)= VTree(name, Seq.empty)
+trait TagHelpers { self: Tags =>
+  def tag(name: String): VTree = VTree(name, Seq.empty)
 }

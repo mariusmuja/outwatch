@@ -25,11 +25,7 @@ trait Handlers {
   def createHandler[T](defaultValues: T*)(implicit s: Scheduler): IO[Pipe[T, T]] = Handler.create[T](defaultValues: _*)
 }
 
-trait AttributesExtra { self: Attributes =>
-  lazy val `class` = className
-
-  lazy val `for` = forId
-}
+object Handlers extends Handlers
 
 trait AttributesCompat { self: Attributes =>
   @deprecated("Use `type`, tpe or typ instead", "0.11.0")
