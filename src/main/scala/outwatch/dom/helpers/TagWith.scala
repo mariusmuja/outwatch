@@ -1,4 +1,4 @@
-package outwatch.dom
+package outwatch.dom.helpers
 
 import org.scalajs.dom
 

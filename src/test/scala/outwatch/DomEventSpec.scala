@@ -286,10 +286,10 @@ object DomEventSpec extends JSDomSuite {
   test("EventStreams should be able to be transformed from strings") {
 
     val number = 42
-    val onInputString = onInput.value
+    val onInputValue = onInput.value
     val node = Handler.create[Int].flatMap { stream =>
       div(
-        input(id := "input", onInputString(number) --> stream),
+        input(id := "input", onInputValue(number) --> stream),
         span(id:="num",child <-- stream)
       )
     }
