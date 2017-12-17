@@ -1,12 +1,13 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
+import com.raquo.domtypes.jsdom.defs.events.TypedTargetEvent
 import org.scalajs.dom._
 import outwatch.Sink
 import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, Observable, PostPatchHook, PrePatchHook, TagWithChecked, TagWithNumber, TagWithString, UpdateHook}
 
 
-trait EmitterBuilder[E <: Event, O] extends Any {
+trait EmitterBuilder[E <: Event, O] extends Any with CurrentTargetOps[E, O] {
 
   private[outwatch] def transform[T](tr: Observable[O] => Observable[T]): TransformingEmitterBuilder[E, T]
 
@@ -26,9 +27,55 @@ trait EmitterBuilder[E <: Event, O] extends Any {
   def -->(sink: Sink[_ >: O]): IO[Emitter]
 }
 
-
-object EmitterBuilder {
+object EmitterBuilder extends TypedTargetOps {
   def apply[E <: Event](eventType: String) = new SimpleEmitterBuilder[E](eventType)
+}
+
+trait TypedTargetOps {
+
+  trait TypedTarget[+Elem <: EventTarget, -E <: Event] {
+    def target(event: E): Elem
+  }
+
+  trait TypedTargetLowPriority {
+    implicit def castEventTarget[Elem <: EventTarget, E <: Event] = new TypedTarget[Elem, E] {
+      def target(event: E): Elem = event.target.asInstanceOf[Elem]
+    }
+  }
+
+  object TypedTarget extends TypedTargetLowPriority {
+    implicit def typedTargetEventTarget[Elem <: EventTarget, E <: Event](implicit ev: E <:< TypedTargetEvent[Elem]) =
+      new TypedTarget[Elem, E] {
+        def target(event: E): Elem = ev(event).target
+      }
+  }
+
+  class TargetOps[E <: Event, O <: Event, Elem <: EventTarget](event: EmitterBuilder[E, O], getTarget: O => Elem) {
+    def value(implicit tag: TagWithString[Elem]): EmitterBuilder[E, String] =
+      event.map(ev => tag.value(getTarget(ev)))
+
+    def valueAsNumber(implicit tag: TagWithNumber[Elem]): EmitterBuilder[E, Double] =
+      event.map(ev => tag.valueAsNumber(getTarget(ev)))
+
+    def checked(implicit tag: TagWithChecked[Elem]): EmitterBuilder[E, Boolean] =
+      event.map(ev => tag.checked(getTarget(ev)))
+  }
+
+  implicit class WithTarget[E <: Event, O <: Event](private val builder: EmitterBuilder[E, O]) {
+    def target[Elem <: EventTarget](implicit ev: TypedTarget[Elem, O]) = new TargetOps[E, O, Elem](builder, event => ev.target(event))
+  }
+}
+
+trait CurrentTargetOps[E <: Event, O] extends Any { self: EmitterBuilder[E, O] =>
+
+  def value[Elem <: EventTarget](implicit tag: TagWithString[Elem], ev: O <:< Event): EmitterBuilder[E, String] =
+    map(e => tag.value(ev(e).currentTarget.asInstanceOf[Elem]))
+
+  def valueAsNumber[Elem <: EventTarget](implicit tag: TagWithNumber[Elem], ev: O <:< Event): EmitterBuilder[E, Double] =
+    map(e => tag.valueAsNumber(ev(e).currentTarget.asInstanceOf[Elem]))
+
+  def checked[Elem <: EventTarget](implicit tag: TagWithChecked[Elem], ev: O <:< Event): EmitterBuilder[E, Boolean] =
+    map(e => tag.checked(ev(e).currentTarget.asInstanceOf[Elem]))
 }
 
 
@@ -48,28 +95,14 @@ final case class TransformingEmitterBuilder[E <: Event, O] private[helpers] (
 }
 
 
-trait EventProps[E <: Event] extends Any { self: EmitterBuilder[E, E] =>
+final class SimpleEmitterBuilder[E <: Event] private[helpers]( val eventType: String) extends AnyVal
+                                                                                              with EmitterBuilder[E, E] {
 
-  def stringValue[L <: html.Element](implicit tag: TagWithString[L]): TransformingEmitterBuilder[E, String] =
-    map(e => tag.value(e.currentTarget.asInstanceOf[L]))
+  private[outwatch] def transform[O](transformer: Observable[E] => Observable[O]) =
+    new TransformingEmitterBuilder[E, O](eventType, transformer)
 
-  def numberValue[L <: html.Element](implicit tag: TagWithNumber[L]): TransformingEmitterBuilder[E, Double] =
-    map(e => tag.valueAsNumber(e.currentTarget.asInstanceOf[L]))
-
-  def checked[L <: html.Element](implicit tag: TagWithChecked[L]): TransformingEmitterBuilder[E, Boolean] =
-    map(e => tag.checked(e.currentTarget.asInstanceOf[L]))
-}
-
-final class SimpleEmitterBuilder[E <: Event] private[helpers](
-  val eventType: String
-) extends AnyVal
-          with EmitterBuilder[E, E]
-          with EventProps[E] {
-
-  private[outwatch] def transform[O](transformer: Observable[E] => Observable[O]) = new TransformingEmitterBuilder[E, O](eventType, transformer)
-
-  def -->(sink: Sink[_ >: E]): IO[Emitter] = {
-    IO.pure(Emitter(eventType, event => sink.observer.onNext(event.asInstanceOf[E])))
+  def -->(sink: Sink[_ >: E]): IO[Emitter] = IO.pure {
+    Emitter(eventType, event => sink.observer.onNext(event.asInstanceOf[E]))
   }
 }
 

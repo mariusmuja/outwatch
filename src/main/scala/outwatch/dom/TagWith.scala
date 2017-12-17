@@ -2,15 +2,22 @@ package outwatch.dom
 
 import org.scalajs.dom
 
-trait TagWithString[Elem <: dom.html.Element] {
+trait TagWithString[Elem <: dom.EventTarget] {
   def value(elem: Elem): String
 }
-object TagWithString {
-  implicit object InputWithString extends TagWithString[dom.html.Input] {
-    def value(elem: dom.html.Input) = elem.value
-  }
+
+trait TagWithStringLowPriority {
   implicit object TextAreaWithString extends TagWithString[dom.html.TextArea] {
     def value(elem: dom.html.TextArea) = elem.value
+  }
+  implicit object SelectWithString extends TagWithString[dom.html.Select] {
+    def value(elem: dom.html.Select) = elem.value
+  }
+}
+
+object TagWithString extends TagWithStringLowPriority {
+  implicit object InputWithString extends TagWithString[dom.html.Input] {
+    def value(elem: dom.html.Input) = elem.value
   }
 }
 

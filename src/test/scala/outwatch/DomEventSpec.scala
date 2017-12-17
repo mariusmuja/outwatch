@@ -286,9 +286,10 @@ object DomEventSpec extends JSDomSuite {
   test("EventStreams should be able to be transformed from strings") {
 
     val number = 42
+    val onInputString = onInput.value
     val node = Handler.create[Int].flatMap { stream =>
       div(
-        input(id := "input", inputString(number) --> stream),
+        input(id := "input", onInputString(number) --> stream),
         span(id:="num",child <-- stream)
       )
     }
@@ -335,7 +336,7 @@ object DomEventSpec extends JSDomSuite {
 
       Handler.create[String].flatMap { stream =>
         div(
-          input(id := "input", tpe := "text", inputString --> stream),
+          input(id := "input", tpe := "text", onInput.value --> stream),
           button(id := "submit", onClick(stream) --> submit),
           ul( id := "items",
             children <-- state.map(items => items.map(it => li(it)))
@@ -426,4 +427,78 @@ object DomEventSpec extends JSDomSuite {
     docClicked shouldBe true
   }
 
+  test("TagWith should correctly work on events") {
+
+    val node = Handler.create[String].flatMap { submit =>
+
+      for {
+        stringStream <- Handler.create[String]
+        doubleStream <- Handler.create[Double]
+        boolStream <- Handler.create[Boolean]
+        elem <- div(
+          input(
+            id := "input", tpe := "text",
+            onSearch.target.value --> stringStream,
+            onSearch.target.valueAsNumber --> doubleStream,
+            onSearch.target.checked --> boolStream,
+
+            onClick.target[html.Input].value --> stringStream,
+            onClick.target[html.Input].valueAsNumber --> doubleStream,
+            onChange.target[html.Input].checked --> boolStream,
+
+            // currentTarget
+            onClick.value --> stringStream,
+            onClick.valueAsNumber --> doubleStream,
+            onChange.checked --> boolStream,
+
+            onSearch.filter(_ => true).target.value --> stringStream,
+            onClick.filter(_ => true).target[html.Input].value --> stringStream,
+            onClick.filter(_ => true).value --> stringStream
+          ),
+          ul(id := "items")
+        )
+      } yield elem
+    }
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element =document.getElementById("input")
+    element shouldNotBe null
+  }
+
+  test("DomEvents should correctly be compiled with currentTarget") {
+
+    val stringHandler = Handler.create[String].unsafeRunSync()
+    def modifier: VDomModifier = Seq(
+      onDrag.value --> stringHandler,
+      onDrag.value[html.TextArea] --> stringHandler
+    )
+
+    val node = Handler.create[String].flatMap { submit =>
+
+      for {
+        stream <- Handler.create[String]
+        eventStream <- Handler.create[MouseEvent]
+        elem <- div(
+          input(
+            id := "input", tpe := "text",
+
+            onSearch.map(_.target.value) --> stream,
+
+            onSearch.target.value --> stream,
+            onClick.target[html.Input].value --> stream,
+            onClick.value --> stream,
+
+            modifier
+          ),
+          ul(id := "items")
+        )
+      } yield elem
+    }
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element =document.getElementById("input")
+    element shouldNotBe null
+  }
 }
