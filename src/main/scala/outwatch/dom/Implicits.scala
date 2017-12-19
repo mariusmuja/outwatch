@@ -10,7 +10,7 @@ trait Implicits {
 
   implicit def valueModifier[T](value: T)(implicit mr: ValueModifier[T]): VDomModifier = mr.asModifier(value)
 
-  implicit def optionIsEmptyModifier(opt: Option[VDomModifier]): VDomModifier = opt getOrElse VDomModifier.empty
+  implicit def optionIsEmptyModifier[T](opt: Option[T])(implicit conv: T => VDomModifier): VDomModifier = opt.map(conv) getOrElse VDomModifier.empty
 
   implicit def compositeModifier(modifiers: Seq[VDomModifier]): VDomModifier = VDomModifier.apply(modifiers : _*)
 
