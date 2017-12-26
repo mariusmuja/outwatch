@@ -62,14 +62,8 @@ object Children {
 
   private[outwatch] case class VNodes(nodes: List[ChildVNode], streamStatus: StreamStatus) extends Children {
 
-    private def ensureVTreeKey(vtree: VTree): VTree = {
-      val defaultKey = Key(vtree.hashCode)
-      val newModifiers = defaultKey +: vtree.modifiers
-      vtree.copy(modifiers = newModifiers)
-    }
-
     private def ensureVNodeKey[N >: VTree](node: N): N = node match {
-      case vtree: VTree => ensureVTreeKey(vtree)
+      case vtree: VTree => vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
       case other => other
     }
 
@@ -181,10 +175,8 @@ private[outwatch] final case class Receivers(
       Observable(Seq.empty)
     } else {
       Observable.combineLatestList(
-        attributeStreamReceivers
-          .groupBy(_.attribute)
-          .values
-          .map(_.last.attributeStream)(breakOut): _*
+        attributeStreamReceivers.groupBy(_.attribute).values
+          .map(_.last.attributeStream.startWith(Seq(Attribute.empty)))(breakOut): _*
       )
     }
 

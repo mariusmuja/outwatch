@@ -623,6 +623,68 @@ object OutWatchDomSpec extends JSDomSuite {
     node.children(0).innerHTML shouldBe "messagegenus"
   }
 
+  test("The HTML DSL partially render component even if parts not present") {
+    val messagesColor = PublishSubject[String]
+    val messagesBgColor = PublishSubject[String]
+    val childString = PublishSubject[String]
+
+    val vNode = div( id := "inner",
+      color <-- messagesColor,
+      backgroundColor <-- messagesBgColor,
+      child <-- childString
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
+    val inner = document.getElementById("inner").asInstanceOf[html.Div]
+
+    inner.innerHTML shouldBe ""
+    inner.style.color shouldBe ""
+    inner.style.backgroundColor shouldBe ""
+
+    childString.onNext("fish")
+    inner.innerHTML shouldBe "fish"
+    inner.style.color shouldBe ""
+    inner.style.backgroundColor shouldBe ""
+
+    messagesColor.onNext("red")
+    inner.innerHTML shouldBe "fish"
+    inner.style.color shouldBe "red"
+    inner.style.backgroundColor shouldBe ""
+
+    messagesBgColor.onNext("blue")
+    inner.innerHTML shouldBe "fish"
+    inner.style.color shouldBe "red"
+    inner.style.backgroundColor shouldBe "blue"
+  }
+
+  test("The HTML DSL partially render component even if parts not present2") {
+    val messagesColor = PublishSubject[String]
+    val childString = PublishSubject[String]
+
+    val vNode = div( id := "inner",
+      color <-- messagesColor,
+      child <-- childString
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+    OutWatch.renderInto(node, vNode).unsafeRunSync()
+    val inner = document.getElementById("inner").asInstanceOf[html.Div]
+
+    inner.innerHTML shouldBe ""
+    inner.style.color shouldBe ""
+
+    childString.onNext("fish")
+    inner.innerHTML shouldBe "fish"
+    inner.style.color shouldBe ""
+
+    messagesColor.onNext("red")
+    inner.innerHTML shouldBe "fish"
+    inner.style.color shouldBe "red"
+  }
+
   test("The HTML DSL should update reused vnodes correctly") {
     val messages = PublishSubject[String]
     val vNode = div(data.ralf := true, child <-- messages)

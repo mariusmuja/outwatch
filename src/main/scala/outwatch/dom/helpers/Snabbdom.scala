@@ -98,13 +98,13 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ).orUndefined
   }
 
-  private def createInsertHook(receivers: Receivers,
-    subscriptionCancelable: SingleAssignmentCancelable,
+  private def createInsertHook(
+    receivers: Receivers,
+    subscription: SingleAssignmentCancelable,
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
-    def toProxy(changable: (Seq[Attribute], Seq[IO[StaticVNode]])): VNodeProxy = {
-      val (attributes, nodes) = changable
+    val toProxy: ((Seq[Attribute], Seq[IO[StaticVNode]])) => VNodeProxy = { case (attributes, nodes) =>
       val newData = SeparatedAttributes.from(attributes).updateDataObject(proxy.data)
 
       if (nodes.isEmpty) {
@@ -118,7 +118,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       }
     }
 
-    val subscription = receivers.observable
+    subscription := receivers.observable
       .map(toProxy)
       .startWith(Seq(proxy))
       .bufferSliding(2, 1)
@@ -126,8 +126,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
         { case Seq(old, crt) => patch(old, crt); Continue },
         error => dom.console.error(error.getMessage)
       )
-
-    subscriptionCancelable := subscription
 
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
   }
@@ -179,6 +177,10 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
   private def createDataObject(receivers: Receivers)(implicit s: Scheduler): DataObject = {
 
+    val (attrs, props, style) = properties.attributes.toSnabbdom
+    val eventHandlers = emitters.toSnabbdom
+    val hooks = properties.hooks.toSnabbdom(receivers)
+
     val keyOption = properties.keys.lastOption
     val key = if (receivers.nonEmpty) {
       keyOption.fold[Key.Value](receivers.hashCode)(_.value): js.UndefOr[Key.Value]
@@ -186,12 +188,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
       keyOption.map(_.value).orUndefined
     }
 
-    val (attrs, props, style) = properties.attributes.toSnabbdom
-    DataObject(
-      attrs, props, style, emitters.toSnabbdom,
-      properties.hooks.toSnabbdom(receivers),
-      key
-    )
+    DataObject(attrs, props, style, eventHandlers, hooks, key)
   }
 
   private[outwatch] def toSnabbdom(nodeType: String)(implicit s: Scheduler): VNodeProxy = {

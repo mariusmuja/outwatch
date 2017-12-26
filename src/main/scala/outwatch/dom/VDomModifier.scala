@@ -75,6 +75,8 @@ object Key {
 sealed trait Attribute extends Property
 object Attribute {
   def apply(title: String, value: Attr.Value): Attribute = BasicAttr(title, value)
+
+  val empty: Attribute = EmptyAttribute
 }
 
 
