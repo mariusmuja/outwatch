@@ -1,6 +1,7 @@
 package outwatch
 
 import minitest.TestSuite
+import minitest.api.{SourceLocation, Void}
 import monix.execution.Ack.Continue
 import monix.execution.ExecutionModel.SynchronousExecution
 import monix.execution.schedulers.TrampolineScheduler
@@ -23,8 +24,8 @@ trait EasySubscribe {
 trait TestDSL { self: TestSuite[_] =>
 
   implicit class ShouldBe[T](received: => T) {
-    def shouldBe(expected: => T): Unit = assertEquals(received, expected)
-    def shouldNotBe(expected: => T): Unit = assert(received != expected)
+    def shouldBe(expected: => T)(implicit pos: SourceLocation): Unit = assertEquals(received, expected)
+    def shouldNotBe(expected: => T)(implicit pos: SourceLocation): Unit = assert(received != expected)
   }
 
 }
@@ -45,7 +46,7 @@ trait JSDomSuite extends TestSuite[Unit] with EasySubscribe with TestDSL {
 
   def tearDown(env: Unit): Unit = {}
 
-  def test(name: String)(f: => Unit): Unit = super.test(name)(_ => f)
+  def test(name: String)(f: => Void): Unit = super.test(name)(_ => f)
 
   def testAsync(name: String)(f: => Future[Unit]): Unit = super.testAsync(name)(_ => f)
 }
