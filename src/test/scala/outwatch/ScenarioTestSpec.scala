@@ -8,7 +8,6 @@ import outwatch.dom.dsl._
 object ScenarioTestSpec extends JSDomSuite {
 
   test("A simple counter application should work as intended") {
-    implicit val scheduler = trampolineScheduler
 
     val node = for {
       handlePlus <- Handler.create[MouseEvent]
@@ -117,8 +116,6 @@ object ScenarioTestSpec extends JSDomSuite {
   }
 
   test("A todo application should work with components") {
-
-    implicit val scheduler = trampolineScheduler
 
     def TodoComponent(title: String, deleteStream: Sink[String]) =
       li(

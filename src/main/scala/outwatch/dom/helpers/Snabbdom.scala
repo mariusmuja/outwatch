@@ -1,6 +1,5 @@
 package outwatch.dom.helpers
 
-import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.cancelables.SingleAssignmentCancelable
@@ -104,18 +103,20 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
-    val toProxy: ((Seq[Attribute], Seq[IO[StaticVNode]])) => VNodeProxy = { case (attributes, nodes) =>
-      val newData = SeparatedAttributes.from(attributes).updateDataObject(proxy.data)
+    def toProxy(state: VNodeState): VNodeProxy = {
+      val newData = SeparatedAttributes.from(state.attributes.values.toSeq).updateDataObject(proxy.data)
 
-      if (nodes.isEmpty) {
+      if (state.nodes.isEmpty) {
         if (proxy.children.isDefined) {
           hFunction(proxy.sel, newData, proxy.children.get)
         } else {
           hFunction(proxy.sel, newData, proxy.text)
         }
       } else {
-        hFunction(proxy.sel,newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
+        val nodes = state.nodes.reduceLeft(_ ++ _)
+        hFunction(proxy.sel, newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
       }
+
     }
 
     subscription := receivers.observable
@@ -124,7 +125,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       .bufferSliding(2, 1)
       .subscribe(
         { case Seq(old, crt) => patch(old, crt); Continue },
-        error => dom.console.error(error.getMessage)
+        { error => dom.console.error(error.toString) }
       )
 
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))

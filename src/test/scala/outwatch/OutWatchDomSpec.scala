@@ -9,7 +9,7 @@ import outwatch.dom.dsl._
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
 
-import scala.collection.immutable.Seq
+import scala.collection.mutable
 import scala.language.reflectiveCalls
 import scala.scalajs.js
 import scala.scalajs.js.JSON
@@ -58,15 +58,14 @@ object OutWatchDomSpec extends JSDomSuite {
       )
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(nodes, hasStream)) =
       SeparatedModifiers.from(modifiers)
 
     emitters.emitters.length shouldBe 2
     receivers.length shouldBe 2
     properties.attributes.attrs.length shouldBe 2
-    childNodes.length shouldBe 3
-    streamStatus.numChild shouldBe 0
-    streamStatus.numChildren shouldBe 0
+    nodes.length shouldBe 3
+    hasStream shouldBe false
   }
 
   test("VDomModifiers should be separated correctly with children") {
@@ -82,15 +81,14 @@ object OutWatchDomSpec extends JSDomSuite {
       div().unsafeRunSync()
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(nodes, hasStream)) =
       SeparatedModifiers.from(modifiers)
 
     emitters.emitters.length shouldBe 3
     receivers.length shouldBe 2
     properties.attributes.attrs.length shouldBe 1
-    childNodes.length shouldBe 2
-    streamStatus.numChild shouldBe 0
-    streamStatus.numChildren shouldBe 0
+    nodes.length shouldBe 2
+    hasStream shouldBe false
   }
 
   test("VDomModifiers should be separated correctly with string children") {
@@ -132,7 +130,7 @@ object OutWatchDomSpec extends JSDomSuite {
       StringModifier("text")
     )
 
-    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(childNodes, streamStatus)) =
+    val SeparatedModifiers(properties, emitters, receivers, Children.VNodes(nodes, hasStream)) =
       SeparatedModifiers.from(modifiers)
 
     emitters.emitters.map(_.eventType) shouldBe List("click", "input", "keyup")
@@ -144,9 +142,8 @@ object OutWatchDomSpec extends JSDomSuite {
     properties.attributes.attrs.length shouldBe 1
     receivers.length shouldBe 2
     properties.keys.length shouldBe 0
-    childNodes.length shouldBe 2
-    streamStatus.numChild shouldBe 0
-    streamStatus.numChildren shouldBe 1
+    nodes.length shouldBe 2
+    hasStream shouldBe true
   }
 
   val fixture = new {
@@ -156,12 +153,12 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("VDomModifiers should be run once") {
-    val list = new collection.mutable.ArrayBuffer[String]
+    val list = new mutable.ListBuffer[String]
 
     val vtree = div(
       IO {
         list += "child1"
-        ChildStreamReceiver(Observable())
+        ChildStreamReceiver(Observable(div()))
       },
       IO {
         list += "child2"
@@ -196,7 +193,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     OutWatch.renderInto(node, vtree).unsafeRunSync()
 
-    list.toSet shouldBe Set("child1", "child2", "children1", "children2", "attr1", "attr2")
+    list.toSeq shouldBe Seq("child1", "child2", "children1", "children2", "attr1", "attr2")
   }
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
@@ -208,11 +205,10 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val modifiers =  SeparatedModifiers.from(mods)
-    val Children.VNodes(childNodes, streamStatus) = modifiers.children
+    val Children.VNodes(nodes, hasStream) = modifiers.children
 
-    childNodes.size shouldBe 3
-    streamStatus.numChild shouldBe 0
-    streamStatus.numChildren shouldBe 1
+    nodes.length shouldBe 3
+    hasStream shouldBe true
 
     val proxy = modifiers.toSnabbdom("div")
     proxy.key.isDefined shouldBe true
@@ -235,11 +231,10 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val modifiers =  SeparatedModifiers.from(mods)
-    val Children.VNodes(childNodes, streamStatus) = modifiers.children
+    val Children.VNodes(nodes, hasStream) = modifiers.children
 
-    childNodes.size shouldBe 2
-    streamStatus.numChild shouldBe 0
-    streamStatus.numChildren shouldBe 1
+    nodes.length shouldBe 2
+    hasStream shouldBe true
 
     val proxy = modifiers.toSnabbdom("div")
     proxy.key.toOption shouldBe Some(1234)

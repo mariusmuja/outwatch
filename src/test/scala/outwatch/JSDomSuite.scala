@@ -32,8 +32,7 @@ trait TestDSL { self: TestSuite[_] =>
 
 trait JSDomSuite extends TestSuite[Unit] with EasySubscribe with TestDSL {
 
-  implicit val scheduler = Scheduler.global
-  val trampolineScheduler = TrampolineScheduler(scheduler, SynchronousExecution)
+  implicit val scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
 
   def setup(): Unit = {
     document.body.innerHTML = ""

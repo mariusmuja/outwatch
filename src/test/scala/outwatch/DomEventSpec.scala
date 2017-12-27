@@ -26,6 +26,7 @@ object DomEventSpec extends JSDomSuite {
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
+    document.getElementById("btn").hasAttribute("disabled") shouldBe true
     document.getElementById("btn").getAttribute("disabled") shouldBe ""
   }
 
@@ -404,8 +405,6 @@ object DomEventSpec extends JSDomSuite {
 
   test("DomWindowEvents and DomDocumentEvents should trigger correctly") {
     import outwatch.dom.dsl._
-
-    implicit val scheduler = trampolineScheduler
 
     var docClicked = false
     var winClicked = false

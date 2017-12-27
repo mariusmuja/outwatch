@@ -34,11 +34,12 @@ Modifier
       DestroyHook
     Key
   ChildVNode
+    StreamVNode
+      ChildStreamReceiver
+      ChildrenStreamReceiver
     StaticVNode
       StringVNode
       VTree
-    ChildStreamReceiver
-    ChildrenStreamReceiver
   Emitter
   AttributeStreamReceiver
   CompositeModifier
@@ -135,13 +136,16 @@ private[outwatch] final case class PostPatchHook(observer: Observer[(Element, El
 private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
 
 // Child Nodes
+
+private[outwatch] sealed trait StreamVNode extends Any with ChildVNode
+
 private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
   def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
 
-private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends ChildVNode
+private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends AnyVal with StreamVNode
 
-private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends ChildVNode
+private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends AnyVal with StreamVNode
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {
