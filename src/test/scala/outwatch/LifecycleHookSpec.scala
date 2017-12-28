@@ -313,4 +313,36 @@ object LifecycleHookSpec extends JSDomSuite {
     hooks.count(_ == "insert") shouldBe 1
   }
 
+
+
+  test("Managed subscriptions should unsubscribe on destroy") {
+
+    val nodes = PublishSubject[VNode]
+
+    var latest = ""
+    val sink = Sink.create((elem: String) => IO {
+      latest = elem
+      Continue
+    })
+
+    val sub = PublishSubject[String]
+
+    val node = div(child <-- nodes.startWith(Seq(
+      span(managed(sink <-- sub))
+    )))
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    latest shouldBe ""
+
+    sub.onNext("first")
+    latest shouldBe "first"
+
+    nodes.onNext(div()) // this triggers child destroy and subscription cancelation
+
+    sub.onNext("second")
+    latest shouldBe "first"
+  }
+
+
 }

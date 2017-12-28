@@ -2,6 +2,7 @@ package outwatch.dom
 
 import cats.effect.IO
 import monix.execution.Ack.Continue
+import monix.execution.cancelables.CompositeCancelable
 import monix.execution.{Cancelable, Scheduler}
 import outwatch.dom.dsl.attributes.lifecycle
 
@@ -19,13 +20,11 @@ trait ManagedSubscriptions {
   def managed(sub1: IO[Cancelable], sub2: IO[Cancelable], subscriptions: IO[Cancelable]*)(implicit s: Scheduler): VDomModifier = {
 
     (sub1 :: sub2 :: subscriptions.toList).sequence.flatMap { subs: Seq[Cancelable] =>
-      subs.map { sub =>
-        lifecycle.onDestroy --> Sink.create(_ => IO {
-          sub.cancel()
-          Continue
-        }
-        )
-      }
+      val composite = CompositeCancelable(subs: _*)
+      lifecycle.onDestroy --> Sink.create(_ => IO {
+        composite.cancel()
+        Continue
+      })
     }
   }
 
