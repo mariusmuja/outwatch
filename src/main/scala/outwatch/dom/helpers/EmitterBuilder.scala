@@ -6,7 +6,7 @@ import outwatch.Sink
 import outwatch.dom.{DestroyHook, Emitter, Hook, InsertHook, Observable, PostPatchHook, PrePatchHook, UpdateHook}
 
 
-trait EmitterBuilder[E <: Event, O] extends Any with CurrentTargetOps[E, O] {
+trait EmitterBuilder[E <: Event, O] extends Any {
 
   private[outwatch] def transform[T](tr: Observable[O] => Observable[T]): TransformingEmitterBuilder[E, T]
 

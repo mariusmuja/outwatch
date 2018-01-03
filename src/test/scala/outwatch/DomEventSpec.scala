@@ -432,26 +432,23 @@ object DomEventSpec extends JSDomSuite {
 
       for {
         stringStream <- Handler.create[String]
-        doubleStream <- Handler.create[Double]
+        intStream <- Handler.create[Int]
         boolStream <- Handler.create[Boolean]
         elem <- div(
           input(
             id := "input", tpe := "text",
+
+            // target will be html.Input because onSearch is a TypedTargetEvent[html.Input]
             onSearch.target.value --> stringStream,
-            onSearch.target.valueAsNumber --> doubleStream,
+            onSearch.target.valueAsNumber --> intStream,
             onSearch.target.checked --> boolStream,
 
-            onClick.target[html.Input].value --> stringStream,
-            onClick.target[html.Input].valueAsNumber --> doubleStream,
-            onChange.target[html.Input].checked --> boolStream,
+            onClick.target.value --> stringStream,
 
-            // currentTarget
             onClick.value --> stringStream,
-            onClick.valueAsNumber --> doubleStream,
+            onClick.valueAsNumber --> intStream,
             onChange.checked --> boolStream,
 
-            onSearch.filter(_ => true).target.value --> stringStream,
-            onClick.filter(_ => true).target[html.Input].value --> stringStream,
             onClick.filter(_ => true).value --> stringStream
           ),
           ul(id := "items")
@@ -468,10 +465,7 @@ object DomEventSpec extends JSDomSuite {
   test("DomEvents should correctly be compiled with currentTarget") {
 
     val stringHandler = Handler.create[String].unsafeRunSync()
-    def modifier: VDomModifier = Seq(
-      onDrag.value --> stringHandler,
-      onDrag.value[html.TextArea] --> stringHandler
-    )
+    def modifier: VDomModifier = onDrag.value --> stringHandler
 
     val node = Handler.create[String].flatMap { submit =>
 
@@ -482,10 +476,7 @@ object DomEventSpec extends JSDomSuite {
           input(
             id := "input", tpe := "text",
 
-            onSearch.map(_.target.value) --> stream,
-
             onSearch.target.value --> stream,
-            onClick.target[html.Input].value --> stream,
             onClick.value --> stream,
 
             modifier
