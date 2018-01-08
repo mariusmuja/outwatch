@@ -139,7 +139,7 @@ private[outwatch] final case class SeparatedEmitters(
 
 private[outwatch] case class VNodeState(
   nodes: Array[Seq[IO[StaticVNode]]],
-  attributes: Map[String, Attribute] = Map.empty,
+  attributes: Map[String, Attribute] = Map.empty
 )
 
 private[outwatch] object VNodeState {
