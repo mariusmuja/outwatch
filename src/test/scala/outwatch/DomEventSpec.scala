@@ -488,7 +488,20 @@ object DomEventSpec extends JSDomSuite {
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    val element =document.getElementById("input")
+    val element = document.getElementById("input")
     element shouldNotBe null
+  }
+
+
+  test("Children stream should work for string sequences") {
+    val myStrings: Observable[Seq[String]] = Observable(Seq("a", "b"))
+    val node = div(id := "strings",
+      children <-- myStrings
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "ab"
   }
 }
