@@ -20,6 +20,7 @@ import scala.scalajs.js
 private[outwatch] object DomTypes {
   type AttributeBuilder[T, _] = helpers.AttributeBuilder[T, Attr]
   type PropertyBuilder[T, _] = helpers.PropBuilder[T]
+  type EventEmitterBuilder[E <: dom.Event] = SimpleEmitterBuilder[E, Emitter]
 }
 
 private[outwatch] object CodecBuilder {
@@ -118,10 +119,10 @@ trait Props
 
 // Events
 trait Events
-  extends HTMLElementEventProps[SimpleEmitterBuilder]
-  with builders.EventPropBuilder[SimpleEmitterBuilder, dom.Event] {
+  extends HTMLElementEventProps[DomTypes.EventEmitterBuilder]
+  with builders.EventPropBuilder[DomTypes.EventEmitterBuilder, dom.Event] {
 
-  override def eventProp[V <: dom.Event](key: String): SimpleEmitterBuilder[V] =  EmitterBuilder[V](key)
+  override def eventProp[V <: dom.Event](key: String): DomTypes.EventEmitterBuilder[V] =  EmitterBuilder[V](key)
 }
 
 

@@ -345,4 +345,27 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
 
+  test("Hooks should support emitter operations") {
+
+    val operations = mutable.ArrayBuffer.empty[String]
+
+    val sink = Sink.create((op: String) => IO {
+      operations += op
+      Continue
+    })
+
+    val divTagName = onInsert.map(_.tagName.toLowerCase).filter(_ == "div")
+
+    val node = div(onInsert("insert") --> sink,
+      div(divTagName --> sink),
+      span(divTagName --> sink)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    operations.toList shouldBe List("div", "insert")
+
+  }
+
+
 }
