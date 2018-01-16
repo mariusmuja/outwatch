@@ -39,7 +39,7 @@ object LocalStorageReader {
 object LocalStorageWriter {
   def apply(key: String)(implicit s: Scheduler): Sink[String] = {
     Sink.create[String](
-      data => IO {
+      data => {
         localStorage.setItem(key, data)
         Continue
       }
