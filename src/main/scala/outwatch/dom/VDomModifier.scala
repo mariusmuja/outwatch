@@ -109,6 +109,9 @@ object Prop {
 sealed trait Style extends TitledAttribute {
   val value: String
 }
+object Style {
+  type Value = DataObject.StyleValue
+}
 
 final case class BasicAttr(title: String, value: Attr.Value) extends Attr
 
