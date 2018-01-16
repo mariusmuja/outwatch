@@ -32,7 +32,7 @@ object EmitterBuilder extends TargetOps {
     SimpleEmitterBuilder[E, Emitter](observer => Emitter(eventType, event => observer.onNext(event.asInstanceOf[E])))
 }
 
-case class TransformingEmitterBuilder[E, O, R](
+final case class TransformingEmitterBuilder[E, O, R] private[helpers](
   transformer: Observable[E] => Observable[O],
   create: Observer[E] => R
 ) extends EmitterBuilder[E, O, R] {
@@ -47,7 +47,7 @@ case class TransformingEmitterBuilder[E, O, R](
   }
 }
 
-case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends AnyVal with EmitterBuilder[E, E, R] {
+final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends AnyVal with EmitterBuilder[E, E, R] {
 
   def transform[T](tr: Observable[E] => Observable[T]): EmitterBuilder[E, T, R] =
     new TransformingEmitterBuilder[E, T, R](tr, create)
