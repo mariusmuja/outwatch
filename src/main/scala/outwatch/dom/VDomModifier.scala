@@ -160,7 +160,7 @@ private[outwatch] final case class StringVNode(string: String) extends AnyVal wi
 // Needs to be benchmarked in the Browser
 private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifier]) extends StaticVNode {
 
-  def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy( modifiers = modifiers ++ args))
+  def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy(modifiers = modifiers ++ args))
 
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
     SeparatedModifiers.from(modifiers).toSnabbdom(nodeType)

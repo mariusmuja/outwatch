@@ -837,4 +837,27 @@ object OutWatchDomSpec extends JSDomSuite {
     node.disabled shouldBe true
   }
 
+  test("The HTML DSL should correctly work with AsVomModifier conversions") {
+
+    val node = document.createElement("div")
+
+    OutWatch.renderReplace(node, div("one")).unsafeRunSync()
+    node.innerHTML shouldBe "one"
+
+    OutWatch.renderReplace(node, div(1)).unsafeRunSync()
+    node.innerHTML shouldBe "1"
+
+    OutWatch.renderReplace(node, div(1.0)).unsafeRunSync()
+    node.innerHTML shouldBe "1"
+
+    OutWatch.renderReplace(node, div(Seq("one", "two"))).unsafeRunSync()
+    node.innerHTML shouldBe "onetwo"
+
+    OutWatch.renderReplace(node, div(Seq(1, 2))).unsafeRunSync()
+    node.innerHTML shouldBe "12"
+
+    OutWatch.renderReplace(node, div(Seq(1.0, 2.0))).unsafeRunSync()
+    node.innerHTML shouldBe "12"
+  }
+
 }
