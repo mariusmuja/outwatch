@@ -89,17 +89,6 @@ object Sink {
     sink
   }
 
-  def createIO[T](next: T => IO[Future[Ack]],
-    error: Throwable => IO[Unit] = _ => IO.pure(()),
-    complete: () => IO[Unit] = () => IO.pure(())
-  )(implicit s: Scheduler): Sink[T] =
-    create[T](
-      (t: T) => next(t).unsafeRunSync(),
-      (e: Throwable) => error(e).unsafeRunSync(),
-      () => complete().unsafeRunSync()
-    )
-
-
   private def completionObservable[T](sink: Sink[T]): Option[Observable[Unit]] = {
     sink match {
       case subject@SubjectSink() =>
