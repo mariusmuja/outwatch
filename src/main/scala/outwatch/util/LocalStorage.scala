@@ -1,48 +1,55 @@
 package outwatch.util
 
 import cats.effect.IO
-import monix.execution.Ack.Continue
 import monix.execution.Scheduler
-import org.scalajs.dom.Storage
+import org.scalajs.dom
+import org.scalajs.dom.StorageEvent
 import org.scalajs.dom.window.localStorage
+import org.scalajs.dom.window.sessionStorage
 import outwatch.dom.Observable
-import outwatch.dom.dsl.events.window.onStorage
-import outwatch.{Handler, Sink}
+import outwatch.dom.dsl.events
+import cats.implicits._
+import outwatch.Handler
 
+class Storage(domStorage: dom.Storage) {
+  private def handlerWithTransform(key: String, transform: Observable[Option[String]] => Observable[Option[String]])(implicit scheduler: Scheduler) = {
+    val storage = new dom.ext.Storage(domStorage)
 
-class StorageHandler(storageArea: Storage)(key: String)(implicit s: Scheduler) {
-
-  def value: Observable[String] = Observable(storageArea.getItem(key))
-
-  val handler: IO[Handler[Option[String]]] = Handler.create[Option[String]].map { handler =>
-
-    val otherPageChange = onStorage.filter(x => x.storageArea == storageArea && x.key == key)
-      .map(e => Option(e.newValue).map(_.asInstanceOf[String]))
-
-    handler.transformSource { orig =>
-      val obs = orig.map { value =>
-        value.fold(storageArea.removeItem(key))(value =>
-          storageArea.setItem(key, value)
-        )
-        value
-      }.startWith(Seq(Option(storageArea.getItem(key))))
-
-      Observable.merge(obs, otherPageChange).share
+    for {
+      h <- Handler.create[Option[String]](storage(key))
+    } yield {
+      // We execute the write-action to the storage
+      // and pass the written value through to the underlying handler h
+      h.transformHandler(o => transform(o).distinctUntilChanged) { input =>
+        input.foreach {
+          case Some(data) => storage.update(key, data)
+          case None => storage.remove(key)
+        }
+        input
+      }
     }
   }
-}
 
-object LocalStorageReader {
-  def apply(key: String): Observable[String] = Observable(localStorage.getItem(key))
-}
+  def handlerWithoutEvents(key: String)(implicit scheduler: Scheduler): IO[Handler[Option[String]]] = {
+    handlerWithTransform(key, identity)
+  }
 
-object LocalStorageWriter {
-  def apply(key: String)(implicit s: Scheduler): Sink[String] = {
-    Sink.create[String](
-      data => {
-        localStorage.setItem(key, data)
-        Continue
+  def handler(key: String)(implicit scheduler: Scheduler): IO[Handler[Option[String]]] = {
+    // StorageEvents are only fired if the localStorage was changed in another window
+    val storageEvents: Observable[Option[String]] = events.window.onStorage
+      .collect {
+        case e: StorageEvent if e.storageArea == domStorage && e.key == key =>
+          // newValue is either String or null if removed or cleared
+          // Option() transformes this to Some(string) or None
+          Option(e.newValue.asInstanceOf[String]) //TODO: https://github.com/scala-js/scala-js-dom/pull/308
+        case e: StorageEvent if e.storageArea == domStorage && e.key == null =>
+          // storage.clear() emits an event with key == null
+          None
       }
-    )
+
+    handlerWithTransform(key, Observable.merge(_, storageEvents))
   }
 }
+
+object LocalStorage extends Storage(localStorage)
+object SessionStorage extends Storage(sessionStorage)
