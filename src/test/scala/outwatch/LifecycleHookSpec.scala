@@ -14,12 +14,14 @@ object LifecycleHookSpec extends JSDomSuite {
   test("Insertion hooks should be called correctly") {
 
     var switch = false
-    val sink = Sink.create((_: Element) => {
+    val sink = Sink.create{(_: Element) =>
       switch = true
       Continue
-    })
+    }
 
-    val node = div(onInsert --> sink)
+    val node = sink.flatMap { sink =>
+      div(onInsert --> sink)
+    }
 
     switch shouldBe false
 
@@ -31,17 +33,21 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Insertion hooks should be called correctly on merged nodes") {
     var switch = false
-    val sink = Sink.create((_: Element) => {
+    val sink = Sink.create{(_: Element) =>
       switch = true
       Continue
-    })
+    }
     var switch2 = false
-    val sink2 = Sink.create((_: Element) => {
+    val sink2 = Sink.create{(_: Element) =>
       switch2 = true
       Continue
-    })
+    }
 
-    val node = div(onInsert --> sink)(onInsert --> sink2)
+    val node = for {
+      sink <- sink
+      sink2 <- sink2
+      node <- div(onInsert --> sink)(onInsert --> sink2)
+    } yield node
 
     switch shouldBe false
     switch2 shouldBe false
@@ -56,12 +62,14 @@ object LifecycleHookSpec extends JSDomSuite {
   test("Destruction hooks should be called correctly") {
 
     var switch = false
-    val sink = Sink.create((_: Element) => {
+    val sink = Sink.create{(_: Element) =>
       switch = true
       Continue
-    })
+    }
 
-    val node = div(child <-- Observable(span(onDestroy --> sink), div("Hasdasd")))
+    val node = sink.flatMap { sink =>
+      div(child <-- Observable(span(onDestroy --> sink), div("Hasdasd")))
+    }
 
     switch shouldBe false
 
@@ -74,17 +82,21 @@ object LifecycleHookSpec extends JSDomSuite {
   test("Destruction hooks should be called correctly on merged nodes") {
 
     var switch = false
-    val sink = Sink.create((_: Element) => {
+    val sink = Sink.create{(_: Element) =>
       switch = true
       Continue
-    })
+    }
     var switch2 = false
-    val sink2 = Sink.create((_: Element) => {
+    val sink2 = Sink.create{(_: Element) =>
       switch2 = true
       Continue
-    })
+    }
 
-    val node = div(child <-- Observable(span(onDestroy --> sink)(onDestroy --> sink2), div("Hasdasd")))
+    val node = for {
+      sink <- sink
+      sink2 <- sink2
+      node <- div(child <-- Observable(span(onDestroy --> sink)(onDestroy --> sink2), div("Hasdasd")))
+    } yield node
 
     switch shouldBe false
     switch2 shouldBe false
@@ -96,38 +108,24 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
 
-  test("Update hooks should be called correctly") {
-
-    var switch = false
-    val sink = Sink.create((_: (Element, Element)) => {
-      switch = true
-      Continue
-    })
-
-    val node = div(child <-- Observable(span(onUpdate --> sink, "Hello"), span(onUpdate --> sink, "Hey")))
-
-    switch shouldBe false
-
-    OutWatch.renderInto("#app", node).unsafeRunSync()
-
-    switch shouldBe true
-  }
-
-
   test("Update hooks should be called correctly on merged nodes") {
     var switch1 = false
-    val sink1 = Sink.create((_: (Element, Element)) => {
+    val sink1 = Sink.create{(_: (Element, Element)) =>
       switch1 = true
       Continue
-    })
+    }
     var switch2 = false
-    val sink2 = Sink.create((_: (Element, Element)) => {
+    val sink2 = Sink.create{(_: (Element, Element)) =>
       switch2 = true
       Continue
-    })
+    }
 
     val message = PublishSubject[String]
-    val node = div(child <-- message, onUpdate --> sink1)(onUpdate --> sink2)
+    val node = for {
+      sink1 <- sink1
+      sink2 <- sink2
+      node <- div(child <-- message, onUpdate --> sink1)(onUpdate --> sink2)
+    } yield node
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     switch1 shouldBe false
@@ -138,16 +136,38 @@ object LifecycleHookSpec extends JSDomSuite {
     switch2 shouldBe true
   }
 
+  test("Update hooks should be called correctly") {
+
+    var switch = false
+    val sink = Sink.create{(_: (Element, Element)) =>
+      switch = true
+      Continue
+    }
+
+    val node = sink.flatMap { sink =>
+      div(child <-- Observable(span(onUpdate --> sink, "Hello"), span(onUpdate --> sink, "Hey")))
+    }
+
+    switch shouldBe false
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    switch shouldBe true
+  }
+
+
 
   test("Prepatch hooks should be called") {
 
     var switch = false
-    val sink = Sink.create((_: (Option[Element], Option[Element])) => {
+    val sink = Sink.create{(_: (Option[Element], Option[Element])) =>
       switch = true
       Continue
-    })
+    }
 
-    val node = div(child <-- Observable(span("Hello")), span(onPrepatch --> sink, "Hey"))
+    val node = sink.flatMap { sink =>
+      div(child <-- Observable(span("Hello")), span(attributes.key := "1", onPrePatch --> sink, "Hey"))
+    }
 
     switch shouldBe false
 
@@ -158,17 +178,21 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Prepatch hooks should be called correctly on merged nodes") {
     var switch1 = false
-    val sink1 = Sink.create((_: (Option[Element], Option[Element])) => {
+    val sink1 = Sink.create{(_: (Option[Element], Option[Element])) =>
       switch1 = true
       Continue
-    })
+    }
     var switch2 = false
-    val sink2 = Sink.create((_: (Option[Element], Option[Element])) => {
+    val sink2 = Sink.create{(_: (Option[Element], Option[Element])) =>
       switch2 = true
       Continue
-    })
+    }
     val message = PublishSubject[String]()
-    val node = div(child <-- message, onPrepatch --> sink1)(onPrepatch --> sink2)
+    val node =  for {
+      sink1 <- sink1
+      sink2 <- sink2
+      node <- div(child <-- message, onPrePatch --> sink1)(onPrePatch --> sink2)
+    } yield node
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     switch1 shouldBe false
@@ -183,12 +207,14 @@ object LifecycleHookSpec extends JSDomSuite {
   test("Postpatch hooks should be called") {
 
     var switch = false
-    val sink = Sink.create((_: (Element, Element)) => {
+    val sink = Sink.create{(_: (Element, Element)) =>
       switch = true
       Continue
-    })
+    }
 
-    val node = div(child <-- Observable("message"), onPostpatch --> sink, "Hey")
+    val node = sink.flatMap { sink =>
+      div(child <-- Observable("message"), onPostPatch --> sink, "Hey")
+    }
 
     switch shouldBe false
 
@@ -200,17 +226,21 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Postpatch hooks should be called correctly on merged nodes") {
     var switch1 = false
-    val sink1 = Sink.create((_: (Element, Element)) => {
+    val sink1 = Sink.create{(_: (Element, Element)) =>
       switch1 = true
       Continue
-    })
+    }
     var switch2 = false
-    val sink2 = Sink.create((_: (Element, Element)) => {
+    val sink2 = Sink.create{(_: (Element, Element)) =>
       switch2 = true
       Continue
-    })
+    }
     val message = PublishSubject[String]()
-    val node = div(child <-- message, onPostpatch --> sink1)(onPostpatch --> sink2)
+    val node = for {
+      sink1 <- sink1
+      sink2 <- sink2
+      node <- div(child <-- message, onPostPatch --> sink1)(onPostPatch --> sink2)
+    } yield node
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
     switch1 shouldBe false
@@ -225,20 +255,43 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Hooks should be called in the correct order for modified node") {
     val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create((_: Element) => {hooks += "insert"; Continue})
-    val prepatchSink = Sink.create((_: (Option[Element], Option[Element])) => {hooks += "prepatch"; Continue} )
-    val updateSink = Sink.create((_: (Element, Element)) => {hooks += "update"; Continue} )
-    val postpatchSink = Sink.create((_: (Element, Element)) => {hooks += "postpatch"; Continue} )
-    val destroySink = Sink.create((_: Element) => {hooks += "destroy"; Continue} )
+    val insertSink = Sink.create { (_: Element) =>
+      hooks += "insert"
+      Continue
+    }
+    val prepatchSink = Sink.create { (_: (Option[Element], Option[Element])) =>
+      hooks += "prepatch"
+      Continue
+    }
+    val updateSink = Sink.create { (_: (Element, Element)) =>
+      hooks += "update"
+      Continue
+    }
+    val postpatchSink = Sink.create { (_: (Element, Element)) =>
+      hooks += "postpatch"
+      Continue
+
+    }
+    val destroySink = Sink.create { (_: Element) =>
+      hooks += "destroy"
+      Continue
+    }
 
     val message = PublishSubject[String]()
-    val node = div(child <-- message,
-      onInsert --> insertSink,
-      onPrepatch --> prepatchSink,
-      onUpdate --> updateSink,
-      onPostpatch --> postpatchSink,
-      onDestroy --> destroySink
-    )
+    val node = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      destroySink <- destroySink
+      prepatchSink <- prepatchSink
+      postpatchSink <- postpatchSink
+      node <- div(child <-- message,
+        onInsert --> insertSink,
+        onPrePatch --> prepatchSink,
+        onUpdate --> updateSink,
+        onPostPatch --> postpatchSink,
+        onDestroy --> destroySink
+      )
+    } yield node
 
     hooks.toList shouldBe List.empty
 
@@ -254,14 +307,24 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Empty single children receiver should not trigger node update on render") {
     val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create((_: Element) => {hooks += "insert"; Continue})
-    val updateSink = Sink.create((_: (Element, Element)) => {hooks += "update"; Continue} )
+    val insertSink = Sink.create { (_: Element) =>
+      hooks += "insert"
+      Continue
+    }
+    val updateSink = Sink.create { (_: (Element, Element)) =>
+      hooks += "update"
+      Continue
+    }
 
     val messageList = PublishSubject[Seq[String]]()
-    val node = div("Hello",  children <-- messageList.map(_.map(span(_))),
-      onInsert --> insertSink,
-      onUpdate --> updateSink
-    )
+    val node = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      node <- div("Hello", children <-- messageList.map(_.map(span(_))),
+        onInsert --> insertSink,
+        onUpdate --> updateSink
+      )
+    } yield node
 
     hooks.toList shouldBe List.empty
 
@@ -272,14 +335,28 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Static child nodes should not be destroyed and inserted when child stream emits") {
     val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create((_: Element) => {hooks += "insert"; Continue})
-    val updateSink = Sink.create((_: (Element, Element)) => {hooks += "update"; Continue} )
-    val destroySink = Sink.create((_: Element) => {hooks += "destroy"; Continue})
+    val insertSink = Sink.create { (_: Element) =>
+      hooks += "insert"
+      Continue
+    }
+    val updateSink = Sink.create { (_: (Element, Element)) =>
+      hooks += "update"
+      Continue
+    }
+    val destroySink = Sink.create { (_: Element) =>
+      hooks += "destroy"
+      Continue
+    }
 
     val message = PublishSubject[String]()
-    val node = div(span("Hello", onInsert --> insertSink, onUpdate --> updateSink,onDestroy --> destroySink),
-      child <-- message.map(span(_))
-    )
+    val node = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      destroySink <- destroySink
+      node <- div(span("Hello", onInsert --> insertSink, onUpdate --> updateSink, onDestroy --> destroySink),
+        child <-- message.map(span(_))
+      )
+    } yield node
 
     hooks.toList shouldBe List.empty
 
@@ -292,14 +369,28 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Static child nodes should be only inserted once when children stream emits") {
     val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create((_: Element) => {hooks += "insert"; Continue})
-    val updateSink = Sink.create((_: (Element, Element)) => {hooks += "update"; Continue} )
-    val destroySink = Sink.create((_: Element) => {hooks += "destroy"; Continue})
+    val insertSink = Sink.create { (_: Element) =>
+      hooks += "insert"
+      Continue
+    }
+    val updateSink = Sink.create { (_: (Element, Element)) =>
+      hooks += "update"
+      Continue
+    }
+    val destroySink = Sink.create { (_: Element) =>
+      hooks += "destroy"
+      Continue
+    }
 
     val messageList = PublishSubject[Seq[String]]()
-    val node = div(children <-- messageList.map(_.map(span(_))),
-      span("Hello", onInsert --> insertSink, onUpdate --> updateSink,onDestroy --> destroySink)
-    )
+    val node = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      destroySink <- destroySink
+      node <- div(children <-- messageList.map(_.map(span(_))),
+        span("Hello", onInsert --> insertSink, onUpdate --> updateSink, onDestroy --> destroySink)
+      )
+    } yield node
 
     hooks.toList shouldBe List.empty
 
@@ -319,16 +410,18 @@ object LifecycleHookSpec extends JSDomSuite {
     val nodes = PublishSubject[VNode]
 
     var latest = ""
-    val sink = Sink.create((elem: String) => {
+    val sink = Sink.create { (elem: String) =>
       latest = elem
       Continue
-    })
+    }
 
     val sub = PublishSubject[String]
 
-    val node = div(child <-- nodes.startWith(Seq(
-      span(managed(sink <-- sub))
-    )))
+    val node = sink.flatMap { sink =>
+      div(child <-- nodes.startWith(Seq(
+        span(managed(sink <-- sub))
+      )))
+    }
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
@@ -348,23 +441,24 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val operations = mutable.ArrayBuffer.empty[String]
 
-    val sink = Sink.create((op: String) => {
+    val sink = Sink.create { (op: String) =>
       operations += op
       Continue
-    })
+    }
 
     val divTagName = onInsert.map(_.tagName.toLowerCase).filter(_ == "div")
 
-    val node = div(onInsert("insert") --> sink,
-      div(divTagName --> sink),
-      span(divTagName --> sink)
-    )
+    val node = sink.flatMap { sink =>
+      div(onInsert("insert") --> sink,
+        div(divTagName --> sink),
+        span(divTagName --> sink)
+      )
+    }
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     operations.toList shouldBe List("div", "insert")
 
   }
-
 
 }

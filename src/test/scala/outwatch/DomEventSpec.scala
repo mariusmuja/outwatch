@@ -426,7 +426,7 @@ object DomEventSpec extends JSDomSuite {
     docClicked shouldBe true
   }
 
-  test("TagWith should correctly work on events") {
+  test("EmitterOps should correctly work on events") {
 
     val node = Handler.create[String].flatMap { submit =>
 
@@ -434,6 +434,8 @@ object DomEventSpec extends JSDomSuite {
         stringStream <- Handler.create[String]
         intStream <- Handler.create[Int]
         boolStream <- Handler.create[Boolean]
+        htmlElementStream <- Handler.create[html.Element]
+        svgElementTupleStream <- Handler.create[(svg.Element, svg.Element)]
         elem <- div(
           input(
             id := "input", tpe := "text",
@@ -449,7 +451,10 @@ object DomEventSpec extends JSDomSuite {
             onClick.valueAsNumber --> intStream,
             onChange.checked --> boolStream,
 
-            onClick.filter(_ => true).value --> stringStream
+            onClick.filter(_ => true).value --> stringStream,
+
+            onInsert.asHtml --> htmlElementStream,
+            onUpdate.asSvg --> svgElementTupleStream
           ),
           ul(id := "items")
         )

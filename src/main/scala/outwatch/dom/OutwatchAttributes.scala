@@ -11,6 +11,8 @@ trait OutwatchAttributes
   with SnabbdomKeyAttributes
   with OutWatchLifeCycleAttributes
 
+object OutwatchAttributes extends OutwatchAttributes
+
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributes {
   /** A special attribute that takes a stream of single child nodes. */
@@ -31,7 +33,7 @@ trait OutWatchLifeCycleAttributes {
   lazy val onInsert   = SimpleEmitterBuilder(InsertHook)
 
   /** Lifecycle hook for component prepatch. */
-  lazy val onPrepatch   = SimpleEmitterBuilder(PrePatchHook)
+  lazy val onPrePatch   = SimpleEmitterBuilder(PrePatchHook)
 
   /** Lifecycle hook for component updates. */
   lazy val onUpdate   = SimpleEmitterBuilder(UpdateHook)
@@ -41,7 +43,7 @@ trait OutWatchLifeCycleAttributes {
     *
     *  This hook is invoked every time a node has been patched against an older instance of itself.
     */
-  lazy val onPostpatch   = SimpleEmitterBuilder(PostPatchHook)
+  lazy val onPostPatch   = SimpleEmitterBuilder(PostPatchHook)
 
   /**
     * Lifecycle hook for component destruction.
