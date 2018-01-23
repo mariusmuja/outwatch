@@ -2,13 +2,13 @@ package outwatch.dom
 
 import com.raquo.domtypes.generic.builders
 import com.raquo.domtypes.generic.keys
-import com.raquo.domtypes.generic.codecs._
+import com.raquo.domtypes.generic.codecs
 import com.raquo.domtypes.generic.defs.attrs
 import com.raquo.domtypes.generic.defs.reflectedAttrs
 import com.raquo.domtypes.generic.defs.props
 import com.raquo.domtypes.generic.defs.styles
 import com.raquo.domtypes.generic.defs.sameRefTags._
-import com.raquo.domtypes.jsdom.defs.eventProps._
+import com.raquo.domtypes.jsdom.defs.eventProps
 import cats.effect.IO
 import org.scalajs.dom
 import helpers._
@@ -17,18 +17,18 @@ import monix.reactive.OverflowStrategy.Unbounded
 
 import scala.scalajs.js
 
-private[outwatch] object DomTypes {
-  type AttributeBuilder[T, _] = helpers.AttributeBuilder[T, Attr]
-  type PropertyBuilder[T, _] = helpers.PropBuilder[T]
-  type EventEmitterBuilder[E <: dom.Event] = SimpleEmitterBuilder[E, Emitter]
+private[outwatch] object BuilderTypes {
+  type Attribute[T, _] = helpers.AttributeBuilder[T, Attr]
+  type Property[T, _] = helpers.PropBuilder[T]
+  type EventEmitter[E <: dom.Event] = SimpleEmitterBuilder[E, Emitter]
 }
 
 private[outwatch] object CodecBuilder {
-  def encodeAttribute[V](codec: Codec[V, String]): V => Attr.Value = codec match {
+  def encodeAttribute[V](codec: codecs.Codec[V, String]): V => Attr.Value = codec match {
     //The BooleanAsAttrPresenceCodec does not play well with snabbdom. it
     //encodes true as "" and false as null, whereas snabbdom needs true/false
     //of type boolean (not string) for toggling the presence of the attribute.
-    case _: BooleanAsAttrPresenceCodec.type => identity
+    case _: codecs.BooleanAsAttrPresenceCodec.type => identity
     case _ => codec.encode
   }
 }
@@ -45,14 +45,14 @@ private[outwatch] object TagBuilder {
 
 trait Tags
   extends EmbedTags[TagBuilder.Tag, VTree]
-          with GroupingTags[TagBuilder.Tag, VTree]
-          with TextTags[TagBuilder.Tag, VTree]
-          with FormTags[TagBuilder.Tag, VTree]
-          with SectionTags[TagBuilder.Tag, VTree]
-          with TableTags[TagBuilder.Tag, VTree]
-          with TagBuilder
-          with TagHelpers
-          with TagsCompat
+  with GroupingTags[TagBuilder.Tag, VTree]
+  with TextTags[TagBuilder.Tag, VTree]
+  with FormTags[TagBuilder.Tag, VTree]
+  with SectionTags[TagBuilder.Tag, VTree]
+  with TableTags[TagBuilder.Tag, VTree]
+  with TagBuilder
+  with TagHelpers
+  with TagsCompat
 
 @deprecated("Use dsl.tags instead", "0.11.0")
 object Tags extends Tags
@@ -79,18 +79,18 @@ object Attributes extends Attributes
 // Attrs
 
 trait Attrs
-  extends attrs.Attrs[AttrBuilder]
-  with builders.AttrBuilder[AttrBuilder] {
+  extends attrs.Attrs[BasicAttrBuilder]
+  with builders.AttrBuilder[BasicAttrBuilder] {
 
-  override protected def attr[V](key: String, codec: Codec[V, String]): AttrBuilder[V] =
-    new AttrBuilder(key, CodecBuilder.encodeAttribute(codec))
+  override protected def attr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
+    new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
 }
 
 // Reflected attrs
 
 trait ReflectedAttrs
-  extends reflectedAttrs.ReflectedAttrs[DomTypes.AttributeBuilder]
-  with builders.ReflectedAttrBuilder[DomTypes.AttributeBuilder] {
+  extends reflectedAttrs.ReflectedAttrs[BuilderTypes.Attribute]
+  with builders.ReflectedAttrBuilder[BuilderTypes.Attribute] {
 
   // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
   override lazy val className = new AccumAttrBuilder[String]("class",
@@ -101,28 +101,28 @@ trait ReflectedAttrs
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,
     propKey: String,
-    attrCodec: Codec[V, String],
-    propCodec: Codec[V, DomPropV]
-  ) = new AttrBuilder(attrKey, CodecBuilder.encodeAttribute(attrCodec))
+    attrCodec: codecs.Codec[V, String],
+    propCodec: codecs.Codec[V, DomPropV]
+  ) = new BasicAttrBuilder(attrKey, CodecBuilder.encodeAttribute(attrCodec))
     //or: new PropertyBuilder(propKey, propCodec.encode)
 }
 
 // Props
 trait Props
-  extends props.Props[DomTypes.PropertyBuilder]
-  with builders.PropBuilder[DomTypes.PropertyBuilder] {
+  extends props.Props[BuilderTypes.Property]
+  with builders.PropBuilder[BuilderTypes.Property] {
 
-  override protected def prop[V, DomV](key: String, codec: Codec[V, DomV]): PropBuilder[V] =
+  override protected def prop[V, DomV](key: String, codec: codecs.Codec[V, DomV]): PropBuilder[V] =
     new PropBuilder(key, codec.encode)
 }
 
 
 // Events
 trait Events
-  extends HTMLElementEventProps[DomTypes.EventEmitterBuilder]
-  with builders.EventPropBuilder[DomTypes.EventEmitterBuilder, dom.Event] {
+  extends eventProps.HTMLElementEventProps[BuilderTypes.EventEmitter]
+  with builders.EventPropBuilder[BuilderTypes.EventEmitter, dom.Event] {
 
-  override def eventProp[V <: dom.Event](key: String): DomTypes.EventEmitterBuilder[V] =  EmitterBuilder[V](key)
+  override def eventProp[V <: dom.Event](key: String): BuilderTypes.EventEmitter[V] =  EmitterBuilder[V](key)
 }
 
 
@@ -139,18 +139,18 @@ private[outwatch] abstract class ObservableEventPropBuilder(target: dom.EventTar
 
 abstract class WindowEvents
   extends ObservableEventPropBuilder(dom.window)
-  with WindowEventProps[Observable]
+  with eventProps.WindowEventProps[Observable]
 
 abstract class DocumentEvents
   extends ObservableEventPropBuilder(dom.document)
-  with DocumentEventProps[Observable]
+  with eventProps.DocumentEventProps[Observable]
 
 // Styles
 
 private[outwatch] trait SimpleStyleBuilder extends builders.StyleBuilders[IO[Style]] {
   override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
-  override protected def buildIntStyleSetter(style: keys.Style[Int],value: Int): IO[Style] = style := value
-  override protected def buildStringStyleSetter(style: keys.Style[_],value: String): IO[Style] = new BasicStyleBuilder[String](style.cssName) := value
+  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): IO[Style] = style := value
+  override protected def buildStringStyleSetter(style: keys.Style[_], value: String): IO[Style] = new BasicStyleBuilder[Any](style.cssName) := value
 }
 
 trait Styles

@@ -6,8 +6,6 @@ import outwatch.StaticVNodeRender
 import scala.language.dynamics
 import outwatch.dom._
 
-import scala.language.implicitConversions
-
 trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   protected def name: String
   private[outwatch] def assign(value: T): A
@@ -18,6 +16,7 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
     IO.pure(AttributeStreamReceiver(name, valueStream.map(assign)))
   }
 }
+
 object AttributeBuilder {
   implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): IO[Attribute] = builder := true
   implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): IO[Property] = builder := true
@@ -30,21 +29,20 @@ trait AccumulateAttrOps[T] { self: AttributeBuilder[T, BasicAttr] =>
   def accum(reducer: (Attr.Value, Attr.Value) => Attr.Value) = new AccumAttrBuilder[T](name, this, reducer)
 }
 
-final class AttrBuilder[T](val name: String, encode: T => Attr.Value) extends AttributeBuilder[T, BasicAttr]
-                                                                              with AccumulateAttrOps[T] {
+final class BasicAttrBuilder[T](val name: String, encode: T => Attr.Value) extends AttributeBuilder[T, BasicAttr]
+                                                                                   with AccumulateAttrOps[T] {
   @inline private[outwatch] def assign(value: T) = BasicAttr(name, encode(value))
 }
 
-final class DynamicAttributeBuilder[T](parts: List[String]) extends Dynamic
-                                                                    with AttributeBuilder[T, BasicAttr]
-                                                                    with AccumulateAttrOps[T] {
+final class DynamicAttrBuilder[T](parts: List[String]) extends Dynamic
+                                                               with AttributeBuilder[T, BasicAttr]
+                                                               with AccumulateAttrOps[T] {
   lazy val name: String = parts.reverse.mkString("-")
 
-  def selectDynamic(s: String) = new DynamicAttributeBuilder[T](s :: parts)
+  def selectDynamic(s: String) = new DynamicAttrBuilder[T](s :: parts)
 
   @inline private[outwatch] def assign(value: T) = BasicAttr(name, value.toString)
 }
-
 
 final class AccumAttrBuilder[T](
   val name: String,
@@ -95,6 +93,7 @@ final class AccumStyleBuilder[T](val name: String, reducer: (String, String) => 
   extends AttributeBuilder[T, AccumStyle] {
   @inline private[outwatch] def assign(value: T) = AccumStyle(name, value.toString, reducer)
 }
+
 // Keys
 
 object KeyBuilder {
@@ -104,18 +103,20 @@ object KeyBuilder {
 // Child / Children
 
 object ChildStreamReceiverBuilder {
-  def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] = IO.pure (
+  def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] = IO.pure(
     ChildStreamReceiver(valueStream)
   )
-  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] = IO.pure (
+
+  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] = IO.pure(
     ChildStreamReceiver(valueStream.map(r.render))
   )
 }
 
 object ChildrenStreamReceiverBuilder {
-  def <--(childrenStream: Observable[Seq[VNode]]): IO[ChildrenStreamReceiver] = IO.pure (
+  def <--(childrenStream: Observable[Seq[VNode]]): IO[ChildrenStreamReceiver] = IO.pure(
     ChildrenStreamReceiver(childrenStream)
   )
+
   def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T]): IO[ChildrenStreamReceiver] = IO.pure(
     ChildrenStreamReceiver(childrenStream.map(_.map(r.render)))
   )

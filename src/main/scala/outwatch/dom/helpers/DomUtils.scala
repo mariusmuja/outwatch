@@ -46,7 +46,7 @@ object Children {
 
     override def ::(node: ChildVNode): Children = node match {
       case s: StringVNode => toModifier(s) :: this
-      case n => n :: VNodes(Nil)
+      case n => n :: VNodes(Nil, hasStream = false)
     }
   }
 
@@ -55,11 +55,11 @@ object Children {
 
     override def ::(node: ChildVNode): Children = node match {
       case s: StringVNode => toModifier(s) :: this // this should never happen
-      case n => n :: VNodes(modifiers.map(toVNode))
+      case n => n :: VNodes(modifiers.map(toVNode), hasStream = false)
     }
   }
 
-  private[outwatch] case class VNodes(nodes: List[ChildVNode], hasStream: Boolean = false) extends Children {
+  private[outwatch] case class VNodes(nodes: List[ChildVNode], hasStream: Boolean) extends Children {
 
     private def ensureVNodeKey[N >: VTree](node: N): N = node match {
       case vtree: VTree => vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)

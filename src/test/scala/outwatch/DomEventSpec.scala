@@ -306,6 +306,44 @@ object DomEventSpec extends JSDomSuite {
     document.getElementById("num").innerHTML shouldBe number.toString
   }
 
+  test("EventStreams can trigger side-effecting functions") {
+    var triggeredEventFunction = 0
+    var triggeredIntFunction = 0
+    var triggeredFunction = 0
+    var triggeredFunction2 = 0
+
+    val stream = PublishSubject[String]
+    val node = {
+      div(
+        button(id := "button",
+          onClick --> sideEffect(_ => triggeredEventFunction += 1),
+          onClick(1) --> sideEffect(triggeredIntFunction += _),
+          onClick --> sideEffect{ triggeredFunction += 1 },
+          onUpdate --> sideEffect((old,current) => triggeredFunction2 += 1),
+          child <-- stream
+        )
+      )
+    }
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val inputEvt = document.createEvent("HTMLEvents")
+    initEvent(inputEvt)("click", false, true)
+
+    document.getElementById("button").dispatchEvent(inputEvt)
+    stream.onNext("woop")
+    triggeredEventFunction shouldBe 1
+    triggeredIntFunction shouldBe 1
+    triggeredFunction shouldBe 1
+    triggeredFunction2 shouldBe 1
+
+    document.getElementById("button").dispatchEvent(inputEvt)
+    stream.onNext("waap")
+    triggeredEventFunction shouldBe 2
+    triggeredIntFunction shouldBe 2
+    triggeredFunction shouldBe 2
+    triggeredFunction2 shouldBe 2
+  }
 
   test("EventStreams should be able to toggle attributes with a boolean observer") {
     import outwatch.util.SyntaxSugar._

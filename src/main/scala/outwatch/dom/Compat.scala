@@ -24,10 +24,10 @@ trait Handlers {
   @deprecated("Use Handler.create[T] instead", "0.11.0")
   def createHandler[T](defaultValues: T*)(implicit s: Scheduler): IO[Pipe[T, T]] = Handler.create[T](defaultValues: _*)
 }
-
 object Handlers extends Handlers
 
 trait AttributesCompat { self: Attributes =>
+
   @deprecated("Use `type`, tpe or typ instead", "0.11.0")
   lazy val inputType = tpe
 

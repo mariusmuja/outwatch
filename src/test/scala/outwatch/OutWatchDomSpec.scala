@@ -8,6 +8,7 @@ import outwatch.dom._
 import outwatch.dom.dsl._
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
+import org.scalajs.dom.window.localStorage
 
 import scala.collection.mutable
 import scala.language.reflectiveCalls
@@ -413,8 +414,8 @@ object OutWatchDomSpec extends JSDomSuite {
   test("The HTML DSL should construct VTrees with boolean attributes") {
     import outwatch.dom.dsl._
 
-    def boolBuilder(name: String) = new AttrBuilder[Boolean](name, identity[Boolean])
-    def stringBuilder(name: String) = new AttrBuilder[Boolean](name, _.toString)
+    def boolBuilder(name: String) = new BasicAttrBuilder[Boolean](name, identity)
+    def stringBuilder(name: String) = new BasicAttrBuilder[Boolean](name, _.toString)
     val vtree = div(
       boolBuilder("a"),
       boolBuilder("b") := true,
@@ -792,6 +793,7 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vNode).unsafeRunSync()
 
     node.innerHTML shouldBe "<div><span>one</span><span>two</span><span>three</span></div>"
+
   }
 
   test("The HTML DSL should render nodes with only attribute receivers properly") {
@@ -844,6 +846,13 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderReplace(node, div("one")).unsafeRunSync()
     node.innerHTML shouldBe "one"
 
+    OutWatch.renderReplace(node, div(Some("one"))).unsafeRunSync()
+    node.innerHTML shouldBe "one"
+
+    val node2 = document.createElement("div")
+    OutWatch.renderReplace(node2, div(Option.empty[Int])).unsafeRunSync()
+    node2.innerHTML shouldBe ""
+
     OutWatch.renderReplace(node, div(1)).unsafeRunSync()
     node.innerHTML shouldBe "1"
 
@@ -860,4 +869,94 @@ object OutWatchDomSpec extends JSDomSuite {
     node.innerHTML shouldBe "12"
   }
 
+  test("Children stream should work for string sequences") {
+    val myStrings: Observable[Seq[String]] = Observable(Seq("a", "b"))
+    val node = div(id := "strings",
+      children <-- myStrings
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "ab"
+  }
+
+  test("Child stream should work for string options") {
+    val myOption: Handler[Option[String]] = Handler.create(Option("a")).unsafeRunSync()
+    val node = div(id := "strings",
+      child <-- myOption
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "a"
+
+    myOption.unsafeOnNext(None)
+    element.innerHTML shouldBe ""
+  }
+
+  test("Child stream should work for vnode options") {
+    val myOption: Handler[Option[VNode]] = Handler.create(Option(div("a"))).unsafeRunSync()
+    val node = div(id := "strings",
+      child <-- myOption
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div>a</div>"
+
+    myOption.unsafeOnNext(None)
+    element.innerHTML shouldBe ""
+  }
+
+  test("LocalStorage should provide a handler") {
+
+    val key = "banana"
+    val triggeredHandlerEvents = mutable.ArrayBuffer.empty[Option[String]]
+
+    assert(localStorage.getItem(key) == null)
+
+    val storageHandler = util.LocalStorage.handler(key).unsafeRunSync()
+    storageHandler.foreach{e => triggeredHandlerEvents += e}
+    assert(localStorage.getItem(key) == null)
+    assert(triggeredHandlerEvents.toList == List(None))
+
+    storageHandler.unsafeOnNext(Some("joe"))
+    assert(localStorage.getItem(key) == "joe")
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe")))
+
+    var initialValue:Option[String] = null
+    util.LocalStorage.handler(key).unsafeRunSync().foreach {initialValue = _}
+    assert(initialValue == Some("joe"))
+
+    storageHandler.unsafeOnNext(None)
+    assert(localStorage.getItem(key) == null)
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None))
+
+    // localStorage.setItem(key, "split") from another window
+    dispatchStorageEvent(key, newValue = "split", null)
+    assert(localStorage.getItem(key) == "split")
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split")))
+
+    // localStorage.removeItem(key) from another window
+    dispatchStorageEvent(key, null, "split")
+    assert(localStorage.getItem(key) == null)
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None))
+
+    // only trigger handler if value changed
+    storageHandler.unsafeOnNext(None)
+    assert(localStorage.getItem(key) == null)
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None))
+
+    storageHandler.unsafeOnNext(Some("rhabarbar"))
+    assert(localStorage.getItem(key) == "rhabarbar")
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar")))
+
+    // localStorage.clear() from another window
+    dispatchStorageEvent(null, null, null)
+    assert(localStorage.getItem(key) == null)
+    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"), None))
+  }
 }

@@ -9,7 +9,6 @@ import snabbdom.{DataObject, VNodeProxy}
 
 import scala.concurrent.Future
 
-
 /*
 Modifier
   Property
@@ -101,6 +100,13 @@ object Attr {
   type Value = DataObject.AttrValue
 }
 
+final case class BasicAttr(title: String, value: Attr.Value) extends Attr
+
+/**
+  * Attribute that accumulates the previous value in the same VNode with it's value
+  */
+final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
+
 final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
 object Prop {
   type Value = DataObject.PropValue
@@ -112,15 +118,6 @@ sealed trait Style extends TitledAttribute {
 object Style {
   type Value = DataObject.StyleValue
 }
-
-final case class BasicAttr(title: String, value: Attr.Value) extends Attr
-
-/**
-  * Attribute that accumulates the previous value in the same VNode with it's value
-  */
-final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
-
-
 
 final case class AccumStyle(title: String, value: String, accum: (String, String) => String) extends Style
 
@@ -145,6 +142,9 @@ private[outwatch] sealed trait StreamVNode extends Any with ChildVNode
 private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
   def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
+object StaticVNode {
+  val empty: StaticVNode = StringVNode("")
+}
 
 private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends AnyVal with StreamVNode
 
@@ -166,6 +166,8 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifi
     SeparatedModifiers.from(modifiers).toSnabbdom(nodeType)
   }
 }
+
+
 
 
 

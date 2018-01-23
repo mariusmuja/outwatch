@@ -83,7 +83,7 @@ object DataObject {
   type PropValue = Any
   type AttrValue = String | Boolean
   type StyleValue = String | js.Dictionary[String]
-  type KeyValue = String | Int
+  type KeyValue = String | Double  // https://github.com/snabbdom/snabbdom#key--string--number
 
   def apply(attrs: js.Dictionary[AttrValue],
             on: js.Dictionary[js.Function1[Event, Unit]],

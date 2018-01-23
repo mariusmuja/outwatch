@@ -97,8 +97,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ).orUndefined
   }
 
-  private def createInsertHook(
-    receivers: Receivers,
+  private def createInsertHook(receivers: Receivers,
     subscription: SingleAssignCancelable,
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
@@ -116,7 +115,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
         val nodes = state.nodes.reduceLeft(_ ++ _)
         hFunction(proxy.sel, newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
       }
-
     }
 
     subscription := receivers.observable
@@ -125,7 +123,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       .bufferSliding(2, 1)
       .subscribe(
         { case Seq(old, crt) => patch(old, crt); Continue },
-        { error => dom.console.error(error.toString) }
+        error => dom.console.error(error.getMessage)
       )
 
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))

@@ -1,13 +1,14 @@
 package outwatch.dom
 
 import cats.effect.IO
+import cats.syntax.apply._
 import com.raquo.domtypes.generic.keys
 import outwatch.AsVDomModifier
 import outwatch.dom.helpers.BasicStyleBuilder
-import cats.syntax.apply._
 
 trait Implicits {
-  implicit def valueModifier[T](value: T)(implicit vm: AsVDomModifier[T]): VDomModifier = vm.asVDomModifier(value)
+
+  implicit def asVDomModifier[T](value: T)(implicit vm: AsVDomModifier[T]): VDomModifier = vm.asVDomModifier(value)
 
   implicit class ioVTreeMerge(vnode: VNode) {
     def apply(args: VDomModifier*): VNode = vnode.flatMap(_.apply(args: _*))
