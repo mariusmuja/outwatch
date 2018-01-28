@@ -282,7 +282,7 @@ object OutWatchDomSpec extends JSDomSuite {
           Attribute("hans", "")
         }
       ),
-      child <-- stringHandler
+      stringHandler
     )
 
     val node = document.createElement("div")
@@ -313,7 +313,7 @@ object OutWatchDomSpec extends JSDomSuite {
           Attribute("hans", "")
         }
       )),
-      child <-- stringHandler
+      stringHandler
     )
 
     val node = document.createElement("div")
@@ -359,9 +359,9 @@ object OutWatchDomSpec extends JSDomSuite {
       div( id := "page",
         num match {
           case 1 =>
-            div(child <-- pageNum)
+            div(pageNum)
           case 2 =>
-            div(child <-- pageNum)
+            div(pageNum)
         }
       )
     }
@@ -369,7 +369,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val pageHandler =  PublishSubject[Int]
 
     val vtree = div(
-      div(child <-- pageHandler.map(page))
+      div(pageHandler.map(page))
     )
 
     val node = document.createElement("div")
@@ -492,9 +492,9 @@ object OutWatchDomSpec extends JSDomSuite {
     val messagesB = PublishSubject[String]
     val vNode = div(
       span("A"),
-      child <-- messagesA.map(span(_)),
+      messagesA.map(span(_)),
       span("B"),
-      child <-- messagesB.map(span(_))
+      messagesB.map(span(_))
     )
 
     val node = document.createElement("div")
@@ -512,9 +512,9 @@ object OutWatchDomSpec extends JSDomSuite {
     val messagesB = PublishSubject[String]
     val vNode = div(
       "A",
-      child <-- messagesA,
+      messagesA,
       "B",
-      child <-- messagesB
+      messagesB
     )
 
     val node = document.createElement("div")
@@ -535,9 +535,9 @@ object OutWatchDomSpec extends JSDomSuite {
     val messagesB = PublishSubject[String]
     val vNode = div(
       "A",
-      child <-- messagesA,
+      messagesA,
       "B",
-      child <-- messagesB
+      messagesB
     )
 
     val node = document.createElement("div")
@@ -557,10 +557,10 @@ object OutWatchDomSpec extends JSDomSuite {
     val messagesC = PublishSubject[Seq[VNode]]
     val vNode = div(
       "A",
-      child <-- messagesA,
-      children <-- messagesC,
+      messagesA,
+      messagesC,
       "B",
-      child <-- messagesB
+      messagesB
     )
 
     val node = document.createElement("div")
@@ -582,7 +582,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("The HTML DSL should update merged nodes children correctly") {
     val messages = PublishSubject[Seq[VNode]]
     val otherMessages = PublishSubject[Seq[VNode]]
-    val vNode = div(children <-- messages)(children <-- otherMessages)
+    val vNode = div(messages)(otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
@@ -601,7 +601,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("The HTML DSL should update merged nodes separate children correctly") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
-    val vNode = div(child <-- messages)(child <-- otherMessages)
+    val vNode = div(messages)(otherMessages)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
@@ -627,7 +627,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val vNode = div( id := "inner",
       color <-- messagesColor,
       backgroundColor <-- messagesBgColor,
-      child <-- childString
+      childString
     )
 
     val node = document.createElement("div")
@@ -661,7 +661,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val vNode = div( id := "inner",
       color <-- messagesColor,
-      child <-- childString
+      childString
     )
 
     val node = document.createElement("div")
@@ -683,7 +683,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
   test("The HTML DSL should update reused vnodes correctly") {
     val messages = PublishSubject[String]
-    val vNode = div(data.ralf := true, child <-- messages)
+    val vNode = div(data.ralf := true, messages)
     val container = div(vNode, vNode)
 
     val node = document.createElement("div")
@@ -702,8 +702,8 @@ object OutWatchDomSpec extends JSDomSuite {
   test("The HTML DSL should update merged nodes correctly (render reuse)") {
     val messages = PublishSubject[String]
     val otherMessages = PublishSubject[String]
-    val vNodeTemplate = div(child <-- messages)
-    val vNode = vNodeTemplate(child <-- otherMessages)
+    val vNodeTemplate = div(messages)
+    val vNode = vNodeTemplate(otherMessages)
 
     val node1 = document.createElement("div")
     document.body.appendChild(node1)
@@ -872,7 +872,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("Children stream should work for string sequences") {
     val myStrings: Observable[Seq[String]] = Observable(Seq("a", "b"))
     val node = div(id := "strings",
-      children <-- myStrings
+      myStrings
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -884,7 +884,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("Child stream should work for string options") {
     val myOption: Handler[Option[String]] = Handler.create(Option("a")).unsafeRunSync()
     val node = div(id := "strings",
-      child <-- myOption
+      myOption
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -899,7 +899,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("Child stream should work for vnode options") {
     val myOption: Handler[Option[VNode]] = Handler.create(Option(div("a"))).unsafeRunSync()
     val node = div(id := "strings",
-      child <-- myOption
+      myOption
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()

@@ -36,7 +36,7 @@ object DomEventSpec extends JSDomSuite {
 
     val vtree = Handler.create[String].flatMap { observable =>
       div(id := "click", onClick(message) --> observable,
-        span(id := "child", child <-- observable)
+        span(id := "child", observable)
       )
     }
 
@@ -64,7 +64,7 @@ object DomEventSpec extends JSDomSuite {
 
     val vtree = Handler.create[String].flatMap { stream =>
       div(id := "click", onClick(messages) --> stream,
-        span(id := "child", child <-- stream)
+        span(id := "child", stream)
       )
     }
 
@@ -167,7 +167,7 @@ object DomEventSpec extends JSDomSuite {
     val state = PublishSubject[Seq[VNode]]
 
     val vtree = div(
-      ul(id:= "list", children <-- state)
+      ul(id:= "list", state)
     )
 
     OutWatch.renderInto("#app", vtree).unsafeRunSync()
@@ -216,8 +216,8 @@ object DomEventSpec extends JSDomSuite {
 
     val node = div(
       button(id := "click", onClick(messages._1) --> first, onClick(messages._2) --> second),
-      span(id:="first",child <-- first),
-      span(id:="second",child <-- second)
+      span(id:="first", first),
+      span(id:="second", second)
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -240,7 +240,7 @@ object DomEventSpec extends JSDomSuite {
     val node = Handler.create[(MouseEvent, Int)].flatMap { stream =>
       div(
         button(id := "click", onClick.map(toTuple) --> stream),
-        span(id := "num", child <-- stream.map(_._2))
+        span(id := "num", stream.map(_._2))
       )
     }
 
@@ -268,7 +268,7 @@ object DomEventSpec extends JSDomSuite {
 
       div(
         button(id := "click", onClick.transform(transformer) --> stream),
-        span(id := "num", children <-- state.map(nums => nums.map(num => span(num.toString))))
+        span(id := "num", state.map(nums => nums.map(num => span(num.toString))))
       )
     }
 
@@ -291,7 +291,7 @@ object DomEventSpec extends JSDomSuite {
     val node = Handler.create[Int].flatMap { stream =>
       div(
         input(id := "input", onInputValue(number) --> stream),
-        span(id:="num",child <-- stream)
+        span(id:="num", stream)
       )
     }
 
@@ -320,7 +320,7 @@ object DomEventSpec extends JSDomSuite {
           onClick(1) --> sideEffect(triggeredIntFunction += _),
           onClick --> sideEffect{ triggeredFunction += 1 },
           onUpdate --> sideEffect((old,current) => triggeredFunction2 += 1),
-          child <-- stream
+          stream
         )
       )
     }
@@ -378,7 +378,7 @@ object DomEventSpec extends JSDomSuite {
           input(id := "input", tpe := "text", onInput.value --> stream),
           button(id := "submit", onClick(stream) --> submit),
           ul( id := "items",
-            children <-- state.map(items => items.map(it => li(it)))
+            state.map(items => items.map(it => li(it)))
           )
         )
       }
@@ -539,7 +539,7 @@ object DomEventSpec extends JSDomSuite {
   test("Children stream should work for string sequences") {
     val myStrings: Observable[Seq[String]] = Observable(Seq("a", "b"))
     val node = div(id := "strings",
-      children <-- myStrings
+      myStrings
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()

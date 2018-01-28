@@ -22,7 +22,7 @@ object ScenarioTestSpec extends JSDomSuite {
         div(
           button(id := "plus", "+", onClick --> handlePlus),
           button(id := "minus", "-", onClick --> handleMinus),
-          span(id:="counter",child <-- count)
+          span(id:="counter", count)
         )
       )
     } yield div
@@ -56,7 +56,7 @@ object ScenarioTestSpec extends JSDomSuite {
         label("Name:"),
         input(id := "input", tpe := "text", onInput.value --> nameHandler),
         hr(),
-        h1(id := "greeting", greetStart, child <-- nameHandler)
+        h1(id := "greeting", greetStart, nameHandler)
       )
     }
 
@@ -89,7 +89,7 @@ object ScenarioTestSpec extends JSDomSuite {
       Handler.create[String].flatMap { handler =>
         div(
           button(onClick("clicked") --> handler),
-          div(cls := "label", child <-- handler)
+          div(cls := "label", handler)
         )
       }
     }
@@ -175,7 +175,7 @@ object ScenarioTestSpec extends JSDomSuite {
 
       div <- div(
         textFieldComponent,
-        ul(id:= "list", children <-- state)
+        ul(id:= "list", state)
       )
     } yield div
 
