@@ -3,6 +3,7 @@ package outwatch.dom
 import cats.effect.IO
 import monix.execution.Scheduler
 import org.scalajs.dom.{ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent}
+import outwatch.dom.helpers.{ChildStreamReceiverBuilder, ChildrenStreamReceiverBuilder}
 
 trait Handlers {
   @deprecated("Use Handler.create[MouseEvent] instead", "0.11.0")
@@ -58,13 +59,13 @@ trait AttributesCompat { self: Attributes =>
   @deprecated("Use onInsert instead", "0.11.0")
   lazy val insert = onInsert
 
-  @deprecated("Use onPrepatch instead", "0.11.0")
+  @deprecated("Use onPrePatch instead", "0.11.0")
   lazy val prepatch = onPrePatch
 
   @deprecated("Use onUpdate instead", "0.11.0")
   lazy val update = onUpdate
 
-  @deprecated("Use onPostpatch instead", "0.11.0")
+  @deprecated("Use onPostPatch instead", "0.11.0")
   lazy val postpatch = onPostPatch
 
   @deprecated("Use onDestroy instead", "0.11.0")
@@ -74,4 +75,16 @@ trait AttributesCompat { self: Attributes =>
 trait TagsCompat { self: Tags =>
   @deprecated("Use textArea instead", "0.11.0")
   lazy val textarea = textArea
+}
+
+
+/** OutWatch specific attributes used to asign child nodes to a VNode. */
+trait OutWatchChildAttributesCompat {
+  /** A special attribute that takes a stream of single child nodes. */
+  @deprecated("Use the observable directly", "1.0.0")
+  lazy val child    = ChildStreamReceiverBuilder
+
+  /** A special attribute that takes a stream of lists of child nodes. */
+  @deprecated("Use the observable directly", "1.0.0")
+  lazy val children = ChildrenStreamReceiverBuilder
 }

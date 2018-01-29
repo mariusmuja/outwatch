@@ -72,6 +72,7 @@ trait Attributes
   with AttributeHelpers
   with OutwatchAttributes
   with AttributesCompat
+  with OutWatchChildAttributesCompat
 
 @deprecated("Use dsl.attributes instead", "0.11.0")
 object Attributes extends Attributes
