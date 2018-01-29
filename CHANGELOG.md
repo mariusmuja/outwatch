@@ -97,7 +97,7 @@
   ```
   @mariusmuja: please explain Pipes
 
-* You can now manually write values into Sinks:
+* It is possible to write values into Sinks (doing so is however discouraged, prefer using `Observable` operators if possible):
   ```scala
   val handler = Handler.create[Int].unsafeRunSync()
   handler.unsafeOnNext(5)
@@ -149,22 +149,58 @@
 
 * Boolean attributes are now proprly handled. Details @cornerman?
 
-* It is possible to group modifiers with `CompositeModifier`:
+* It is possible use modifier sequences as modifiers (composite modifiers):
+
   ```scala
-  div(
-    CompositeModifier(
-      Seq(
-        div(),
-        color := "blue"
-      )
-    )
+  val modifiers = Seq[VDomModifier](
+    div(),
+    color := "blue"
   )
+  div(modifiers)
   ```
-  @mariusmuja, please describe more
 
-* Extended styles for easy and composable CSS animations, example @mariusmuja
+* Extended styles for easy and composable CSS animations
+  
+  It is possible to have simple CSS anumations using the `.remove` and `.delayed` modifiers. Check 
+  the [Snabbdom style documentation](https://github.com/snabbdom/snabbdom#the-style-module) for further
+  details on how delayed and remove styles work.
 
-* Accumulated Attributes @mariusmuja
+  ```scala
+   val slideInOut = VDomModifier(
+      transition.accum := "transform .2s ease-in-out",
+      transform := "translateX(-50px)",
+      transform.delayed := "translateX(0px)",
+      transform.remove := "translateX(50px)",
+    )
+  
+   val fadeInOut = VDomModifier(
+     transition.accum :=  "opacity .2s ease-in-out",
+     opacity := 0,
+     opacity.delayed := 1,
+     opacity.remove := 0
+   )
+  
+   val moveInOut =  VDomModifier(slideInOut, fadeInOut)
+  ```
+
+* Accumulated Attributes
+  
+  Class attributes are being accumulated if multiple are present in a `VNode`:
+  
+  ```scala
+  div( cls := "header", cls := "active")  
+  // is equivalent to 
+  div( cls := "header active")
+   ```
+   
+   It is also possible to have any accumulated attributes with any separators:
+   ```scala
+   input(
+     attr("id").accum(",") := "foo1",
+     attr("id").accum(",") := "foo2"
+   )
+   ```
+   
 
 * Source maps should now point to the correct commit and file on github ([build.sbt](https://github.com/OutWatch/outwatch/blob/master/build.sbt#L30)).
 
