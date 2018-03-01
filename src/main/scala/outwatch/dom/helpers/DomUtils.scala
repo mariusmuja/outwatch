@@ -6,7 +6,7 @@ import outwatch.dom._
 import scala.collection.breakOut
 
 object SeparatedModifiers {
-  private[outwatch] def from(modifiers: Seq[Modifier]): SeparatedModifiers = {
+  private[outwatch] def from(modifiers: TraversableOnce[Modifier]): SeparatedModifiers = {
     modifiers.foldRight(SeparatedModifiers())((m, sm) => m :: sm)
   }
 }
@@ -109,7 +109,7 @@ private[outwatch] final case class SeparatedAttributes(
   }
 }
 object SeparatedAttributes {
-  private[outwatch] def from(attributes: Seq[Attribute]): SeparatedAttributes = {
+  private[outwatch] def from(attributes: TraversableOnce[Attribute]): SeparatedAttributes = {
     attributes.foldRight(SeparatedAttributes())((a, sa) => a :: sa)
   }
 }

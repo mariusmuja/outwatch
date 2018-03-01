@@ -103,7 +103,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
     def toProxy(state: VNodeState): VNodeProxy = {
-      val newData = SeparatedAttributes.from(state.attributes.values.toSeq).updateDataObject(proxy.data)
+      val newData = SeparatedAttributes.from(state.attributes.values).updateDataObject(proxy.data)
 
       if (state.nodes.isEmpty) {
         if (proxy.children.isDefined) {
