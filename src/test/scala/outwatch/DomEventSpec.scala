@@ -470,7 +470,7 @@ object DomEventSpec extends JSDomSuite {
 
       for {
         stringStream <- Handler.create[String]
-        intStream <- Handler.create[Int]
+        numberStream <- Handler.create[Double]
         boolStream <- Handler.create[Boolean]
         htmlElementStream <- Handler.create[html.Element]
         svgElementTupleStream <- Handler.create[(svg.Element, svg.Element)]
@@ -480,13 +480,13 @@ object DomEventSpec extends JSDomSuite {
 
             // target will be html.Input because onSearch is a TypedTargetEvent[html.Input]
             onSearch.target.value --> stringStream,
-            onSearch.target.valueAsNumber --> intStream,
+            onSearch.target.valueAsNumber --> numberStream,
             onSearch.target.checked --> boolStream,
 
             onClick.target.value --> stringStream,
 
             onClick.value --> stringStream,
-            onClick.valueAsNumber --> intStream,
+            onClick.valueAsNumber --> numberStream,
             onChange.checked --> boolStream,
 
             onClick.filter(_ => true).value --> stringStream,
