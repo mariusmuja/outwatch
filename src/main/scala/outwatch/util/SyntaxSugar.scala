@@ -1,7 +1,6 @@
 package outwatch.util
 
 import cats.effect.IO
-import outwatch.AsVDomModifier
 import outwatch.dom.{Attribute, AttributeStreamReceiver, Observable, TitledAttribute, VDomModifier}
 
 
@@ -18,15 +17,15 @@ object SyntaxSugar {
 
 
   implicit class BooleanVDomSelector(val condition: Boolean) extends AnyVal {
-    def ?=[T : AsVDomModifier](vDomModifier: => T): VDomModifier = {
-      if (condition) vDomModifier else VDomModifier.empty
+    def ?=[T](vDomModifier: => T)(implicit conv: T => VDomModifier): VDomModifier = {
+      if (condition) conv(vDomModifier) else VDomModifier.empty
     }
   }
 
 
-  implicit class OptionalVDomModifier[T : AsVDomModifier](vDomModifier: => T) {
-    def when(condition: Boolean): VDomModifier = {
-      if (condition) vDomModifier else VDomModifier.empty
+  implicit class OptionalVDomModifier[T](vDomModifier: => T) {
+    def when(condition: Boolean)(implicit conv: T => VDomModifier): VDomModifier = {
+      if (condition) conv(vDomModifier) else VDomModifier.empty
     }
   }
 
