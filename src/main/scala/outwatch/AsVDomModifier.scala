@@ -35,16 +35,13 @@ object AsVDomModifier {
     def asVDomModifier(valueStream: Observable[VNode]): VDomModifier = IO.pure(ChildStreamReceiver(valueStream))
   }
 
-  implicit def observableRender[T : StaticVNodeRender]: AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) => IO.pure(
-    ChildStreamReceiver(valueStream.map(implicitly[StaticVNodeRender[T]].render))
-  )
+  implicit def observableRender[T](implicit r: StaticVNodeRender[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
+    IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
 
   implicit object ObservableSeqRender extends AsVDomModifier[Observable[Seq[VNode]]] {
     def asVDomModifier(seqStream: Observable[Seq[VNode]]): VDomModifier = IO.pure(ChildrenStreamReceiver(seqStream))
   }
 
-  implicit def observableSeqRender[T : StaticVNodeRender]: AsVDomModifier[Observable[Seq[T]]] = (seqStream: Observable[Seq[T]]) => IO.pure(
-    ChildrenStreamReceiver(seqStream.map(_.map(implicitly[StaticVNodeRender[T]].render)))
-  )
-
+  implicit def observableSeqRender[T](implicit r: StaticVNodeRender[T]): AsVDomModifier[Observable[Seq[T]]] = (seqStream: Observable[Seq[T]]) =>
+    IO.pure(ChildrenStreamReceiver(seqStream.map(_.map(r.render))))
 }

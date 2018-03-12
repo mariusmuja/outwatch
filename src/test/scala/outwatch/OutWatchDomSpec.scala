@@ -555,10 +555,12 @@ object OutWatchDomSpec extends JSDomSuite {
     val messagesA = PublishSubject[String]
     val messagesB = PublishSubject[String]
     val messagesC = PublishSubject[Seq[VNode]]
+    val messagesD = PublishSubject[Seq[Int]]
     val vNode = div(
       "A",
-      messagesA,
+      child <-- messagesA,
       messagesC,
+      child <-- messagesD,
       "B",
       messagesB
     )
@@ -577,6 +579,9 @@ object OutWatchDomSpec extends JSDomSuite {
 
     messagesC.onNext(Seq(div("5"), div("7")))
     node.innerHTML shouldBe "<div>A1<div>5</div><div>7</div>B2</div>"
+
+    messagesD.onNext(Seq(1, 2, 3))
+    node.innerHTML shouldBe "<div>A1<div>5</div><div>7</div>123B2</div>"
   }
 
   test("The HTML DSL should update merged nodes children correctly") {

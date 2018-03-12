@@ -2,9 +2,9 @@ package outwatch.dom.helpers
 
 import cats.effect.IO
 import outwatch.StaticVNodeRender
+import outwatch.dom._
 
 import scala.language.dynamics
-import outwatch.dom._
 
 trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   protected def name: String
@@ -103,13 +103,19 @@ object KeyBuilder {
 // Child / Children
 
 object ChildStreamReceiverBuilder {
-  def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] = IO.pure(
-    ChildStreamReceiver(valueStream)
-  )
+  implicit object ChildrenTag
 
-  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] = IO.pure(
-    ChildStreamReceiver(valueStream.map(r.render))
-  )
+  def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] =
+    IO.pure(ChildStreamReceiver(valueStream))
+
+  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] =
+    IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
+
+  def <--(childrenStream: Observable[Seq[VNode]])(implicit tag: ChildrenTag.type): IO[ChildrenStreamReceiver] =
+    IO.pure(ChildrenStreamReceiver(childrenStream))
+
+  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T], tag: ChildrenTag.type): IO[ChildrenStreamReceiver] =
+    IO.pure(ChildrenStreamReceiver(childrenStream.map(_.map(r.render))))
 }
 
 object ChildrenStreamReceiverBuilder {

@@ -81,10 +81,9 @@ trait TagsCompat { self: Tags =>
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributesCompat {
   /** A special attribute that takes a stream of single child nodes. */
-  @deprecated("Use the observable directly", "1.0.0")
   lazy val child    = ChildStreamReceiverBuilder
 
   /** A special attribute that takes a stream of lists of child nodes. */
-  @deprecated("Use the observable directly", "1.0.0")
+  @deprecated("Use 'child <--' or the observable directly", "1.0.0")
   lazy val children = ChildrenStreamReceiverBuilder
 }
