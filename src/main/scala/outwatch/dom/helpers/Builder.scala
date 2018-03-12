@@ -18,8 +18,8 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
 }
 
 object AttributeBuilder {
-  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): IO[Attribute] = builder := true
-  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): IO[Property] = builder := true
+  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): IO[Attr] = builder := true
+  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): IO[Prop] = builder := true
 }
 
 // Attr
