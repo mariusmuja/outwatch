@@ -59,8 +59,8 @@ object Tags extends Tags
 
 trait TagsExtra
   extends DocumentTags[TagBuilder.Tag, VTree]
-          with MiscTags[TagBuilder.Tag, VTree]
-          with TagBuilder
+  with MiscTags[TagBuilder.Tag, VTree]
+  with TagBuilder
 
 // all Attributes
 
