@@ -1,32 +1,32 @@
 package outwatch.util
 
 import cats.effect.IO
-import monix.execution.Scheduler
-import monix.execution.{Ack, Cancelable}
+import monix.execution.{Ack, Cancelable, Scheduler}
+import org.scalajs.dom
+import outwatch.dom.helpers.STRef
 import outwatch.dom.{Observable, OutWatch, VNode}
 import outwatch.{Handler, Pipe, Sink}
-import outwatch.dom.helpers.STRef
 
 import scala.concurrent.Future
 
 
 
 final case class Store[State, Action](initialState: State,
-                                           reducer: (State, Action) => (State, Option[IO[Action]]),
+                                           reducer: (State, Action) => (State, Observable[Action]),
                                            handler: Pipe[Action, Action])(implicit s: Scheduler) {
   val sink: Sink[Action] = handler
   val source: Observable[State] = handler
     .scan(initialState)(fold)
-    .startWith(Seq(initialState))
     .share
+    .startWith(Seq(initialState))
 
   private def fold(state: State, action: Action): State = {
     val (newState, next) = reducer(state, action)
 
-    next.foreach(_.unsafeRunAsync {
-      case Left(e) => sink.observer.onError(e)
-      case Right(r) => sink.observer.onNext(r).asInstanceOf[Unit]
-    })
+    next.subscribe(
+      r => sink.observer.feed(List(r)),
+      e => dom.console.error(e.getMessage)
+    )
 
     newState
   }
@@ -41,7 +41,8 @@ object Store {
 
   private val storeRef = STRef.empty
 
-  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode)(implicit s: Scheduler): IO[Unit] = for {
+
+  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Observable[A]), selector: String, root: VNode)(implicit s: Scheduler): IO[Unit] = for {
     handler <- Handler.create[A]
     store <- IO(Store(initialState, reducer, handler))
     _ <- storeRef.asInstanceOf[STRef[Store[S, A]]].put(store)
