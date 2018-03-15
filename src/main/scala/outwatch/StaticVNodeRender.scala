@@ -1,18 +1,14 @@
 package outwatch
 
 import cats.Applicative
-import cats.effect.{Effect, LiftIO}
-import outwatch.dom.{StaticVNode, StringVNode, VNode}
+import cats.effect.Effect
+import outwatch.dom.{StaticVNode, StringVNode, VNodeF}
 
 trait StaticVNodeRender[-T] {
-  def render[F[+_]: Effect](value: T): F[StaticVNode]
+  def render[F[+_]: Effect](value: T): VNodeF[F]
 }
 
 object StaticVNodeRender {
-
-  implicit def vNodeRender: StaticVNodeRender[VNode] = new StaticVNodeRender[VNode] {
-    def render[F[+_]: Effect](value: VNode) = LiftIO[F].liftIO(value)
-  }
 
   implicit def optionRender[T](implicit svnr: StaticVNodeRender[T]): StaticVNodeRender[Option[T]] =
     new StaticVNodeRender[Option[T]] {

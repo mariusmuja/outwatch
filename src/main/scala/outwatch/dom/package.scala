@@ -1,24 +1,11 @@
 package outwatch
 
 import cats.Applicative
-import cats.effect.IO
 
 package object dom extends Implicits with ManagedSubscriptions {
 
   type VNodeF[F[+_]] = F[VTree[F]]
   type VDomModifierF[F[+_]] = F[Modifier]
-
-  type VNode = VNodeF[IO]
-  type VDomModifier = VDomModifierF[IO]
-
-  object VDomModifier {
-
-    import cats.implicits._
-
-    val empty: VDomModifier = IO.pure(EmptyModifier)
-
-    def apply(modifiers: VDomModifier*): VDomModifier = modifiers.toList.sequence.map(CompositeModifier)
-  }
 
   object VDomModifierF {
     import cats.instances.list._

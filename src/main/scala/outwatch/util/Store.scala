@@ -3,7 +3,7 @@ package outwatch.util
 import cats.effect.IO
 import monix.execution.Scheduler
 import monix.execution.{Ack, Cancelable}
-import outwatch.dom.{Observable, OutWatch, VNode}
+import outwatch.dom.{Observable, OutWatch, VNodeF}
 import outwatch.{Handler, Pipe, Sink}
 import outwatch.dom.helpers.STRef
 
@@ -41,7 +41,7 @@ object Store {
 
   private val storeRef = STRef.empty
 
-  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNode)
+  def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNodeF[IO])
                            (implicit s: Scheduler): IO[Unit] = for {
     handler <- Handler.create[IO, A]
     store <- IO(Store(initialState, reducer, handler))
