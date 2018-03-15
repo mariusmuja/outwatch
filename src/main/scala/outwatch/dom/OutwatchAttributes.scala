@@ -62,6 +62,6 @@ trait AttributeHelpers { self: Attributes =>
   def style[T](key: String) = new BasicStyleBuilder[T](key)
 }
 
-trait TagHelpers[F[+_]] { self: Tags[F] =>
+trait TagHelpers[F[+_]] {
   def tag(name: String)(implicit F: Effect[F]): VNodeF[F] = Applicative[F].pure(VTree[F](name, Seq.empty))
 }
