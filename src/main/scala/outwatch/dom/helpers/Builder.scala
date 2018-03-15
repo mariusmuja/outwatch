@@ -12,7 +12,7 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   private[outwatch] def assign(value: T): A
 
   def :=[F[+_]: Applicative](value: T): F[A] = Applicative[F].pure(assign(value))
-  def :=?[F[+_]: Applicative](value: Option[T]): Option[VDomModifierF[F]] = value.map(:=[F])
+  def :=?[F[+_]: Applicative](value: Option[T]): Option[F[A]] = value.map(:=[F])
   def <--[F[+_]: Effect](valueStream: Observable[T]): F[AttributeStreamReceiver] = {
     Applicative[F].pure(AttributeStreamReceiver(name, valueStream.map(assign)))
   }
@@ -26,7 +26,7 @@ object AttributeBuilder {
 // Attr
 
 trait AccumulateAttrOps[T] { self: AttributeBuilder[T, BasicAttr] =>
-  def accum(s: String): AccumAttrBuilder[T] = accum(_ + s + _)
+  def accum(s: String): AccumAttrBuilder[T] = accum((a: Attr.Value, b: Attr.Value) => a.toString + " " + b.toString)
   def accum(reducer: (Attr.Value, Attr.Value) => Attr.Value) = new AccumAttrBuilder[T](name, this, reducer)
 }
 
@@ -107,8 +107,8 @@ object ChildStreamReceiverBuilder {
     ChildStreamReceiver[F](valueStream)
   )
 
-  def <--[F[+_]: Effect, T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): F[ChildStreamReceiver[F]] =
-    Sync[F].pure(ChildStreamReceiver(valueStream.map(r.render[F])))
+  def <--[F[+_]: Effect, T](valueStream: Observable[T])(implicit R: StaticVNodeRender[F, T]): F[ChildStreamReceiver[F]] =
+    Sync[F].pure(ChildStreamReceiver(valueStream.map(R.render)))
 }
 
 object ChildrenStreamReceiverBuilder {
@@ -116,6 +116,6 @@ object ChildrenStreamReceiverBuilder {
     Sync[F].pure(ChildrenStreamReceiver[F](childrenStream))
 
   def <--[F[+_]: Effect, T](childrenStream: Observable[Seq[T]])
-                        (implicit r: StaticVNodeRender[T]): F[ChildrenStreamReceiver[F]] =
-    Sync[F].pure(ChildrenStreamReceiver(childrenStream.map(_.map(r.render[F]))))
+                        (implicit R: StaticVNodeRender[F, T]): F[ChildrenStreamReceiver[F]] =
+    Sync[F].pure(ChildrenStreamReceiver(childrenStream.map(_.map(R.render))))
 }

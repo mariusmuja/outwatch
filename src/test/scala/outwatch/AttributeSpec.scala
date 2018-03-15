@@ -71,7 +71,7 @@ class AttributeSpec extends JSDomSpec {
 //   }
 
   "attr/prop/style" should "correctly render type" in {
-    val node = tag("input")(
+    val node = tag("input")(effectF)(
       attr("foo") := "foo",
       attr[Boolean]("boo", identity) := true,
       attr[Boolean]("yoo", x => if (x) "yes" else "no") := true,
@@ -102,8 +102,8 @@ class AttributeSpec extends JSDomSpec {
 
   "optional attributes" should "correctly render" in {
     val node = input(
-      data.foo :=? Option("bar"),
-      data.bar :=? Option.empty[String]
+      asVDomModifier(data.foo :=? Option("bar")),
+      asVDomModifier(data.bar :=? Option.empty[String])
     ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toList should contain theSameElementsAs List(

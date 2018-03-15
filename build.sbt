@@ -99,3 +99,5 @@ pomExtra :=
 
 
 pomIncludeRepository := { _ => false }
+
+maxErrors in Global := 7

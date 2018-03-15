@@ -11,9 +11,9 @@ package object dom extends Implicits with ManagedSubscriptions {
     import cats.instances.list._
     import cats.syntax.all._
 
-    def empty[F[+_]: Applicative]: VDomModifierF[F] = Applicative[F].pure(EmptyModifier)
+    def empty[F[+_]: Applicative]: F[Modifier] = Applicative[F].pure(EmptyModifier)
 
-    def apply[F[+_]: Applicative](modifiers: VDomModifierF[F]*): VDomModifierF[F] =
+    def apply[F[+_]: Applicative](modifiers: F[Modifier]*): F[Modifier] =
       modifiers.toList.sequence.map(CompositeModifier)
   }
 

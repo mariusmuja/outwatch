@@ -43,7 +43,7 @@ object Store {
 
   def renderWithStore[S, A](initialState: S, reducer: (S, A) => (S, Option[IO[A]]), selector: String, root: VNodeF[IO])
                            (implicit s: Scheduler): IO[Unit] = for {
-    handler <- Handler.create[IO, A]
+    handler <- Handler.create[A]
     store <- IO(Store(initialState, reducer, handler))
     _ <- storeRef.asInstanceOf[STRef[Store[S, A]]].put[IO](store)
     _ <- OutWatch.renderInto[IO](selector, root)

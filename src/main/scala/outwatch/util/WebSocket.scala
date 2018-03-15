@@ -1,6 +1,7 @@
 package outwatch.util
 
 import cats.effect.Effect
+import monix.execution.Ack.Continue
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.OverflowStrategy.Unbounded
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent}
@@ -23,12 +24,13 @@ final case class WebSocket private(url: String)(implicit s: Scheduler) {
       Cancelable(() => ws.close())
     })
 
-  def sink[F[+_]: Effect]: F[Sink[String]] = Sink.createFull[F, String](
+  def sink[F[+_]: Effect]: F[Sink[String]] = Sink.create[F, String](
     s => {
-      Effect[F].delay(ws.send(s))
+      ws.send(s)
+      Continue
     },
-    _ => Effect[F].unit,
-    Effect[F].delay(ws.close())
+    _ => (),
+    () => ws.close()
   )
 
 }

@@ -1,10 +1,13 @@
 package outwatch
 
-import cats.effect.Sync
+import cats.effect.{IO, Sync}
 import monix.execution.Scheduler
 import outwatch.dom.Observable
 
-object Handler {
+trait HandlerF[F[+_]] {
+
+  implicit def syncF: Sync[F]
+
   private[outwatch] def apply[T](sink: Sink[T], source: Observable[T]): Handler[T] = Pipe(sink, source)
 
   /**
@@ -15,9 +18,11 @@ object Handler {
     * @tparam T the type parameter of the elements
     * @return the newly created Handler.
     */
-  def create[F[+_]: Sync, T](seeds: T*)(implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T](seeds: _*)
+  def create[T](seeds: T*)(implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T](seeds: _*)
 
-  def create[F[+_]: Sync, T](implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T]
-
+  def create[T](implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T]
 }
 
+object Handler extends HandlerF[IO] {
+  val syncF = IO.ioEffect
+}

@@ -93,9 +93,10 @@ trait ReflectedAttrs
   with builders.ReflectedAttrBuilder[BuilderTypes.Attribute] {
 
   // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
-  override lazy val className = new AccumAttrBuilder[String]("class",
+  override lazy val className = new AccumAttrBuilder[String](
+    "class",
     stringReflectedAttr(attrKey = "class", propKey = "className"),
-    _ + " " + _
+    (a: Attr.Value, b: Attr.Value) => a.toString + " " + b.toString
   )
 
   override protected def reflectedAttr[V, DomPropV](

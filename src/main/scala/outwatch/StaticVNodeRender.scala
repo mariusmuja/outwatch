@@ -1,33 +1,38 @@
 package outwatch
 
 import cats.Applicative
-import cats.effect.Effect
-import outwatch.dom.{StaticVNode, StringVNode}
+import outwatch.dom.{StaticVNode, StringVNode, VNodeF}
 
-trait StaticVNodeRender[-T] {
-  def render[F[+_]: Effect](value: T): F[StaticVNode]
+trait StaticVNodeRender[F[+_], -T] {
+  def render(value: T)(implicit A: Applicative[F]): F[StaticVNode]
 }
 
 object StaticVNodeRender {
 
-  implicit def optionRender[T](implicit svnr: StaticVNodeRender[T]): StaticVNodeRender[Option[T]] =
-    new StaticVNodeRender[Option[T]] {
-      def render[F[+_]: Effect](value: Option[T]): F[StaticVNode] =
-        value.fold(Applicative[F].pure(StaticVNode.empty))(svnr.render[F])
+  implicit def vNodeaRender[F[+_], T]: StaticVNodeRender[F, VNodeF[F]] =
+    new StaticVNodeRender[F, VNodeF[F]] {
+      def render(value: VNodeF[F])(implicit A: Applicative[F]): F[StaticVNode] = value
     }
 
-  implicit object StringRender extends StaticVNodeRender[String] {
-    def render[F[+_]: Effect](value: String): F[StaticVNode] =
-      Applicative[F].pure(StringVNode(value))
+  implicit def optionRender[F[+_], T](implicit svnr: StaticVNodeRender[F, T]): StaticVNodeRender[F, Option[T]] =
+    new StaticVNodeRender[F, Option[T]] {
+      def render(value: Option[T])(implicit A: Applicative[F]): F[StaticVNode] =
+        value.fold(A.pure(StaticVNode.empty))(svnr.render)
+    }
+
+
+  implicit def stringRender[F[+_]]: StaticVNodeRender[F, String] = new StaticVNodeRender[F, String] {
+    def render(value: String)(implicit A: Applicative[F]): F[StaticVNode] =
+      A.pure(StringVNode(value))
   }
 
-  implicit object IntRender extends StaticVNodeRender[Int] {
-    def render[F[+_]: Effect](value: Int): F[StaticVNode] =
-      Applicative[F].pure(StringVNode(value.toString))
+  implicit def intRender[F[+_]] : StaticVNodeRender[F, Int] = new StaticVNodeRender[F, Int] {
+    def render(value: Int)(implicit A: Applicative[F]): F[StaticVNode] =
+      A.pure(StringVNode(value.toString))
   }
 
-  implicit object DoubleRender extends StaticVNodeRender[Double] {
-    def render[F[+_]: Effect](value: Double): F[StaticVNode] =
-      Applicative[F].pure(StringVNode(value.toString))
+  implicit def doubleRender[F[+_]]: StaticVNodeRender[F, Double] = new StaticVNodeRender[F, Double] {
+    def render(value: Double)(implicit A: Applicative[F]): F[StaticVNode] =
+      A.pure(StringVNode(value.toString))
   }
 }

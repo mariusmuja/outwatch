@@ -163,7 +163,7 @@ private[outwatch] final case class VTree[F[+_]: Effect](nodeType: String, modifi
 
   import cats.implicits._
 
-  def apply(args: VDomModifierF[F]*): VNodeF[F] =
+  def apply(args: F[Modifier]*): F[VTree[F]] =
     args.toList.sequence.map(args => copy(modifiers = modifiers ++ args))
 
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {

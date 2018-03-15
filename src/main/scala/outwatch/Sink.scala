@@ -77,43 +77,42 @@ object Sink {
     * @tparam A the type parameter of the consumed elements.
     * @return a Sink that consumes elements of type T.
     */
-  def createFull[F[+_], A](next: A => F[Unit],
-                error: Throwable => F[Unit],
-                complete: F[Unit]
-               )(implicit F: Effect[F], s: Scheduler): F[Sink[A]] = {
-    F.delay {
+  def create[F[+_]: Effect, A](next: A => Future[Ack],
+                error: Throwable => Unit = _ => (),
+                complete: () => Unit = () => ()
+               )(implicit s: Scheduler): F[Sink[A]] = {
+    Effect[F].delay {
       ObserverSink(
         new Observer[A] {
-          override def onNext(a: A): Future[Ack] =
-            F.runAsync(next(a))(_ => IO.unit).unsafeToFuture().map(_ => Continue)
-          override def onError(ex: Throwable): Unit = F.runAsync(error(ex))(_ => IO.unit).unsafeRunSync()
-          override def onComplete(): Unit = F.runAsync(complete)(_ => IO.unit).unsafeRunSync()
+          override def onNext(a: A): Future[Ack] = next(a)
+          override def onError(ex: Throwable): Unit = error(ex)
+          override def onComplete(): Unit = complete()
         }
       )
     }
   }
 
-  /**
-    * Creates a new Sink from Scratch.
-    * This function takes another function as its parameter that will be executed every time the Sink receives an emitted value.
-    *
-    * @param next the function to be executed on every emission
-    * @tparam A the type parameter of the consumed elements.
-    * @return a Sink that consumes elements of type T.
-    */
-  def create[F[+_], A](next: A => F[Unit],
-                      )(implicit F: Effect[F], s: Scheduler): F[Sink[A]] = {
-    F.delay {
-      ObserverSink(
-        new Observer[A] {
-          override def onNext(a: A): Future[Ack] =
-            F.runAsync(next(a))(_ => IO.unit).unsafeToFuture().map(_ => Continue)
-          override def onError(ex: Throwable): Unit = ()
-          override def onComplete(): Unit = ()
-        }
-      )
-    }
-  }
+//  /**
+//    * Creates a new Sink from Scratch.
+//    * This function takes another function as its parameter that will be executed every time the Sink receives an emitted value.
+//    *
+//    * @param next the function to be executed on every emission
+//    * @tparam A the type parameter of the consumed elements.
+//    * @return a Sink that consumes elements of type T.
+//    */
+//  def create[F[+_], A](next: A => F[Unit],
+//                      )(implicit F: Effect[F], s: Scheduler): F[Sink[A]] = {
+//    F.delay {
+//      ObserverSink(
+//        new Observer[A] {
+//          override def onNext(a: A): Future[Ack] =
+//            F.runAsync(next(a))(_ => IO.unit).unsafeToFuture().map(_ => Continue)
+//          override def onError(ex: Throwable): Unit = ()
+//          override def onComplete(): Unit = ()
+//        }
+//      )
+//    }
+//  }
 
 
   private def completionObservable[T](sink: Sink[T]): Option[Observable[Unit]] = {
