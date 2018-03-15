@@ -1,6 +1,6 @@
 package outwatch.dom.helpers
 
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import monix.reactive.Observer
 import org.scalajs.dom.Event
 import outwatch.Sink

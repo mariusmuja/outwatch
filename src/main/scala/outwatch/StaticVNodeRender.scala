@@ -1,7 +1,7 @@
 package outwatch
 
 import cats.Applicative
-import cats.effect.{Effect, IO, LiftIO}
+import cats.effect.{Effect, LiftIO}
 import outwatch.dom.{StaticVNode, StringVNode, VNode}
 
 trait StaticVNodeRender[-T] {
@@ -17,7 +17,7 @@ object StaticVNodeRender {
   implicit def optionRender[T](implicit svnr: StaticVNodeRender[T]): StaticVNodeRender[Option[T]] =
     new StaticVNodeRender[Option[T]] {
       def render[F[+_]: Effect](value: Option[T]): F[StaticVNode] =
-        value.fold(Applicative[F].pure(StaticVNode.empty))(svnr.render)
+        value.fold(Applicative[F].pure(StaticVNode.empty))(svnr.render[F])
     }
 
   implicit object StringRender extends StaticVNodeRender[String] {

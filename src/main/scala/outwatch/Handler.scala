@@ -1,6 +1,6 @@
 package outwatch
 
-import cats.effect.{IO, Sync}
+import cats.effect.Sync
 import monix.execution.Scheduler
 import outwatch.dom.Observable
 

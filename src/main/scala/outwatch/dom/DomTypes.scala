@@ -1,5 +1,6 @@
 package outwatch.dom
 
+import cats.Applicative
 import com.raquo.domtypes.generic.builders
 import com.raquo.domtypes.generic.keys
 import com.raquo.domtypes.generic.codecs
@@ -35,32 +36,31 @@ private[outwatch] object CodecBuilder {
 
 // Tags
 
-private[outwatch] trait TagBuilder extends builders.TagBuilder[TagBuilder.Tag, VTree] {
+private[outwatch] abstract class TagBuilder[F[+_]: Effect] extends builders.TagBuilder[TagBuilder.Tag[F, ?], VTree[F]] {
   // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-  protected override def tag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
+  protected override def tag[Ref <: VTree[F]](tagName: String, void: Boolean): VTree[F] = VTree[F](tagName, Seq.empty)
 }
 private[outwatch] object TagBuilder {
-  type Tag[T] = VTree
+  type Tag[F[+_], T] = VTree[F]
 }
 
-trait Tags
-  extends EmbedTags[TagBuilder.Tag, VTree]
-  with GroupingTags[TagBuilder.Tag, VTree]
-  with TextTags[TagBuilder.Tag, VTree]
-  with FormTags[TagBuilder.Tag, VTree]
-  with SectionTags[TagBuilder.Tag, VTree]
-  with TableTags[TagBuilder.Tag, VTree]
-  with TagBuilder
-  with TagHelpers
-  with TagsCompat
+trait Tags[F[+_]]
+  extends TagBuilder[F]
+  with EmbedTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with GroupingTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with TextTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with FormTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with SectionTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with TableTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with TagHelpers[F]
 
 @deprecated("Use dsl.tags instead", "0.11.0")
-object Tags extends Tags
+object Tags extends Tags[IO]
 
-trait TagsExtra
-  extends DocumentTags[TagBuilder.Tag, VTree]
-  with MiscTags[TagBuilder.Tag, VTree]
-  with TagBuilder
+trait TagsExtra[F[+_]]
+  extends TagBuilder[F]
+  with MiscTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with DocumentTags[TagBuilder.Tag[F, ?], VTree[F]]
 
 // all Attributes
 
@@ -145,7 +145,7 @@ abstract class DocumentEvents
 
 // Styles
 
-private[outwatch] abstract class SimpleStyleBuilder[F[+_]] extends builders.StyleBuilders[F[Style]] {
+private[outwatch] abstract class SimpleStyleBuilder[F[+_]: Applicative] extends builders.StyleBuilders[F[Style]] {
   override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): F[Style] =
     style := value
   override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): F[Style] =

@@ -11,7 +11,7 @@ trait ManagedSubscriptions {
 
   def managed[F[+_]: Effect](subscription: F[Cancelable])(implicit s: Scheduler): VDomModifierF[F] = {
     subscription.flatMap { sub: Cancelable =>
-      Sink.create[F, dom.Element] { _ =>
+      Sink.create[F, dom.Element] { (_: dom.Element) =>
         Sync[F].delay(sub.cancel())
       }.flatMap(sink => lifecycle.onDestroy --> sink)
     }
@@ -22,7 +22,7 @@ trait ManagedSubscriptions {
 
     (sub1 :: sub2 :: subscriptions.toList).sequence.flatMap { subs: List[Cancelable] =>
       val composite = CompositeCancelable(subs: _*)
-      Sink.create[F, dom.Element]{ _ =>
+      Sink.create[F, dom.Element]{ (_: dom.Element) =>
         Sync[F].delay(composite.cancel())
       }.flatMap(sink => lifecycle.onDestroy --> sink)
     }

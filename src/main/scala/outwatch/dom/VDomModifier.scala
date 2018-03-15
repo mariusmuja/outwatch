@@ -1,6 +1,6 @@
 package outwatch.dom
 
-import cats.effect.{Effect, IO}
+import cats.effect.Effect
 import monix.execution.{Ack, Scheduler}
 import monix.reactive.Observer
 import org.scalajs.dom._

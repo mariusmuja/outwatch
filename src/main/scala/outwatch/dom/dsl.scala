@@ -2,9 +2,9 @@ package outwatch.dom
 
 import cats.effect.IO
 
-object dsl extends Styles[IO] with Tags with Attributes {
-  object tags extends Tags {
-    object extra extends TagsExtra
+object dsl extends Styles[IO] with Tags[IO] with Attributes with TagsCompat {
+  object tags extends Tags[IO] {
+    object extra extends TagsExtra[IO]
   }
   object attributes extends Attributes {
     object attrs extends Attrs

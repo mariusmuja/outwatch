@@ -1,6 +1,7 @@
 package outwatch
 
 import cats.effect._
+import cats.implicits._
 import monix.execution.Scheduler
 import outwatch.Sink.{ObservableSink, SubjectSink}
 import outwatch.dom.Observable

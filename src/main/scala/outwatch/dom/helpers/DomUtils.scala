@@ -1,11 +1,9 @@
 package outwatch.dom.helpers
 
 import cats.Applicative
-import cats.effect.{Effect, IO}
-import outwatch.dom.{dsl, _}
+import cats.effect.Effect
+import outwatch.dom._
 import outwatch.dom.dsl.attributes
-import outwatch.dom.dsl.attributes.outwatch
-import sun.invoke.empty.Empty
 
 import scala.collection.breakOut
 

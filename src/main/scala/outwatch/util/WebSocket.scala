@@ -1,7 +1,6 @@
 package outwatch.util
 
-import cats.effect.IO
-import monix.execution.Ack.Continue
+import cats.effect.Effect
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.OverflowStrategy.Unbounded
 import org.scalajs.dom.{CloseEvent, ErrorEvent, MessageEvent}
@@ -9,27 +8,27 @@ import outwatch.Sink
 import outwatch.dom.Observable
 
 object WebSocket {
-  implicit def toSink(socket: WebSocket): IO[Sink[String]] = socket.sink
+  implicit def toSink[F[+_]: Effect](socket: WebSocket): F[Sink[String]] = socket.sink[F]
   implicit def toSource(socket: WebSocket): Observable[MessageEvent] = socket.source
 }
 
 final case class WebSocket private(url: String)(implicit s: Scheduler) {
   val ws = new org.scalajs.dom.WebSocket(url)
 
-  lazy val source = Observable.create[MessageEvent](Unbounded)(observer => {
-    ws.onmessage = (e: MessageEvent) => observer.onNext(e)
-    ws.onerror = (e: ErrorEvent) => observer.onError(new Exception(e.message))
-    ws.onclose = (e: CloseEvent) => observer.onComplete()
-    Cancelable(() => ws.close())
-  })
+  lazy val source: Observable[MessageEvent] =
+    Observable.create[MessageEvent](Unbounded)(observer => {
+      ws.onmessage = (e: MessageEvent) => observer.onNext(e)
+      ws.onerror = (e: ErrorEvent) => observer.onError(new Exception(e.message))
+      ws.onclose = (e: CloseEvent) => observer.onComplete()
+      Cancelable(() => ws.close())
+    })
 
-  lazy val sink = Sink.create[String](
+  def sink[F[+_]: Effect]: F[Sink[String]] = Sink.createFull[F, String](
     s => {
-      ws.send(s)
-      Continue
+      Effect[F].delay(ws.send(s))
     },
-    _ => (),
-    () => ws.close()
+    _ => Effect[F].unit,
+    Effect[F].delay(ws.close())
   )
 
 }
