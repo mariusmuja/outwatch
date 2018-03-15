@@ -1,6 +1,6 @@
 package outwatch.dom.helpers
 
-import cats.effect.Sync
+import cats.effect.{Effect, Sync}
 import monix.reactive.Observer
 import org.scalajs.dom.Event
 import outwatch.Sink
@@ -11,7 +11,7 @@ trait EmitterBuilder[E, O, R] extends Any {
 
   def transform[T](tr: Observable[O] => Observable[T]): EmitterBuilder[E, T, R]
 
-  def -->[F[+_]](sink: Sink[_ >: O]): F[R]
+  def -->[F[+_]:Effect](sink: Sink[_ >: O]): F[R]
 
   def apply[T](value: T): EmitterBuilder[E, T, R] = map(_ => value)
 
@@ -37,13 +37,15 @@ final case class TransformingEmitterBuilder[E, O, R] private[helpers](
   create: Observer[E] => R
 ) extends EmitterBuilder[E, O, R] {
 
+
+
   def transform[T](tr: Observable[O] => Observable[T]): EmitterBuilder[E, T, R] = copy(
     transformer = tr compose transformer
   )
 
-  def -->[F[+_]: Sync](sink: Sink[_ >: O]): F[R] = {
+  def -->[F[+_]:Effect](sink: Sink[_ >: O]): F[R] = {
     val redirected: Sink[E] = sink.redirect[E](transformer)
-    Sync[F].pure(create(redirected.observer))
+    Effect[F].pure(create(redirected.observer))
   }
 }
 
@@ -52,5 +54,5 @@ final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends An
   def transform[T](tr: Observable[E] => Observable[T]): EmitterBuilder[E, T, R] =
     new TransformingEmitterBuilder[E, T, R](tr, create)
 
-  def -->[F[+_]: Sync](sink: Sink[_ >: E]): F[R] = Sync[F].pure(create(sink.observer))
+  def -->[F[+_]: Effect](sink: Sink[_ >: E]): F[R] = Effect[F].pure(create(sink.observer))
 }

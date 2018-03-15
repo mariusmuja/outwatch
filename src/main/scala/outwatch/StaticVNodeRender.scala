@@ -5,7 +5,7 @@ import cats.effect.Effect
 import outwatch.dom.{StaticVNode, StringVNode, VNodeF}
 
 trait StaticVNodeRender[-T] {
-  def render[F[+_]: Effect](value: T): VNodeF[F]
+  def render[F[+_]: Effect](value: T): F[StaticVNode]
 }
 
 object StaticVNodeRender {

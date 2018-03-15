@@ -27,6 +27,7 @@ trait dsl[F[+_]] extends Styles[F] with Tags[F] with Attributes {
 }
 
 
+
 object dsl extends dsl[IO] with TagsCompat {
   implicit val effectF: Effect[IO] = IO.ioEffect
 }

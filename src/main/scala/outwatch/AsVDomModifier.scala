@@ -38,7 +38,8 @@ object AsVDomModifier {
   }
 
   implicit def observableRender[F[+_]] = new AsVDomModifier[F, Observable[VNodeF[F]]] {
-    def asVDomModifier(valueStream: Observable[VNodeF[F]])(implicit F: Sync[F]): VDomModifierF[F] =
+
+    def asVDomModifier(valueStream: Observable[VNodeF[F]])(implicit F: Effect[F]): VDomModifierF[F] =
       F.pure(ChildStreamReceiver[F](valueStream))
   }
 
