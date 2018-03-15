@@ -1,5 +1,7 @@
 package outwatch.dom.helpers
 
+import cats.Applicative
+import cats.effect.{Effect, IO}
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.cancelables.SingleAssignCancelable
@@ -97,32 +99,35 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ).orUndefined
   }
 
-  private def createInsertHook(receivers: Receivers,
+  private def createInsertHook[F[_]: Effect](receivers: Receivers,
     subscription: SingleAssignCancelable,
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
-    def toProxy(state: VNodeState): VNodeProxy = {
+    import cats.implicits._
+    import cats.effect.implicits._
+
+    def toProxy(state: VNodeState[F]): F[VNodeProxy] = {
       val newData = SeparatedAttributes.from(state.attributes.values.toSeq).updateDataObject(proxy.data)
 
       if (state.nodes.isEmpty) {
         if (proxy.children.isDefined) {
-          hFunction(proxy.sel, newData, proxy.children.get)
+          Applicative[F].pure(hFunction(proxy.sel, newData, proxy.children.get))
         } else {
-          hFunction(proxy.sel, newData, proxy.text)
+          Applicative[F].pure(hFunction(proxy.sel, newData, proxy.text))
         }
       } else {
-        val nodes = state.nodes.reduceLeft(_ ++ _)
-        hFunction(proxy.sel, newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
+        val nodes = state.nodes.reduceLeft(_ ++ _).toList.sequence
+        nodes.map(list => hFunction(proxy.sel, newData, list.map(_.toSnabbdom).toJSArray))
       }
     }
 
-    subscription := receivers.observable
+    subscription := receivers.observable[F]
       .map(toProxy)
-      .startWith(Seq(proxy))
+      .startWith(Seq(Applicative[F].pure(proxy)))
       .bufferSliding(2, 1)
       .subscribe(
-        { case Seq(old, crt) => patch(old, crt); Continue },
+        { case Seq(old, crt) => (old, crt).mapN(patch.apply).runAsync(_ => IO.unit).unsafeRunSync(); Continue },
         error => dom.console.error(error.getMessage + "\n" + error.getStackTrace.mkString("\n"))
       )
 
@@ -138,10 +143,10 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ()
   }
 
-  def toSnabbdom(receivers: Receivers)(implicit s: Scheduler): Hooks = {
+  def toSnabbdom[F[_]: Effect](receivers: Receivers)(implicit s: Scheduler): Hooks = {
     val (insertHook, destroyHook) = if (receivers.nonEmpty) {
       val subscription = SingleAssignCancelable()
-      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(receivers, subscription, insertHooks)
+      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook[F](receivers, subscription, insertHooks)
       val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscription, destroyHooks)
       (insertHook, destroyHook)
     }
@@ -174,7 +179,7 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
-  private[outwatch] def createDataObject(receivers: Receivers)(implicit s: Scheduler): DataObject = {
+  private[outwatch] def createDataObject[F[_]: Effect](receivers: Receivers)(implicit s: Scheduler): DataObject = {
 
     val keyOption = properties.keys.lastOption
     val key = if (receivers.nonEmpty) {
@@ -186,17 +191,17 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     val (attrs, props, style) = properties.attributes.toSnabbdom
     DataObject(
       attrs, props, style, emitters.toSnabbdom,
-      properties.hooks.toSnabbdom(receivers),
+      properties.hooks.toSnabbdom[F](receivers),
       key
     )
   }
 
-  private[outwatch] def toSnabbdom(nodeType: String)(implicit s: Scheduler): VNodeProxy = {
+  private[outwatch] def toSnabbdom[F[_]: Effect](nodeType: String)(implicit s: Scheduler): VNodeProxy = {
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
     val childrenWithKey = children.ensureKey
-    val dataObject = createDataObject(Receivers(childrenWithKey, attributeReceivers))
+    val dataObject = createDataObject[F](Receivers(childrenWithKey, attributeReceivers))
 
     childrenWithKey match {
       case Children.VNodes(vnodes, _) =>

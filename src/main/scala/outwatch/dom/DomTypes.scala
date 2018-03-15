@@ -9,7 +9,7 @@ import com.raquo.domtypes.generic.defs.props
 import com.raquo.domtypes.generic.defs.styles
 import com.raquo.domtypes.generic.defs.sameRefTags._
 import com.raquo.domtypes.jsdom.defs.eventProps
-import cats.effect.IO
+import cats.effect.{Effect, IO}
 import org.scalajs.dom
 import helpers._
 import monix.execution.{Ack, Cancelable}
@@ -145,16 +145,22 @@ abstract class DocumentEvents
 
 // Styles
 
-private[outwatch] trait SimpleStyleBuilder extends builders.StyleBuilders[IO[Style]] {
-  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): IO[Style] = style := value
-  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): IO[Style] = style := value
-  override protected def buildStringStyleSetter(style: keys.Style[_], value: String): IO[Style] = new BasicStyleBuilder[Any](style.cssName) := value
+private[outwatch] trait SimpleStyleBuilder[F[+_]] extends builders.StyleBuilders[F[Style]] {
+  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double)
+                                               (implicit F: Effect[F]): F[Style] =
+    style := value
+  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int)
+                                            (implicit F: Effect[F]): F[Style] =
+    style := value
+  override protected def buildStringStyleSetter(style: keys.Style[_], value: String)
+                                               (implicit F: Effect[F]): F[Style] =
+    new BasicStyleBuilder[Any](style.cssName) := value
 }
 
-trait Styles
-  extends styles.Styles[IO[Style]]
-  with SimpleStyleBuilder
+trait Styles[F[_]]
+  extends styles.Styles[F[Style]]
+  with SimpleStyleBuilder[F]
 
-trait StylesExtra
-  extends styles.Styles2[IO[Style]]
-  with SimpleStyleBuilder
+trait StylesExtra[F[_]]
+  extends styles.Styles2[F[Style]]
+  with SimpleStyleBuilder[F]

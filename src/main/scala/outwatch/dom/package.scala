@@ -1,15 +1,30 @@
 package outwatch
 
+import cats.Applicative
 import cats.effect.IO
 
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
-  type VNode = IO[VTree]
-  type VDomModifier = IO[Modifier]
+  type VNodeF[F[_]] = F[StaticVNode]
+  type VDomModifierF[F[_]] = F[Modifier]
+
+  type VNode = VNodeF[IO]
+  type VDomModifier = VDomModifierF[IO]
+
   object VDomModifier {
     val empty: VDomModifier = IO.pure(EmptyModifier)
 
     def apply(modifiers: VDomModifier*): VDomModifier = modifiers.sequence.map(CompositeModifier)
+  }
+
+  object VDomModifierF {
+    import cats.instances.list._
+    import cats.syntax.all._
+
+    def empty[F[_]: Applicative]: VDomModifierF[F] = Applicative[F].pure(EmptyModifier)
+
+    def apply[F[_]: Applicative](modifiers: VDomModifierF[F]*): VDomModifierF[F] =
+      modifiers.toList.sequence.map(CompositeModifier)
   }
 
   type Observable[+A] = monix.reactive.Observable[A]

@@ -1,7 +1,9 @@
 package outwatch.dom.helpers
 
+import cats.Applicative
 import cats.effect.IO
-import outwatch.dom._
+import outwatch.dom.{dsl, _}
+import outwatch.dom.dsl.attributes
 
 import scala.collection.breakOut
 
@@ -137,20 +139,20 @@ private[outwatch] final case class SeparatedEmitters(
 }
 
 
-private[outwatch] case class VNodeState(
-  nodes: Array[Seq[IO[StaticVNode]]],
+private[outwatch] case class VNodeState[F[_]](
+  nodes: Array[Seq[F[StaticVNode]]],
   attributes: Map[String, Attribute] = Map.empty
 )
 
 private[outwatch] object VNodeState {
-  def from(nodes: List[ChildVNode]): VNodeState = VNodeState(
+  def from[F[_]: Applicative](nodes: List[ChildVNode]): VNodeState[F] = VNodeState[F](
     nodes.map {
-      case n: StaticVNode => List(IO.pure(n))
+      case n: StaticVNode => List(Applicative[F].pure(n))
       case _ => List.empty
     }(breakOut)
   )
 
-  type Updater = VNodeState => VNodeState
+  type Updater[F[_]] = VNodeState[F] => VNodeState[F]
 }
 
 private[outwatch] final case class Receivers(
@@ -162,20 +164,20 @@ private[outwatch] final case class Receivers(
     case _ => (Nil, false)
   }
 
-  private lazy val updaters: Seq[Observable[VNodeState.Updater]] = nodes.zipWithIndex.map {
+  private def updaters[F[_]]: Seq[Observable[VNodeState.Updater[F]]] = nodes.zipWithIndex.map {
     case (_: StaticVNode, _) =>
       Observable.empty
-    case (csr: ChildStreamReceiver, index) =>
-      csr.childStream.map[VNodeState.Updater](n => s => s.copy(nodes = s.nodes.updated(index, n :: Nil)))
-    case (csr: ChildrenStreamReceiver, index) =>
-      csr.childrenStream.map[VNodeState.Updater](n => s => s.copy(nodes = s.nodes.updated(index, n)))
+    case (csr: ChildStreamReceiver[F], index) =>
+      csr.childStream.map[VNodeState.Updater[F]](n => s => s.copy(nodes = s.nodes.updated(index, n :: Nil)))
+    case (csr: ChildrenStreamReceiver[F], index) =>
+      csr.childrenStream.map[VNodeState.Updater[F]](n => s => s.copy(nodes = s.nodes.updated(index, n)))
   } ++ attributeStreamReceivers.groupBy(_.attribute).values.map(_.last).map {
     case AttributeStreamReceiver(name, attributeStream) =>
-      attributeStream.map[VNodeState.Updater](a => s => s.copy(attributes = s.attributes.updated(name, a)))
+      attributeStream.map[VNodeState.Updater[F]](a => s => s.copy(attributes = s.attributes.updated(name, a)))
   }
 
-  lazy val observable: Observable[VNodeState] = Observable.merge(updaters: _*)
-    .scan(VNodeState.from(nodes))((state, updater) => updater(state))
+  def observable[F[_]: Applicative]: Observable[VNodeState[F]] = Observable.merge(updaters[F]: _*)
+    .scan(VNodeState.from[F](nodes))((state, updater) => updater(state))
 
   lazy val nonEmpty: Boolean = {
     hasNodeStreams || attributeStreamReceivers.nonEmpty

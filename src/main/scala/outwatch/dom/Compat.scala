@@ -23,7 +23,7 @@ trait Handlers {
   def createNumberHandler(defaultValues: Double*)(implicit s: Scheduler) = Handler.create[Double](defaultValues: _*)
 
   @deprecated("Use Handler.create[T] instead", "0.11.0")
-  def createHandler[T](defaultValues: T*)(implicit s: Scheduler): IO[Pipe[T, T]] = Handler.create[T](defaultValues: _*)
+  def createHandler[T](defaultValues: T*)(implicit s: Scheduler): IO[Pipe[T, T]] = Handler.create[IO, T](defaultValues: _*)
 }
 object Handlers extends Handlers
 

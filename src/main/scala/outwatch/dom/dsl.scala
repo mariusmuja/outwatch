@@ -12,9 +12,6 @@ object dsl extends Attributes with Tags with Styles {
     object outwatch extends OutwatchAttributes
     object lifecycle extends OutWatchLifeCycleAttributes
   }
-  object styles extends Styles {
-    object extra extends StylesExtra
-  }
   object events {
     object window extends WindowEvents
     object document extends DocumentEvents

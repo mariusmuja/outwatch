@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   "org.scala-js"    %%% "scalajs-dom" % "0.9.3",
   "com.raquo"       %%% "domtypes" % "0.5",
   "org.typelevel" %%% "cats-core" % "1.0.1",
-  "org.typelevel" %%% "cats-effect" % "0.8",
+  "org.typelevel" %%% "cats-effect" % "0.9",
   "org.scalatest" %%% "scalatest" % "3.0.5" % Test
 )
 

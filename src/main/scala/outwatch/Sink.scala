@@ -1,6 +1,7 @@
 package outwatch
 
-import cats.effect.IO
+import cats.effect._
+import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.{Ack, Cancelable}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
@@ -18,7 +19,7 @@ sealed trait Sink[-T] extends Any {
     * Using this method is inherently impure and can cause memory leaks, if subscription
     * isn't handled correctly. For more guaranteed safety, use Sink.redirect() instead.
     */
-  def <--(observable: Observable[T]): IO[Cancelable] = IO {
+  def <--[F[_]: Sync](observable: Observable[T]): F[Cancelable] = Sync[F].delay {
     observable.subscribe(observer)
   }
 
@@ -73,19 +74,20 @@ object Sink {
     * @param next the function to be executed on every emission
     * @param error the function to be executed on error
     * @param complete the function to be executed on completion
-    * @tparam T the type parameter of the consumed elements.
+    * @tparam A the type parameter of the consumed elements.
     * @return a Sink that consumes elements of type T.
     */
-  def create[T](next: T => Future[Ack],
-                error: Throwable => Unit = _ => (),
-                complete: () => Unit = () => ()
-               )(implicit s: Scheduler): IO[Sink[T]] = {
-    IO{
+  def create[F[_], A](next: A => F[Unit],
+                error: Throwable => F[Unit] = _ => Effect[F].unit,
+                complete: F[Unit] = Effect[F].unit
+               )(implicit F: Effect[F], s: Scheduler): F[Sink[A]] = {
+    F.delay {
       ObserverSink(
-        new Observer[T] {
-          override def onNext(t: T): Future[Ack] = next(t)
-          override def onError(ex: Throwable): Unit = error(ex)
-          override def onComplete(): Unit = complete()
+        new Observer[A] {
+          override def onNext(a: A): Future[Ack] =
+            F.runAsync(next(a))(_ => IO.unit).unsafeToFuture().map(_ => Continue)
+          override def onError(ex: Throwable): Unit = F.runAsync(error(ex))(_ => IO.unit).unsafeRunSync()
+          override def onComplete(): Unit = F.runAsync(complete)(_ => IO.unit).unsafeRunSync()
         }
       )
     }
@@ -192,6 +194,6 @@ object Sink {
 
 }
 
-final case class ObserverSink[-T](obs: Observer[T])(implicit s: Scheduler) extends Sink[T] {
+final case class ObserverSink[F[_]: Effect, -T](obs: Observer[T])(implicit s: Scheduler) extends Sink[T] {
   override val observer = Subscriber(obs, s)
 }

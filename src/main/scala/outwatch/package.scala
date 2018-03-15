@@ -1,3 +1,4 @@
+import monix.execution.Scheduler
 import outwatch.dom.Observable
 
 package object outwatch {
