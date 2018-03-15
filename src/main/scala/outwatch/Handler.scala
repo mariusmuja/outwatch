@@ -15,9 +15,9 @@ object Handler {
     * @tparam T the type parameter of the elements
     * @return the newly created Handler.
     */
-  def create[F[_]: Sync, T](seeds: T*)(implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T](seeds: _*)
+  def create[F[+_]: Sync, T](seeds: T*)(implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T](seeds: _*)
 
-  def create[F[_]: Sync, T](implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T]
+  def create[F[+_]: Sync, T](implicit s: Scheduler): F[Handler[T]] = Pipe.create[F, T]
 
 }
 

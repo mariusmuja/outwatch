@@ -145,22 +145,19 @@ abstract class DocumentEvents
 
 // Styles
 
-private[outwatch] trait SimpleStyleBuilder[F[+_]] extends builders.StyleBuilders[F[Style]] {
-  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double)
-                                               (implicit F: Effect[F]): F[Style] =
+private[outwatch] abstract class SimpleStyleBuilder[F[+_]] extends builders.StyleBuilders[F[Style]] {
+  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): F[Style] =
     style := value
-  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int)
-                                            (implicit F: Effect[F]): F[Style] =
+  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): F[Style] =
     style := value
-  override protected def buildStringStyleSetter(style: keys.Style[_], value: String)
-                                               (implicit F: Effect[F]): F[Style] =
+  override protected def buildStringStyleSetter(style: keys.Style[_], value: String): F[Style] =
     new BasicStyleBuilder[Any](style.cssName) := value
 }
 
-trait Styles[F[_]]
-  extends styles.Styles[F[Style]]
-  with SimpleStyleBuilder[F]
+trait Styles[F[+_]]
+  extends SimpleStyleBuilder[F]
+  with styles.Styles[F[Style]]
 
-trait StylesExtra[F[_]]
-  extends styles.Styles2[F[Style]]
-  with SimpleStyleBuilder[F]
+trait StylesExtra[F[+_]]
+  extends SimpleStyleBuilder[F]
+  with styles.Styles2[F[Style]]

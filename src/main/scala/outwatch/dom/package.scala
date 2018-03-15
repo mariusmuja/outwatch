@@ -5,8 +5,8 @@ import cats.effect.IO
 
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
-  type VNodeF[F[_]] = F[StaticVNode]
-  type VDomModifierF[F[_]] = F[Modifier]
+  type VNodeF[F[+_]] = F[VTree[F]]
+  type VDomModifierF[F[+_]] = F[Modifier]
 
   type VNode = VNodeF[IO]
   type VDomModifier = VDomModifierF[IO]
@@ -21,9 +21,9 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
     import cats.instances.list._
     import cats.syntax.all._
 
-    def empty[F[_]: Applicative]: VDomModifierF[F] = Applicative[F].pure(EmptyModifier)
+    def empty[F[+_]: Applicative]: VDomModifierF[F] = Applicative[F].pure(EmptyModifier)
 
-    def apply[F[_]: Applicative](modifiers: VDomModifierF[F]*): VDomModifierF[F] =
+    def apply[F[+_]: Applicative](modifiers: VDomModifierF[F]*): VDomModifierF[F] =
       modifiers.toList.sequence.map(CompositeModifier)
   }
 

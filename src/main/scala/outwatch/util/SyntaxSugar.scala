@@ -8,7 +8,7 @@ import outwatch.dom.{Attribute, AttributeStreamReceiver, Observable, TitledAttri
 object SyntaxSugar {
 
   implicit class BooleanSelector(val values: Observable[Boolean]) extends AnyVal {
-    def ?=[F[_]: Functor](attr: F[TitledAttribute]): F[AttributeStreamReceiver] = {
+    def ?=[F[+_]: Functor](attr: F[TitledAttribute]): F[AttributeStreamReceiver] = {
       attr.map { attr =>
         val attributes = values.map(b => if (b) attr else Attribute.empty)
         AttributeStreamReceiver(attr.title, attributes)

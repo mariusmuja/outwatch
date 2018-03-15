@@ -99,7 +99,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ).orUndefined
   }
 
-  private def createInsertHook[F[_]: Effect](receivers: Receivers,
+  private def createInsertHook[F[+_]: Effect](receivers: Receivers[F],
     subscription: SingleAssignCancelable,
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
@@ -122,7 +122,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       }
     }
 
-    subscription := receivers.observable[F]
+    subscription := receivers.observable
       .map(toProxy)
       .startWith(Seq(Applicative[F].pure(proxy)))
       .bufferSliding(2, 1)
@@ -143,7 +143,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ()
   }
 
-  def toSnabbdom[F[_]: Effect](receivers: Receivers)(implicit s: Scheduler): Hooks = {
+  def toSnabbdom[F[+_]: Effect](receivers: Receivers[F])(implicit s: Scheduler): Hooks = {
     val (insertHook, destroyHook) = if (receivers.nonEmpty) {
       val subscription = SingleAssignCancelable()
       val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook[F](receivers, subscription, insertHooks)
@@ -177,9 +177,9 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
   }
 }
 
-private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
+private[outwatch] trait SnabbdomModifiers[F[+_]] { self: SeparatedModifiers[F] =>
 
-  private[outwatch] def createDataObject[F[_]: Effect](receivers: Receivers)(implicit s: Scheduler): DataObject = {
+  private[outwatch] def createDataObject(receivers: Receivers[F])(implicit s: Scheduler, F: Effect[F]): DataObject = {
 
     val keyOption = properties.keys.lastOption
     val key = if (receivers.nonEmpty) {
@@ -196,12 +196,12 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     )
   }
 
-  private[outwatch] def toSnabbdom[F[_]: Effect](nodeType: String)(implicit s: Scheduler): VNodeProxy = {
+  private[outwatch] def toSnabbdom(nodeType: String)(implicit s: Scheduler, F: Effect[F]): VNodeProxy = {
 
     // if child streams exists, we want the static children in the same node have keys
     // for efficient patching when the streams change
     val childrenWithKey = children.ensureKey
-    val dataObject = createDataObject[F](Receivers(childrenWithKey, attributeReceivers))
+    val dataObject = createDataObject(Receivers(childrenWithKey, attributeReceivers))
 
     childrenWithKey match {
       case Children.VNodes(vnodes, _) =>
@@ -210,7 +210,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
         hFunction(nodeType, dataObject, childProxies)
       case Children.StringModifiers(textChildren) =>
         hFunction(nodeType, dataObject, textChildren.map(_.string).mkString)
-      case Children.Empty =>
+      case Children.Empty() =>
         hFunction(nodeType, dataObject)
     }
   }

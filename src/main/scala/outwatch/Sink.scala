@@ -19,7 +19,7 @@ sealed trait Sink[-T] extends Any {
     * Using this method is inherently impure and can cause memory leaks, if subscription
     * isn't handled correctly. For more guaranteed safety, use Sink.redirect() instead.
     */
-  def <--[F[_]: Sync](observable: Observable[T]): F[Cancelable] = Sync[F].delay {
+  def <--[F[+_]: Sync](observable: Observable[T]): F[Cancelable] = Sync[F].delay {
     observable.subscribe(observer)
   }
 
@@ -77,7 +77,7 @@ object Sink {
     * @tparam A the type parameter of the consumed elements.
     * @return a Sink that consumes elements of type T.
     */
-  def create[F[_], A](next: A => F[Unit],
+  def create[F[+_], A](next: A => F[Unit],
                 error: Throwable => F[Unit] = _ => Effect[F].unit,
                 complete: F[Unit] = Effect[F].unit
                )(implicit F: Effect[F], s: Scheduler): F[Sink[A]] = {
@@ -194,6 +194,6 @@ object Sink {
 
 }
 
-final case class ObserverSink[F[_]: Effect, -T](obs: Observer[T])(implicit s: Scheduler) extends Sink[T] {
+final case class ObserverSink[F[+_]: Effect, -T](obs: Observer[T])(implicit s: Scheduler) extends Sink[T] {
   override val observer = Subscriber(obs, s)
 }

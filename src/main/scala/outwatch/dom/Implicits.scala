@@ -8,7 +8,7 @@ import outwatch.dom.helpers.BasicStyleBuilder
 
 trait Implicits {
 
-  implicit def asVDomModifier[F[_], T](value: T)(implicit vm: AsVDomModifier[F, T]): VDomModifierF[F] =
+  implicit def asVDomModifier[F[+_], T](value: T)(implicit vm: AsVDomModifier[F, T]): VDomModifierF[F] =
     vm.asVDomModifier(value)
 
   implicit class ioVTreeMerge(vnode: VNode) {

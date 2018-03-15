@@ -1,6 +1,8 @@
 package outwatch.dom
 
-object dsl extends Attributes with Tags with Styles {
+import cats.effect.IO
+
+object dsl extends Styles[IO] with Tags with Attributes {
   object tags extends Tags {
     object extra extends TagsExtra
   }
