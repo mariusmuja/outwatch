@@ -36,7 +36,8 @@ private[outwatch] object CodecBuilder {
 
 // Tags
 
-private[outwatch] abstract class TagBuilder[F[+_]: Effect] extends builders.TagBuilder[TagBuilder.Tag[F, ?], VTree[F]] {
+private[outwatch] trait TagBuilder[F[+_]] extends builders.TagBuilder[TagBuilder.Tag[F, ?], VTree[F]] {
+  implicit val effectF:Effect[F]
   // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
   protected override def tag[Ref <: VTree[F]](tagName: String, void: Boolean): VTree[F] = VTree[F](tagName, Seq.empty)
 }
@@ -45,22 +46,22 @@ private[outwatch] object TagBuilder {
 }
 
 trait Tags[F[+_]]
-  extends TagBuilder[F]
-  with EmbedTags[TagBuilder.Tag[F, ?], VTree[F]]
+  extends EmbedTags[TagBuilder.Tag[F, ?], VTree[F]]
   with GroupingTags[TagBuilder.Tag[F, ?], VTree[F]]
   with TextTags[TagBuilder.Tag[F, ?], VTree[F]]
   with FormTags[TagBuilder.Tag[F, ?], VTree[F]]
   with SectionTags[TagBuilder.Tag[F, ?], VTree[F]]
   with TableTags[TagBuilder.Tag[F, ?], VTree[F]]
-  with TagHelpers[F]
+  with TagHelpers[F] { this: TagBuilder[F] => }
 
 @deprecated("Use dsl.tags instead", "0.11.0")
-object Tags extends Tags[IO]
+object Tags extends TagBuilder[IO] with Tags[IO] {
+  implicit val effectF: Effect[IO] = IO.ioEffect
+}
 
 trait TagsExtra[F[+_]]
-  extends TagBuilder[F]
-  with MiscTags[TagBuilder.Tag[F, ?], VTree[F]]
-  with DocumentTags[TagBuilder.Tag[F, ?], VTree[F]]
+  extends MiscTags[TagBuilder.Tag[F, ?], VTree[F]]
+  with DocumentTags[TagBuilder.Tag[F, ?], VTree[F]] { this: TagBuilder[F] =>}
 
 // all Attributes
 
@@ -145,7 +146,9 @@ abstract class DocumentEvents
 
 // Styles
 
-private[outwatch] abstract class SimpleStyleBuilder[F[+_]: Applicative] extends builders.StyleBuilders[F[Style]] {
+private[outwatch] trait SimpleStyleBuilder[F[+_]] extends builders.StyleBuilders[F[Style]] {
+  implicit val applicativeF:Applicative[F]
+
   override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): F[Style] =
     style := value
   override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): F[Style] =
@@ -154,10 +157,6 @@ private[outwatch] abstract class SimpleStyleBuilder[F[+_]: Applicative] extends 
     new BasicStyleBuilder[Any](style.cssName) := value
 }
 
-trait Styles[F[+_]]
-  extends SimpleStyleBuilder[F]
-  with styles.Styles[F[Style]]
+trait Styles[F[+_]] extends styles.Styles[F[Style]] { this: SimpleStyleBuilder[F] => }
 
-trait StylesExtra[F[+_]]
-  extends SimpleStyleBuilder[F]
-  with styles.Styles2[F[Style]]
+trait StylesExtra[F[+_]] extends styles.Styles2[F[Style]]{ this: SimpleStyleBuilder[F] => }

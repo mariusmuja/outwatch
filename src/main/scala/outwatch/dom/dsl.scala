@@ -1,16 +1,20 @@
 package outwatch.dom
 
+import cats.{Applicative, Id}
 import cats.effect.{Effect, IO}
 
-trait dsl[F[+_]] extends Styles[F] with Tags[F] with Attributes {
-
+trait dsl[F[+_]] extends Styles[F] with Tags[F] with Attributes with SimpleStyleBuilder[F] with TagBuilder[F] { thisDsl =>
   implicit val effectF: Effect[F]
+  implicit val applicativeF: Applicative[F]
 
   type VNode = VNodeF[F]
   type VDomModifier = VDomModifierF[F]
 
-  object tags extends Tags[F] {
-    object extra extends TagsExtra[F]
+  object tags extends Tags[F] with TagBuilder[F] {
+    implicit val effectF: Effect[F] = thisDsl.effectF
+    object extra extends TagsExtra[F] with TagBuilder[F] {
+      implicit val effectF: Effect[F] = thisDsl.effectF
+    }
   }
   object attributes extends Attributes {
     object attrs extends Attrs
@@ -30,4 +34,11 @@ trait dsl[F[+_]] extends Styles[F] with Tags[F] with Attributes {
 
 object dsl extends dsl[IO] with TagsCompat {
   implicit val effectF: Effect[IO] = IO.ioEffect
+  implicit val applicativeF: Applicative[IO] = Applicative.apply
 }
+
+//TODO:
+//object dslId extends dsl[Id] with TagsCompat {
+//  implicit val effectF: Effect[Id] = Id.
+//  implicit val applicativeF: Applicative[Id] = Applicative.apply
+//}
