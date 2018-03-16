@@ -63,5 +63,9 @@ trait AttributeHelpers { self: Attributes =>
 }
 
 trait TagHelpers[F[+_]] {
-  def tag(name: String)(implicit F: Effect[F]): VNodeF[F] = Applicative[F].pure(VTree[F](name, Seq.empty))
+  implicit def effectF: Effect[F]
+
+  object Dummy // workaround to avoid type erasure error
+
+  def tag(name: String, dummy: Dummy.type = Dummy): VNodeF[F] = Applicative[F].pure(VTree[F](name, Seq.empty))
 }

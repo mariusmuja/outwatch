@@ -71,7 +71,7 @@ class AttributeSpec extends JSDomSpec {
 //   }
 
   "attr/prop/style" should "correctly render type" in {
-    val node = tag("input")(effectF)(
+    val node = tag("input")(
       attr("foo") := "foo",
       attr[Boolean]("boo", identity) := true,
       attr[Boolean]("yoo", x => if (x) "yes" else "no") := true,
