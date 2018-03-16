@@ -1,9 +1,7 @@
 package outwatch
 
 import cats.effect._
-import monix.execution.Ack.Continue
-import monix.execution.Scheduler
-import monix.execution.{Ack, Cancelable}
+import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
 import monix.reactive.{Observable, Observer}

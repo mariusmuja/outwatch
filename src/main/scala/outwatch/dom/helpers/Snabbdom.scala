@@ -120,8 +120,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       } else {
         val nodes = state.nodes.reduceLeft(_ ++ _).toList.sequence
         nodes.map { list =>
-          val nodes = list.map(_.toSnabbdom).toJSArray
-          nodes.map(obj => println(JSON.stringify(obj)))
           hFunction(proxy.sel, newData, list.map(_.toSnabbdom).toJSArray)
         }
       }
@@ -152,7 +150,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
   def toSnabbdom[F[+_]: Effect](receivers: Receivers[F])(implicit s: Scheduler): Hooks = {
     val (insertHook, destroyHook) = if (receivers.nonEmpty) {
-      println(s"Create changeable node: $receivers")
       val subscription = SingleAssignCancelable()
       val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook[F](receivers, subscription, insertHooks)
       val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscription, destroyHooks)

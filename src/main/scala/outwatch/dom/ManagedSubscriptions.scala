@@ -1,6 +1,6 @@
 package outwatch.dom
 
-import cats.effect.{Effect, Sync}
+import cats.effect.Effect
 import cats.implicits._
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.CompositeCancelable
