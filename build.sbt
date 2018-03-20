@@ -4,7 +4,7 @@ name := "OutWatch"
 
 normalizedName := "outwatch"
 
-version := "1.0.0-RC7"
+version := "1.0.0-RC8"
 
 organization := "io.github.mariusmuja"
 
@@ -14,7 +14,7 @@ crossScalaVersions := Seq("2.11.12", "2.12.4")
 
 
 libraryDependencies ++= Seq(
-  "io.monix"        %%% "monix"       % "3.0.0-M3",
+  "io.monix"        %%% "monix"       % "3.0.0-RC1",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.4",
   "com.raquo"       %%% "domtypes" % "0.5",
   "org.typelevel" %%% "cats-core" % "1.1.0",
