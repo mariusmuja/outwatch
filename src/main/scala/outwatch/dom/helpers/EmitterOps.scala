@@ -2,8 +2,15 @@ package outwatch.dom.helpers
 
 import org.scalajs.dom.{Element, Event, html, svg}
 import outwatch.dom.{Emitter, Hook}
+import monix.execution.Scheduler
 
 trait EmitterOps {
+
+  implicit class EventActions[E <: Event, O, R](builder: EmitterBuilder[E, O, R]) {
+    def preventDefault(implicit s: Scheduler): EmitterBuilder[E, O, R] = builder.eventAction(_.preventDefault)
+    def stopPropagation(implicit s: Scheduler): EmitterBuilder[E, O, R] = builder.eventAction(_.stopPropagation)
+    def stopImmediatePropagation(implicit s: Scheduler): EmitterBuilder[E, O, R] = builder.eventAction(_.stopImmediatePropagation)
+  }
 
   implicit class TargetAsInput[E <: Event, O <: Event](builder: EmitterBuilder[E, O, Emitter]) {
 

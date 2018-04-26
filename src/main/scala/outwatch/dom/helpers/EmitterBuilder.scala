@@ -2,6 +2,7 @@ package outwatch.dom.helpers
 
 import cats.effect.IO
 import monix.reactive.Observer
+import monix.execution.Scheduler
 import org.scalajs.dom.Event
 import outwatch.Sink
 import outwatch.dom.{Emitter, Observable}
@@ -25,6 +26,8 @@ trait EmitterBuilder[E, O, R] extends Any {
   def filter(predicate: O => Boolean): EmitterBuilder[E, O, R] = transform(_.filter(predicate))
 
   def collect[T](f: PartialFunction[O, T]): EmitterBuilder[E, T, R] = transform(_.collect(f))
+
+  def eventAction(f: E => Unit)(implicit s: Scheduler): EmitterBuilder[E, O, R]
 }
 
 object EmitterBuilder extends EmitterOps {
@@ -45,6 +48,13 @@ final case class TransformingEmitterBuilder[E, O, R] private[helpers](
     val redirected: Sink[E] = sink.unsafeRedirect[E](transformer)
     IO.pure(create(redirected.observer))
   }
+
+  def eventAction(f: E => Unit)(implicit s: Scheduler) = copy(
+    transformer = { o =>
+      o.foreach(f)
+      transformer(o)
+    }
+  )
 }
 
 final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends AnyVal with EmitterBuilder[E, E, R] {
@@ -53,4 +63,9 @@ final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends An
     new TransformingEmitterBuilder[E, T, R](tr, create)
 
   def -->(sink: Sink[_ >: E]): IO[R] = IO.pure(create(sink.observer))
+
+  def eventAction(f: E => Unit)(implicit s: Scheduler) = transform[E] { o =>
+    o.foreach(f)
+    o
+  }
 }
