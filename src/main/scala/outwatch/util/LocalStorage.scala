@@ -21,11 +21,10 @@ class Storage(domStorage: dom.Storage) {
       // We execute the write-action to the storage
       // and pass the written value through to the underlying handler h
       h.transformHandler(o => transform(o).distinctUntilChanged) { input =>
-        input.foreach {
+        input.doOnNext {
           case Some(data) => storage.update(key, data)
           case None => storage.remove(key)
         }
-        input
       }
     }
   }
