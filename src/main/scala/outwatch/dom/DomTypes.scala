@@ -1,19 +1,14 @@
 package outwatch.dom
 
-import com.raquo.domtypes.generic.builders
-import com.raquo.domtypes.generic.keys
-import com.raquo.domtypes.generic.codecs
-import com.raquo.domtypes.generic.defs.attrs
-import com.raquo.domtypes.generic.defs.reflectedAttrs
-import com.raquo.domtypes.generic.defs.props
-import com.raquo.domtypes.generic.defs.styles
-import com.raquo.domtypes.generic.defs.sameRefTags._
-import com.raquo.domtypes.jsdom.defs.eventProps
 import cats.effect.IO
-import org.scalajs.dom
-import helpers._
+import com.raquo.domtypes.generic.defs.sameRefTags._
+import com.raquo.domtypes.generic.defs.{attrs, props, reflectedAttrs, styles, tags}
+import com.raquo.domtypes.generic.{builders, codecs, keys}
+import com.raquo.domtypes.jsdom.defs.eventProps
 import monix.execution.{Ack, Cancelable}
 import monix.reactive.OverflowStrategy.Unbounded
+import org.scalajs.dom
+import outwatch.dom.helpers._
 
 import scala.scalajs.js
 
@@ -21,6 +16,13 @@ private[outwatch] object BuilderTypes {
   type Attribute[T, _] = helpers.AttributeBuilder[T, Attr]
   type Property[T, _] = helpers.PropBuilder[T]
   type EventEmitter[E <: dom.Event] = SimpleEmitterBuilder[E, Emitter]
+
+  type Tag[T] = VTree
+
+  type SameRefSvgTags[T[_ <: N], N] = tags.SvgTags[T, N,
+    N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N,
+    N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N,
+    N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N, N]
 }
 
 private[outwatch] object CodecBuilder {
@@ -35,22 +37,20 @@ private[outwatch] object CodecBuilder {
 
 // Tags
 
-private[outwatch] trait TagBuilder extends builders.TagBuilder[TagBuilder.Tag, VTree] {
+private[outwatch] trait HtmlTagBuilder extends builders.HtmlTagBuilder[BuilderTypes.Tag, VTree] {
   // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-  protected override def tag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
-}
-private[outwatch] object TagBuilder {
-  type Tag[T] = VTree
+  protected override def htmlTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
 }
 
+
 trait Tags
-  extends EmbedTags[TagBuilder.Tag, VTree]
-  with GroupingTags[TagBuilder.Tag, VTree]
-  with TextTags[TagBuilder.Tag, VTree]
-  with FormTags[TagBuilder.Tag, VTree]
-  with SectionTags[TagBuilder.Tag, VTree]
-  with TableTags[TagBuilder.Tag, VTree]
-  with TagBuilder
+  extends EmbedTags[BuilderTypes.Tag, VTree]
+  with GroupingTags[BuilderTypes.Tag, VTree]
+  with TextTags[BuilderTypes.Tag, VTree]
+  with FormTags[BuilderTypes.Tag, VTree]
+  with SectionTags[BuilderTypes.Tag, VTree]
+  with TableTags[BuilderTypes.Tag, VTree]
+  with HtmlTagBuilder
   with TagHelpers
   with TagsCompat
 
@@ -58,9 +58,17 @@ trait Tags
 object Tags extends Tags
 
 trait TagsExtra
-  extends DocumentTags[TagBuilder.Tag, VTree]
-  with MiscTags[TagBuilder.Tag, VTree]
-  with TagBuilder
+  extends DocumentTags[BuilderTypes.Tag, VTree]
+  with MiscTags[BuilderTypes.Tag, VTree]
+  with HtmlTagBuilder
+
+trait TagsSvg
+  extends BuilderTypes.SameRefSvgTags[BuilderTypes.Tag, VTree]
+  with builders.SvgTagBuilder[BuilderTypes.Tag, VTree] {
+
+  protected override def svgTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
+}
+
 
 // all Attributes
 
@@ -81,9 +89,18 @@ object Attributes extends Attributes
 
 trait Attrs
   extends attrs.Attrs[BasicAttrBuilder]
-  with builders.AttrBuilder[BasicAttrBuilder] {
+  with builders.HtmlAttrBuilder[BasicAttrBuilder] {
 
-  override protected def attr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
+  override protected def htmlAttr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
+    new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
+}
+
+// Svg attributes
+trait AttrsSvg
+  extends attrs.SvgAttrs[BasicAttrBuilder]
+  with builders.SvgAttrBuilder[BasicAttrBuilder] {
+
+  override protected def svgAttr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
     new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
 }
 

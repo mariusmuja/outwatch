@@ -4,7 +4,7 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{html, _}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
-import outwatch.dom.dsl._
+import outwatch.dom.dsl.{svg => _, _}
 
 object DomEventSpec extends JSDomSuite {
 

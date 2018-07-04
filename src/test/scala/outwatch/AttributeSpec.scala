@@ -192,4 +192,13 @@ object AttributeSpec extends JSDomSuite {
       "transition" -> "transform .2s ease-in-out,opacity .2s ease-in-out"
     )
   }
+
+  test("svg should should work with tags and attributes") {
+    import outwatch.dom.dsl.svg._
+    val node = svg(
+      path(fill := "red", d := "M 100 100 L 300 100 L 200 300 z")
+    ).map(_.toSnabbdom).unsafeRunSync()
+
+    node.children.get.head.data.attrs.toMap shouldBe Map("fill" -> "red", "d" -> "M 100 100 L 300 100 L 200 300 z")
+  }
 }
