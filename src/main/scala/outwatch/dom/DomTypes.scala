@@ -30,7 +30,7 @@ private[outwatch] object CodecBuilder {
     //The BooleanAsAttrPresenceCodec does not play well with snabbdom. it
     //encodes true as "" and false as null, whereas snabbdom needs true/false
     //of type boolean (not string) for toggling the presence of the attribute.
-    case _: codecs.BooleanAsAttrPresenceCodec.type => identity
+    case codecs.BooleanAsAttrPresenceCodec => identity[Boolean]
     case _ => codec.encode
   }
 }

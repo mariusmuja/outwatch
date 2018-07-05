@@ -9,7 +9,9 @@ trait AsVDomModifier[-T] {
 
 object AsVDomModifier {
 
-  implicit def seqModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[Seq[T]] =
+  @inline def apply[T](implicit avm: AsVDomModifier[T]): AsVDomModifier[T] = avm
+
+  implicit def seqModifier[T : AsVDomModifier](implicit vm: AsVDomModifier[T]): AsVDomModifier[Seq[T]] =
     (value: Seq[T]) => value.map(vm.asVDomModifier).sequence.map(CompositeModifier)
 
   implicit def optionModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[Option[T]] =
