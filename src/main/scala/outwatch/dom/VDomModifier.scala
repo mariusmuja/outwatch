@@ -53,13 +53,13 @@ private[outwatch] sealed trait Modifier extends Any
 
 private[outwatch] sealed trait Property extends Modifier
 
-final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
+private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
 
 private[outwatch] final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Modifier
 
 private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
-case object EmptyModifier extends Modifier
+private[outwatch] case object EmptyModifier extends Modifier
 
 private[outwatch] final case class StringModifier(string: String) extends Modifier
 
@@ -72,7 +72,7 @@ object Key {
   type Value = DataObject.KeyValue
 }
 
-sealed trait Attribute extends Property
+private[outwatch] sealed trait Attribute extends Property
 object Attribute {
   def apply(title: String, value: Attr.Value): Attribute = BasicAttr(title, value)
 
@@ -80,13 +80,13 @@ object Attribute {
 }
 
 
-sealed trait Hook[T] extends Property {
+private[outwatch] sealed trait Hook[T] extends Property {
   def observer: Observer[T]
 }
 
 // Attributes
 
-case object EmptyAttribute extends Attribute
+private[outwatch] case object EmptyAttribute extends Attribute
 
 sealed trait TitledAttribute extends Attribute {
   val title: String
@@ -100,31 +100,31 @@ object Attr {
   type Value = DataObject.AttrValue
 }
 
-final case class BasicAttr(title: String, value: Attr.Value) extends Attr
+private[outwatch] final case class BasicAttr(title: String, value: Attr.Value) extends Attr
 
 /**
   * Attribute that accumulates the previous value in the same VNode with it's value
   */
-final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
+private[outwatch] final case class AccumAttr(title: String, value: Attr.Value, accum: (Attr.Value, Attr.Value)=> Attr.Value) extends Attr
 
-final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
+private[outwatch] final case class Prop(title: String, value: Prop.Value) extends TitledAttribute
 object Prop {
   type Value = DataObject.PropValue
 }
 
-sealed trait Style extends TitledAttribute {
+private[outwatch] sealed trait Style extends TitledAttribute {
   val value: String
 }
 object Style {
   type Value = DataObject.StyleValue
 }
 
-final case class AccumStyle(title: String, value: String, accum: (String, String) => String) extends Style
+private[outwatch] final case class AccumStyle(title: String, value: String, accum: (String, String) => String) extends Style
 
-final case class BasicStyle(title: String, value: String) extends Style
-final case class DelayedStyle(title: String, value: String) extends Style
-final case class RemoveStyle(title: String, value: String) extends Style
-final case class DestroyStyle(title: String, value: String) extends Style
+private[outwatch] final case class BasicStyle(title: String, value: String) extends Style
+private[outwatch] final case class DelayedStyle(title: String, value: String) extends Style
+private[outwatch] final case class RemoveStyle(title: String, value: String) extends Style
+private[outwatch] final case class DestroyStyle(title: String, value: String) extends Style
 
 // Hooks
 
