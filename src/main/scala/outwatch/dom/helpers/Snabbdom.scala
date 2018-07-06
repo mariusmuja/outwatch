@@ -1,5 +1,6 @@
 package outwatch.dom.helpers
 
+import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.cancelables.SingleAssignCancelable
@@ -102,27 +103,27 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
-    def toProxy(state: VNodeState): VNodeProxy = {
+    def toProxy(state: VNodeState): IO[VNodeProxy] = {
       val newData = SeparatedAttributes.from(state.attributes.values).updateDataObject(proxy.data)
 
       if (state.nodes.isEmpty) {
         if (proxy.children.isDefined) {
-          hFunction(proxy.sel, newData, proxy.children.get)
+          IO.pure(hFunction(proxy.sel, newData, proxy.children.get))
         } else {
-          hFunction(proxy.sel, newData, proxy.text)
+          IO.pure(hFunction(proxy.sel, newData, proxy.text))
         }
       } else {
         val nodes = state.nodes.reduceLeft(_ ++ _)
-        hFunction(proxy.sel, newData, nodes.map(_.unsafeRunSync().toSnabbdom)(breakOut): js.Array[VNodeProxy])
+        nodes.sequence.map { nodes =>
+          hFunction(proxy.sel, newData, nodes.map(_.toSnabbdom)(breakOut): js.Array[VNodeProxy])
+        }
       }
     }
 
-    subscription := receivers.observable
-      .map(toProxy)
-      .startWith(Seq(proxy))
-      .bufferSliding(2, 1)
+    subscription := receivers.observable.mapEval(toProxy)
+      .scan(proxy)(patch.apply)
       .subscribe(
-        { case Seq(old, crt) => patch(old, crt); Continue },
+        _ => Continue,
         error => dom.console.error(error.getMessage + "\n" + error.getStackTrace.mkString("\n"))
       )
 
@@ -161,7 +162,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
   private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[dom.Event, Unit] = {
-    (event: dom.Event) => emitters.foreach(_.trigger(event))
+    event => emitters.foreach(_.trigger(event))
   }
 
   def toSnabbdom: js.Dictionary[js.Function1[dom.Event, Unit]] = {

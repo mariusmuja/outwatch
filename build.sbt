@@ -4,7 +4,7 @@ name := "OutWatch"
 
 normalizedName := "outwatch"
 
-version := "1.0.0-RC8"
+version := "1.0.0-RC9"
 
 organization := "io.github.mariusmuja"
 
@@ -18,7 +18,7 @@ libraryDependencies ++= Seq(
   "org.scala-js"    %%% "scalajs-dom" % "0.9.4",
   "com.raquo"       %%% "domtypes" % "0.5",
   "org.typelevel" %%% "cats-core" % "1.1.0",
-  "org.typelevel" %%% "cats-effect" % "0.10",
+  "org.typelevel" %%% "cats-effect" % "1.0.0-RC2",
   "io.monix" %%% "minitest" % "2.1.1" % Test
 )
 
