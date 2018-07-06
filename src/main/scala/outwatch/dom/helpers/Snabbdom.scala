@@ -106,7 +106,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   )(implicit s: Scheduler): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
 
     import cats.implicits._
-    import cats.effect.implicits._
 
     def toProxy(state: VNodeState[F]): F[VNodeProxy] = {
       val newData = SeparatedAttributes.from(state.attributes.values.toSeq).updateDataObject(proxy.data)
@@ -120,19 +119,15 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
       } else {
         val nodes = state.nodes.reduceLeft(_ ++ _).toList.sequence
         nodes.map { list =>
-          hFunction(proxy.sel, newData, list.map(_.toSnabbdom).toJSArray)
+          hFunction(proxy.sel, newData, list.map(_.toSnabbdom)(breakOut): js.Array[VNodeProxy])
         }
       }
     }
 
-    subscription := receivers.observable
-      .map(toProxy)
-      .startWith(Seq(Applicative[F].pure(proxy)))
-      .bufferSliding(2, 1)
+    subscription := receivers.observable.mapEval(toProxy)
+      .scan(proxy)(patch.apply)
       .subscribe(
-        { case Seq(old, crt) =>
-          (old, crt).mapN(patch.apply).runAsync(_ => IO.unit).unsafeRunSync(); Continue
-        },
+        _ => Continue,
         error => dom.console.error(error.getMessage + "\n" + error.getStackTrace.mkString("\n"))
       )
 
@@ -171,7 +166,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
   private def emittersToFunction(emitters: Seq[Emitter]): js.Function1[dom.Event, Unit] = {
-    (event: dom.Event) => emitters.foreach(_.trigger(event))
+    event: dom.Event => emitters.foreach(_.trigger(event))
   }
 
   def toSnabbdom: js.Dictionary[js.Function1[dom.Event, Unit]] = {

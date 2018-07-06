@@ -26,7 +26,7 @@ object AttributeBuilder {
 // Attr
 
 trait AccumulateAttrOps[T] { self: AttributeBuilder[T, BasicAttr] =>
-  def accum(s: String): AccumAttrBuilder[T] = accum((a: Attr.Value, b: Attr.Value) => a.toString + " " + b.toString)
+  def accum(s: String): AccumAttrBuilder[T] = accum((a: Attr.Value, b: Attr.Value) => a.toString + s + b.toString)
   def accum(reducer: (Attr.Value, Attr.Value) => Attr.Value) = new AccumAttrBuilder[T](name, this, reducer)
 }
 
