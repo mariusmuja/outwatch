@@ -4,7 +4,9 @@ name := "OutWatch"
 
 normalizedName := "outwatch"
 
-version := "1.0.0-SNAPSHOT"
+// use sbt-git for versioning
+//version := "1.0.0-SNAPSHOT"
+enablePlugins(GitVersioning)
 
 organization := "io.github.mariusmuja"
 

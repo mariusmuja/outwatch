@@ -12,8 +12,8 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
 
   def :=(value: T): IO[A] = IO.pure(assign(value))
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
-  def <--(valueStream: Observable[T]): IO[AttributeStreamReceiver] = {
-    IO.pure(AttributeStreamReceiver(name, valueStream.map(assign)))
+  def <--(valueStream: Observable[T]): IO[AttributeStream] = {
+    IO.pure(AttributeStream(valueStream.map(assign)))
   }
 }
 
@@ -102,7 +102,7 @@ object KeyBuilder {
 
 // Child / Children
 
-object ChildStreamReceiverBuilder {
+object ChildStreamBuilder {
   implicit object ChildrenTag
 
   def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] =
@@ -111,19 +111,19 @@ object ChildStreamReceiverBuilder {
   def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] =
     IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
 
-  def <--(childrenStream: Observable[Seq[VNode]])(implicit tag: ChildrenTag.type): IO[ChildrenStreamReceiver] =
-    IO.pure(ChildrenStreamReceiver(childrenStream))
+  def <--(childrenStream: Observable[Seq[VNode]])(implicit tag: ChildrenTag.type): IO[ChildrenStream] =
+    IO.pure(ChildrenStream(childrenStream))
 
-  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T], tag: ChildrenTag.type): IO[ChildrenStreamReceiver] =
-    IO.pure(ChildrenStreamReceiver(childrenStream.map(_.map(r.render))))
+  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T], tag: ChildrenTag.type): IO[ChildrenStream] =
+    IO.pure(ChildrenStream(childrenStream.map(_.map(r.render))))
 }
 
-object ChildrenStreamReceiverBuilder {
-  def <--(childrenStream: Observable[Seq[VNode]]): IO[ChildrenStreamReceiver] = IO.pure(
-    ChildrenStreamReceiver(childrenStream)
+object ChildrenStreamBuilder {
+  def <--(childrenStream: Observable[Seq[VNode]]): IO[ChildrenStream] = IO.pure(
+    ChildrenStream(childrenStream)
   )
 
-  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T]): IO[ChildrenStreamReceiver] = IO.pure(
-    ChildrenStreamReceiver(childrenStream.map(_.map(r.render)))
+  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T]): IO[ChildrenStream] = IO.pure(
+    ChildrenStream(childrenStream.map(_.map(r.render)))
   )
 }

@@ -9,12 +9,15 @@ object SeparatedModifiers {
   private[outwatch] def from(modifiers: TraversableOnce[Modifier]): SeparatedModifiers = {
     modifiers.foldRight(SeparatedModifiers())((m, sm) => m :: sm)
   }
+
+
+//  private def flatten(modifiers: TraversableOnce[Modifier]): (Seq[Modifier], Observable[Seq[Modifier]]) = ???
 }
 
 private[outwatch] final case class SeparatedModifiers(
   properties: SeparatedProperties = SeparatedProperties(),
   emitters: SeparatedEmitters = SeparatedEmitters(),
-  attributeReceivers: List[AttributeStreamReceiver] = Nil,
+  attributeStreams: List[AttributeStream] = Nil,
   children: Children = Children.Empty
 ) extends SnabbdomModifiers { self =>
 
@@ -22,7 +25,7 @@ private[outwatch] final case class SeparatedModifiers(
     case pr: Property => copy(properties = pr :: properties)
     case vn: ChildVNode => copy(children = vn :: children)
     case em: Emitter => copy(emitters = em :: emitters)
-    case rc: AttributeStreamReceiver => copy(attributeReceivers = rc :: attributeReceivers)
+    case rc: AttributeStream => copy(attributeStreams = rc :: attributeStreams)
     case cm: CompositeModifier => cm.modifiers.foldRight(self)((m, sm) => m :: sm)
     case sm: StringModifier => copy(children = sm :: children)
     case EmptyModifier => self
@@ -139,7 +142,7 @@ private[outwatch] final case class SeparatedEmitters(
 
 private[outwatch] case class VNodeState(
   nodes: Array[Seq[IO[StaticVNode]]],
-  attributes: Map[String, Attribute] = Map.empty
+  attribute: Option[Attribute] = None
 )
 
 private[outwatch] object VNodeState {
@@ -153,9 +156,9 @@ private[outwatch] object VNodeState {
   type Updater = VNodeState => VNodeState
 }
 
-private[outwatch] final case class Receivers(
+private[outwatch] final case class Streams(
   children: Children,
-  attributeStreamReceivers: List[AttributeStreamReceiver]
+  attributeStreams: List[AttributeStream]
 ) {
   private val (nodes, hasNodeStreams) = children match {
     case Children.VNodes(nodes, hasStream) => (nodes, hasStream)
@@ -167,17 +170,17 @@ private[outwatch] final case class Receivers(
       Observable.empty
     case (csr: ChildStreamReceiver, index) =>
       csr.childStream.map[VNodeState.Updater](n => s => s.copy(nodes = s.nodes.updated(index, n :: Nil)))
-    case (csr: ChildrenStreamReceiver, index) =>
+    case (csr: ChildrenStream, index) =>
       csr.childrenStream.map[VNodeState.Updater](n => s => s.copy(nodes = s.nodes.updated(index, n)))
-  } ++ attributeStreamReceivers.groupBy(_.attribute).values.map(_.last).map {
-    case AttributeStreamReceiver(name, attributeStream) =>
-      attributeStream.map[VNodeState.Updater](a => s => s.copy(attributes = s.attributes.updated(name, a)))
+  } ++ attributeStreams.map {
+    case AttributeStream(stream) =>
+      stream.map[VNodeState.Updater](a => s => s.copy(attribute = Some(a)))
   }
 
   lazy val observable: Observable[VNodeState] = Observable.merge(updaters: _*)
     .scan(VNodeState.from(nodes))((state, updater) => updater(state))
 
   lazy val nonEmpty: Boolean = {
-    hasNodeStreams || attributeStreamReceivers.nonEmpty
+    hasNodeStreams || attributeStreams.nonEmpty
   }
 }

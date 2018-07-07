@@ -1,7 +1,7 @@
 package outwatch
 
 import cats.effect.IO
-import outwatch.dom.{ChildStreamReceiver, ChildrenStreamReceiver, CompositeModifier, Observable, StringModifier, VDomModifier, VNode}
+import outwatch.dom.{ChildStreamReceiver, ChildrenStream, CompositeModifier, Observable, StringModifier, VDomModifier, VNode}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier
@@ -15,7 +15,7 @@ object AsVDomModifier {
     (value: Seq[T]) => value.map(vm.asVDomModifier).sequence.map(CompositeModifier)
 
   implicit def optionModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[Option[T]] =
-    (value: Option[T]) => value.map(vm.asVDomModifier) getOrElse VDomModifier.empty
+    (value: Option[T]) => value.fold(VDomModifier.empty)(vm.asVDomModifier)
 
   implicit object VDomModifierAsVDomModifier extends AsVDomModifier[VDomModifier] {
     def asVDomModifier(value: VDomModifier): VDomModifier = value
@@ -41,9 +41,9 @@ object AsVDomModifier {
     IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
 
   implicit object ObservableSeqRender extends AsVDomModifier[Observable[Seq[VNode]]] {
-    def asVDomModifier(seqStream: Observable[Seq[VNode]]): VDomModifier = IO.pure(ChildrenStreamReceiver(seqStream))
+    def asVDomModifier(seqStream: Observable[Seq[VNode]]): VDomModifier = IO.pure(ChildrenStream(seqStream))
   }
 
   implicit def observableSeqRender[T](implicit r: StaticVNodeRender[T]): AsVDomModifier[Observable[Seq[T]]] = (seqStream: Observable[Seq[T]]) =>
-    IO.pure(ChildrenStreamReceiver(seqStream.map(_.map(r.render))))
+    IO.pure(ChildrenStream(seqStream.map(_.map(r.render))))
 }

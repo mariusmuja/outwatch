@@ -9,12 +9,10 @@ trait StaticVNodeRender[-T] {
 
 object StaticVNodeRender {
 
-  implicit def vNodeRender: StaticVNodeRender[VNode] = {
-    (value: VNode) => value
-  }
+  implicit def vNodeRender: StaticVNodeRender[VNode] = (value: VNode) => value
 
   implicit def optionRender[T](implicit svnr: StaticVNodeRender[T]): StaticVNodeRender[Option[T]] = {
-    (value: Option[T]) => value.fold(IO.pure(StaticVNode.empty))(svnr.render)
+    value: Option[T] => value.fold(IO.pure(StaticVNode.empty))(svnr.render)
   }
 
   implicit object StringRender extends StaticVNodeRender[String] {

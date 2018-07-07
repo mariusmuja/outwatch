@@ -6,13 +6,14 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
 
   type VNode = IO[VTree]
   type VDomModifier = IO[Modifier]
+
   object VDomModifier {
     val empty: VDomModifier = IO.pure(EmptyModifier)
 
     def apply(modifier: VDomModifier, modifier2: VDomModifier, modifiers: VDomModifier*): VDomModifier =
       (Seq(modifier, modifier2) ++ modifiers).sequence.map(CompositeModifier)
 
-    def apply[T : AsVDomModifier](t: T): VDomModifier = AsVDomModifier[T].asVDomModifier(t)
+    def apply[T: AsVDomModifier](t: T): VDomModifier = AsVDomModifier[T].asVDomModifier(t)
   }
 
   type Observable[+A] = monix.reactive.Observable[A]

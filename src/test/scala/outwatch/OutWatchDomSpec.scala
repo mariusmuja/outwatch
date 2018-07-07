@@ -48,7 +48,7 @@ object OutWatchDomSpec extends JSDomSuite {
       Emitter("click", _ => Continue),
       StringModifier("Test"),
       div().unsafeRunSync(),
-      AttributeStreamReceiver("hidden",Observable()),
+      AttributeStream(Observable()),
       CompositeModifier(
         Seq(
           div(),
@@ -75,8 +75,8 @@ object OutWatchDomSpec extends JSDomSuite {
       EmptyModifier,
       Emitter("click", _ => Continue),
       Emitter("input", _ => Continue),
-      AttributeStreamReceiver("hidden", Observable()),
-      AttributeStreamReceiver("disabled", Observable()),
+      AttributeStream(Observable()),
+      AttributeStream(Observable()),
       Emitter("keyup", _ => Continue),
       StringModifier("text"),
       div().unsafeRunSync()
@@ -99,8 +99,8 @@ object OutWatchDomSpec extends JSDomSuite {
       Emitter("click", _ => Continue),
       Emitter("input", _ => Continue),
       Emitter("keyup", _ => Continue),
-      AttributeStreamReceiver("hidden",Observable()),
-      AttributeStreamReceiver("disabled",Observable()),
+      AttributeStream(Observable()),
+      AttributeStream(Observable()),
       StringModifier("text"),
       StringVNode("text2")
     )
@@ -121,9 +121,9 @@ object OutWatchDomSpec extends JSDomSuite {
       Emitter("click", _ => Continue),
       Emitter("input", _ => Continue),
       UpdateHook(PublishSubject()),
-      AttributeStreamReceiver("hidden",Observable()),
-      AttributeStreamReceiver("disabled",Observable()),
-      ChildrenStreamReceiver(Observable()),
+      AttributeStream(Observable()),
+      AttributeStream(Observable()),
+      ChildrenStream(Observable()),
       Emitter("keyup", _ => Continue),
       InsertHook(PublishSubject()),
       PrePatchHook(PublishSubject()),
@@ -167,11 +167,11 @@ object OutWatchDomSpec extends JSDomSuite {
       },
       IO {
         list += "children1"
-        ChildrenStreamReceiver(Observable())
+        ChildrenStream(Observable())
       },
       IO {
         list += "children2"
-        ChildrenStreamReceiver(Observable())
+        ChildrenStream(Observable())
       },
       div(
         IO {
@@ -199,7 +199,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
     val mods = Seq(
-      ChildrenStreamReceiver(Observable()),
+      ChildrenStream(Observable()),
       div(id := "1").unsafeRunSync(),
       div(id := "2").unsafeRunSync()
       // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
@@ -227,7 +227,7 @@ object OutWatchDomSpec extends JSDomSuite {
   test("VDomModifiers should keep existing key for child nodes") {
     val mods = Seq(
       Key(1234),
-      ChildrenStreamReceiver(Observable()),
+      ChildrenStream(Observable()),
       div()(IO.pure(Key(5678))).unsafeRunSync()
     )
 
@@ -744,8 +744,8 @@ object OutWatchDomSpec extends JSDomSuite {
     otherMessages.onNext("otherMessage")
     node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
 
-    messages.onNext("message") // should be ignored
-    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
+    messages.onNext("message")
+    node.children(0).getAttribute("data-noise") shouldBe "message"
 
     otherMessages.onNext("genus")
     node.children(0).getAttribute("data-noise") shouldBe "genus"
@@ -763,8 +763,8 @@ object OutWatchDomSpec extends JSDomSuite {
     otherMessages.onNext("red")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
-    messages.onNext("blue") // should be ignored
-    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
+    messages.onNext("blue")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "blue"
 
     otherMessages.onNext("green")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"
@@ -782,8 +782,8 @@ object OutWatchDomSpec extends JSDomSuite {
     otherMessages.onNext("red")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
-    messages.onNext("blue") // should be ignored
-    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
+    messages.onNext("blue")
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "blue"
 
     otherMessages.onNext("green")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"

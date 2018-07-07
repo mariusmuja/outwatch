@@ -36,7 +36,6 @@ trait LocalStorageMock {
   import scala.collection.mutable
   import scala.scalajs.js
 
-
   if (js.isUndefined(window.localStorage)) {
     js.Dynamic.global.window.updateDynamic("localStorage")(new js.Object {
       private val map = new mutable.HashMap[String, String]
@@ -74,7 +73,7 @@ trait LocalStorageMock {
 
 trait JSDomSuite extends TestSuite[Unit] with EasySubscribe with TestDSL with LocalStorageMock {
 
-  implicit val scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
+  implicit val scheduler: Scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
 
   def setup(): Unit = {
     document.body.innerHTML = ""

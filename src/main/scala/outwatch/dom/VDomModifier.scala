@@ -34,13 +34,13 @@ Modifier
     Key
   ChildVNode
     StreamVNode
-      ChildStreamReceiver
-      ChildrenStreamReceiver
+      ChildStream
+      ChildrenStream
     StaticVNode
       StringVNode
       VTree
   Emitter
-  AttributeStreamReceiver
+  AttributeStream
   CompositeModifier
   StringModifier
   EmptyModifier
@@ -55,7 +55,7 @@ private[outwatch] sealed trait Property extends Modifier
 
 private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
 
-private[outwatch] final case class AttributeStreamReceiver(attribute: String, attributeStream: Observable[Attribute]) extends Modifier
+private[outwatch] final case class AttributeStream(stream: Observable[Attribute]) extends Modifier
 
 private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
@@ -129,8 +129,7 @@ private[outwatch] final case class DestroyStyle(title: String, value: String) ex
 // Hooks
 
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]
-private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])])
-  extends Hook[(Option[Element], Option[Element])]
+private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])]) extends Hook[(Option[Element], Option[Element])]
 private[outwatch] final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
@@ -146,9 +145,11 @@ object StaticVNode {
   val empty: StaticVNode = StringVNode("")
 }
 
+private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends AnyVal with StreamVNode
+
 private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends AnyVal with StreamVNode
 
-private[outwatch] final case class ChildrenStreamReceiver(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends AnyVal with StreamVNode
+private[outwatch] final case class ChildrenStream(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends AnyVal with StreamVNode
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {

@@ -3,7 +3,7 @@ package outwatch.dom
 import cats.effect.IO
 import monix.execution.Scheduler
 import org.scalajs.dom.{ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent}
-import outwatch.dom.helpers.{ChildStreamReceiverBuilder, ChildrenStreamReceiverBuilder}
+import outwatch.dom.helpers.{ChildStreamBuilder, ChildrenStreamBuilder}
 
 trait Handlers {
   @deprecated("Use Handler.create[MouseEvent] instead", "0.11.0")
@@ -81,9 +81,9 @@ trait TagsCompat { self: Tags =>
 /** OutWatch specific attributes used to asign child nodes to a VNode. */
 trait OutWatchChildAttributesCompat {
   /** A special attribute that takes a stream of single child nodes. */
-  lazy val child    = ChildStreamReceiverBuilder
+  lazy val child    = ChildStreamBuilder
 
   /** A special attribute that takes a stream of lists of child nodes. */
   @deprecated("Use 'child <--' or the observable directly", "1.0.0")
-  lazy val children = ChildrenStreamReceiverBuilder
+  lazy val children = ChildrenStreamBuilder
 }
