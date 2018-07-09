@@ -1,16 +1,17 @@
 package outwatch.util
 
 import cats.effect.IO
-import outwatch.dom.{Attribute, AttributeStream, Observable, VDomModifier}
+import outwatch.dom
+import outwatch.dom.{ModifierStream, Observable, VDomModifier}
 
 
 object SyntaxSugar {
 
   implicit class BooleanSelector(val conditionStream: Observable[Boolean]) extends AnyVal {
-    def ?=(attr: IO[Attribute]): IO[AttributeStream] = {
-      attr.map { attr =>
-        val attributeStream = conditionStream.map(condition => if (condition) attr else Attribute.empty)
-        AttributeStream(attributeStream)
+    def ?=(mod: VDomModifier): IO[ModifierStream] = {
+      mod.map { mod =>
+        val attributeStream = conditionStream.map(condition => if (condition) IO.pure(mod) else VDomModifier.empty)
+        dom.ModifierStream(attributeStream)
       }
     }
   }

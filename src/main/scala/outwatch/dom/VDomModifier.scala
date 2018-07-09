@@ -49,24 +49,26 @@ Modifier
 
 private[outwatch] sealed trait Modifier extends Any
 
+private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends Modifier
+
+private[outwatch] sealed trait StreamableModifier extends Modifier
+
 // Modifiers
 
-private[outwatch] sealed trait Property extends Modifier
+private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends StreamableModifier
 
-private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends Modifier
+private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends StreamableModifier
 
-private[outwatch] final case class AttributeStream(stream: Observable[Attribute]) extends Modifier
+private[outwatch] case object EmptyModifier extends StreamableModifier
 
-private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
+private[outwatch] final case class StringModifier(string: String) extends StreamableModifier
 
-private[outwatch] case object EmptyModifier extends Modifier
 
-private[outwatch] final case class StringModifier(string: String) extends Modifier
+private[outwatch] sealed trait Property extends StreamableModifier
 
-private[outwatch] sealed trait ChildVNode extends Any with Modifier
+private[outwatch] sealed trait ChildVNode extends StreamableModifier
 
 // Properties
-
 private[outwatch] final case class Key(value: Key.Value) extends Property
 object Key {
   type Value = DataObject.KeyValue
@@ -78,7 +80,6 @@ object Attribute {
 
   val empty: Attribute = EmptyAttribute
 }
-
 
 private[outwatch] sealed trait Hook[T] extends Property {
   def observer: Observer[T]
@@ -136,35 +137,29 @@ private[outwatch] final case class DestroyHook(observer: Observer[Element]) exte
 
 // Child Nodes
 
-private[outwatch] sealed trait StreamVNode extends Any with ChildVNode
-
-private[outwatch] sealed trait StaticVNode extends Any with ChildVNode {
-  def toSnabbdom(implicit s: Scheduler): VNodeProxy
+private[outwatch] sealed trait StaticVNode extends ChildVNode {
+  def toSnabbdom(implicit s: Scheduler): IO[VNodeProxy]
 }
 object StaticVNode {
   val empty: StaticVNode = StringVNode("")
 }
 
-private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends AnyVal with StreamVNode
-
-private[outwatch] final case class ChildStreamReceiver(childStream: Observable[IO[StaticVNode]]) extends AnyVal with StreamVNode
-
-private[outwatch] final case class ChildrenStream(childrenStream: Observable[Seq[IO[StaticVNode]]]) extends AnyVal with StreamVNode
-
 // Static Nodes
-private[outwatch] final case class StringVNode(string: String) extends AnyVal with StaticVNode {
-  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = VNodeProxy.fromString(string)
+private[outwatch] final case class StringVNode(string: String) extends StaticVNode {
+  override def toSnabbdom(implicit s: Scheduler): IO[VNodeProxy] = IO.pure(VNodeProxy.fromString(string))
 }
 
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
 // Fast concatenation and lastOption operations are important
 // Needs to be benchmarked in the Browser
-private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifier]) extends StaticVNode {
+private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[VDomModifier]) extends StaticVNode {
 
-  def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy(modifiers = modifiers ++ args))
+  def apply(args: VDomModifier*): VNode = IO.pure(copy(modifiers = modifiers ++ args))
 
-  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
-    SeparatedModifiers.from(modifiers).toSnabbdom(nodeType)
+  override def toSnabbdom(implicit s: Scheduler): IO[VNodeProxy] = {
+    modifiers.sequence.flatMap { modifiers =>
+      SeparatedModifiers.from(modifiers).toSnabbdom(nodeType)
+    }
   }
 }
 

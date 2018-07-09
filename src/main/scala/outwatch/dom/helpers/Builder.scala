@@ -1,7 +1,7 @@
 package outwatch.dom.helpers
 
 import cats.effect.IO
-import outwatch.StaticVNodeRender
+import outwatch.AsVDomModifier
 import outwatch.dom._
 
 import scala.language.dynamics
@@ -12,8 +12,8 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
 
   def :=(value: T): IO[A] = IO.pure(assign(value))
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
-  def <--(valueStream: Observable[T]): IO[AttributeStream] = {
-    IO.pure(AttributeStream(valueStream.map(assign)))
+  def <--(valueStream: Observable[T]): IO[ModifierStream] = {
+    IO.pure(ModifierStream(valueStream.map(s => IO.pure(assign(s)))))
   }
 }
 
@@ -103,27 +103,13 @@ object KeyBuilder {
 // Child / Children
 
 object ChildStreamBuilder {
+
   implicit object ChildrenTag
 
-  def <--[T](valueStream: Observable[VNode]): IO[ChildStreamReceiver] =
-    IO.pure(ChildStreamReceiver(valueStream))
+  def <--(valueStream: Observable[VNode]): IO[ModifierStream] =
+    IO.pure(ModifierStream(valueStream))
 
-  def <--[T](valueStream: Observable[T])(implicit r: StaticVNodeRender[T]): IO[ChildStreamReceiver] =
-    IO.pure(ChildStreamReceiver(valueStream.map(r.render)))
-
-  def <--(childrenStream: Observable[Seq[VNode]])(implicit tag: ChildrenTag.type): IO[ChildrenStream] =
-    IO.pure(ChildrenStream(childrenStream))
-
-  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T], tag: ChildrenTag.type): IO[ChildrenStream] =
-    IO.pure(ChildrenStream(childrenStream.map(_.map(r.render))))
+  def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): IO[ModifierStream] =
+    IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
 }
 
-object ChildrenStreamBuilder {
-  def <--(childrenStream: Observable[Seq[VNode]]): IO[ChildrenStream] = IO.pure(
-    ChildrenStream(childrenStream)
-  )
-
-  def <--[T](childrenStream: Observable[Seq[T]])(implicit r: StaticVNodeRender[T]): IO[ChildrenStream] = IO.pure(
-    ChildrenStream(childrenStream.map(_.map(r.render)))
-  )
-}
