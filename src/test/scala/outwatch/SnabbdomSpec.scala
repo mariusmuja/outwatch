@@ -47,8 +47,6 @@ object SnabbdomSpec extends JSDomSuite {
 
     OutWatch.renderInto("#app", div(nodes)).unsafeRunSync()
 
-    println(document.getElementById("div").outerHTML)
-
     val inputEvt = document.createEvent("HTMLEvents")
     initEvent(inputEvt)("input", false, true)
 

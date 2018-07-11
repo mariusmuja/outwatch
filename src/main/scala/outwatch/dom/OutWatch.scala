@@ -11,8 +11,8 @@ object OutWatch {
 
   def renderInto(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
     node <- vNode
-    proxy <- node.toSnabbdom
   } yield {
+    val proxy = node.toSnabbdom
     val elem = dom.document.createElement("app")
     element.appendChild(elem)
     patch(elem, proxy)
@@ -21,8 +21,8 @@ object OutWatch {
 
   def renderReplace(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
     node <- vNode
-    proxy <- node.toSnabbdom
   } yield {
+    val proxy = node.toSnabbdom
     patch(element, proxy)
     ()
   }

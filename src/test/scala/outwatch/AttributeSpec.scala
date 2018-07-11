@@ -12,7 +12,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       className := "class1",
       cls := "class2"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toMap shouldBe Map("class" -> "class1 class2")
   }
@@ -22,7 +22,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       attr("id").accum(",") := "foo1",
       attr("id").accum(",") := "foo2"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toList shouldBe List("id" -> "foo1,foo2")
   }
@@ -32,7 +32,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       data.foo.accum(",") := "foo1",
       data.foo.accum(",") := "foo2"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toList shouldBe List("data-foo" -> "foo1,foo2")
   }
@@ -41,7 +41,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       data.geul := "bar",
       data.geuli.gurk := "barz"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toMap shouldBe Map("data-geul" -> "bar", "data-geuli-gurk" -> "barz")
   }
@@ -50,7 +50,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       dataAttr("geul") := "bar",
       dataAttr("geuli-gurk") := "barz"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
 
     node.data.attrs.toMap shouldBe Map("data-geul" -> "bar", "data-geuli-gurk" -> "barz")
@@ -72,7 +72,7 @@ object AttributeSpec extends JSDomSuite {
       contentEditable := false,
       autoComplete := false,
       disabled := false
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
 
     node.data.attrs.toList shouldBe List(
@@ -93,7 +93,7 @@ object AttributeSpec extends JSDomSuite {
     val node = input(
       data.foo :=? Option("bar"),
       data.bar :=? Option.empty[String]
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.attrs.toMap shouldBe Map("data-foo" -> "bar")
   }
@@ -105,7 +105,7 @@ object AttributeSpec extends JSDomSuite {
     )(
       data.a := "buh",
       data.a.tomate := "gisela"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
 
     node.data.attrs.toMap shouldBe Map(
@@ -122,7 +122,7 @@ object AttributeSpec extends JSDomSuite {
     )(
       style("color") := "blue",
       border := "1px solid black"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.style.toMap shouldBe Map(
       ("color", "blue"),
@@ -139,7 +139,7 @@ object AttributeSpec extends JSDomSuite {
     )(
       color.blue,
       border := "1px solid black"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.style.toMap shouldBe Map(
       ("color", "blue"),
@@ -149,18 +149,18 @@ object AttributeSpec extends JSDomSuite {
   }
 
   test("apply on vtree should correctly merge keys") {
-    val node = input( key := "bumm")( key := "klapp").flatMap(_.toSnabbdom).unsafeRunSync()
+    val node = input( key := "bumm")( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     node.data.key.toList shouldBe List("klapp")
 
-    val node2 = input()( key := "klapp").flatMap(_.toSnabbdom).unsafeRunSync()
+    val node2 = input()( key := "klapp").map(_.toSnabbdom).unsafeRunSync()
     node2.data.key.toList shouldBe List("klapp")
 
-    val node3 = input( key := "bumm")().flatMap(_.toSnabbdom).unsafeRunSync()
+    val node3 = input( key := "bumm")().map(_.toSnabbdom).unsafeRunSync()
     node3.data.key.toList shouldBe List("bumm")
   }
 
   test("style attribute should render correctly") {
-    val node = input(color.red).flatMap(_.toSnabbdom).unsafeRunSync()
+    val node = input(color.red).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.style.toMap shouldBe Map(
       "color" -> "red"
@@ -174,7 +174,7 @@ object AttributeSpec extends JSDomSuite {
       opacity.delayed := 1,
       opacity.remove := 0,
       opacity.destroy := 0
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.style("opacity") shouldBe "0"
     node.data.style("delayed").asInstanceOf[js.Dictionary[String]].toMap shouldBe Map("opacity" -> "1")
@@ -186,7 +186,7 @@ object AttributeSpec extends JSDomSuite {
     val node = div(
       transition := "transform .2s ease-in-out",
       transition.accum(",") := "opacity .2s ease-in-out"
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.data.style.toMap shouldBe Map(
       "transition" -> "transform .2s ease-in-out,opacity .2s ease-in-out"
@@ -197,7 +197,7 @@ object AttributeSpec extends JSDomSuite {
     import outwatch.dom.dsl.svg._
     val node = svg(
       path(fill := "red", d := "M 100 100 L 300 100 L 200 300 z")
-    ).flatMap(_.toSnabbdom).unsafeRunSync()
+    ).map(_.toSnabbdom).unsafeRunSync()
 
     node.children.get.head.data.attrs.toMap shouldBe Map("fill" -> "red", "d" -> "M 100 100 L 300 100 L 200 300 z")
   }

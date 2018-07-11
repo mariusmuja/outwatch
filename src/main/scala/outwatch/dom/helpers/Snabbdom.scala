@@ -1,6 +1,5 @@
 package outwatch.dom.helpers
 
-import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.Scheduler
 import monix.execution.cancelables.SingleAssignCancelable
@@ -8,22 +7,10 @@ import org.scalajs.dom
 import outwatch.dom._
 import snabbdom._
 
-import scala.collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.scalajs.js.JSON
 
-
-
-
-private[outwatch] object DictionaryOps {
-  def merge[T](first: js.Dictionary[T], second: js.Dictionary[T]) = {
-    val result = js.Dictionary.empty[T]
-    first.foreach { case (key, value) => result(key) = value }
-    second.foreach { case (key, value) => result(key) = value }
-    result
-  }
-}
 
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
@@ -56,7 +43,6 @@ private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
 
 private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
-
   def toSnabbdom: (js.Dictionary[Attr.Value], js.Dictionary[Prop.Value], js.Dictionary[Style.Value]) = {
     val attrsDict = js.Dictionary[Attr.Value]()
     val propsDict = js.Dictionary[Prop.Value]()
@@ -68,25 +54,6 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
     props.foreach { p => propsDict(p.title) = p.value }
 
     (attrsDict, propsDict, styles.toSnabbdom)
-  }
-
-  private def merge[T](first: js.Dictionary[T], second: js.Dictionary[T]): js.Dictionary[T] = {
-    val result = js.Dictionary.empty[T]
-    first.foreach { case (key, value) => result(key) = value }
-    second.foreach { case (key, value) => result(key) = value }
-    result
-  }
-
-  def updateDataObject(obj: DataObject): DataObject = {
-
-    val (attrs, props, style) = toSnabbdom
-
-    DataObject(
-      attrs = merge(obj.attrs, attrs),
-      props = merge(obj.props, props),
-      style = merge(obj.style, style),
-      on = obj.on, hook = obj.hook, key = obj.key
-    )
   }
 }
 
@@ -111,30 +78,26 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
     ).orUndefined
   }
 
-  private def createInsertHook(streams: Streams,
+  private def createInsertHook(
+    streams: Streams,
     subscription: SingleAssignCancelable,
     hooks: Seq[InsertHook]
   )(implicit s: Scheduler): Hooks.HookSingleFn = (vproxy: VNodeProxy) => {
 
-    def toProxy(prev: VNodeProxy, state: VNodeState): IO[VNodeProxy] = {
-
-      state.modifiers.toList.sequence.flatMap { modifiers =>
-        val newProxy = SeparatedModifiers.from(modifiers).toSnabbdom(prev.sel, Some(prev))
-        newProxy.map { proxy =>
-          println("--- Prev: ")
-          dom.console.log(JSON.stringify(prev))
-          println("--- New: ")
-          dom.console.log(JSON.stringify(proxy))
-          patch(prev, proxy)
-        }
-      }
+    def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
+      val proxy = modifiers.toSnabbdom(prev.sel, Streams(Observable.empty), Some(prev))
+//      println("--- Prev: ")
+//      dom.console.log(JSON.stringify(prev))
+//      println("--- New: ")
+//      dom.console.log(JSON.stringify(proxy))
+      patch(prev, proxy)
     }
 
     subscription := streams.observable
-      .scanEval(IO.pure(vproxy))(toProxy)
+      .scan(vproxy)(patchProxy)
       .subscribe(
         _ => Continue,
-        error => dom.console.error(error.getMessage + "\n" + error.getStackTrace.mkString("\n"))
+        e => dom.console.error(e.getMessage + "\n" + e.getStackTrace.mkString("\n"))
       )
 
     vproxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
@@ -142,17 +105,18 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
 
   private def createDestroyHook(
-    subscription: SingleAssignCancelable, hooks: Seq[DestroyHook]
+    subscription: SingleAssignCancelable,
+    hooks: Seq[DestroyHook]
   ): Hooks.HookSingleFn = (proxy: VNodeProxy) => {
     proxy.elm.foreach((e: dom.Element) => hooks.foreach(_.observer.onNext(e)))
     subscription.cancel()
     ()
   }
 
-  def toSnabbdom(streams: Option[Streams])(implicit s: Scheduler): Hooks = {
+  def toSnabbdom(streams: Streams)(implicit s: Scheduler): Hooks = {
     val (insertHook, destroyHook) = if (streams.nonEmpty) {
       val subscription = SingleAssignCancelable()
-      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(streams.get, subscription, insertHooks)
+      val insertHook: js.UndefOr[Hooks.HookSingleFn] = createInsertHook(streams, subscription, insertHooks)
       val destroyHook: js.UndefOr[Hooks.HookSingleFn] = createDestroyHook(subscription, destroyHooks)
       (insertHook, destroyHook)
     }
@@ -185,63 +149,39 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
-  private def createDataObject()(implicit s: Scheduler): DataObject = {
+  private def createDataObject(obj: Option[DataObject], streams: Streams)(implicit s: Scheduler): DataObject = {
 
-    val (attrs, props, style) = properties.attributes.toSnabbdom
+    val (attrs, props, style) = attributes.toSnabbdom
     val eventHandlers = emitters.toSnabbdom
-    val hooks = properties.hooks.toSnabbdom(Option(streams).filter(_ => hasStreams))
+    val snbHooks = hooks.toSnabbdom(streams)
 
-    val keyOption = properties.keys.lastOption
-    val key = if (hasStreams) {
-      keyOption.fold[Key.Value](streams.hashCode)(_.value): js.UndefOr[Key.Value]
-    } else {
-      keyOption.map(_.value).orUndefined
-    }
+    val key = keys.lastOption.map(_.value)
+      .orElse(obj.flatMap(_.key.toOption))
+      .orElse(Option(streams).filter(_.nonEmpty).map[Key.Value](_.hashCode))
 
-    DataObject(attrs, props, style, eventHandlers, hooks, key)
-  }
-
-  private def updateDataObject(obj: DataObject)(implicit scheduler: Scheduler): DataObject = {
-    val (attrs, props, style) = properties.attributes.toSnabbdom
-//    val hooks = properties.hooks.toSnabbdom(receivers)
-    DataObject(
-      attrs = DictionaryOps.merge(obj.attrs, attrs),
-      props = DictionaryOps.merge(obj.props, props),
-      style = DictionaryOps.merge(obj.style, style),
-      on = DictionaryOps.merge(obj.on, emitters.toSnabbdom),
-      hook = obj.hook,
-//        Hooks(
-//        hooks.insert.orElse(obj.hook.insert),
-//        hooks.prepatch.orElse(obj.hook.prepatch),
-//        hooks.update.orElse(obj.hook.update),
-//        hooks.postpatch.orElse(obj.hook.postpatch),
-//        hooks.destroy.orElse(obj.hook.destroy)
-//      ),
-      //TODO: it should not be possible to stream keys!
-      key = obj.key
-    )
+    DataObject(attrs, props, style, eventHandlers, snbHooks, key.orUndefined)
   }
 
   private[outwatch] def toSnabbdom(
-    nodeType: String, previousProxy: Option[VNodeProxy] = None, ensureKey: Boolean = false
-  )(implicit scheduler: Scheduler): IO[VNodeProxy] = {
+    nodeType: String, streams: Streams, previousProxy: Option[VNodeProxy] = None
+  )(implicit scheduler: Scheduler): VNodeProxy = {
 
-    // if child streams exists, we want the static children in the same node have keys
-    // for efficient patching when the streams change
-    val childrenWithKey = children.ensureKey(ensureKey || hasStreams)
-//    println(childrenWithKey)
-    val dataObject = previousProxy.fold(createDataObject())(p => updateDataObject(p.data))
+    val dataObject = createDataObject(previousProxy.map(_.data), streams)
 
-    childrenWithKey match {
+    children match {
       case Children.VNodes(vnodes) =>
-        val childProxies = vnodes.collect { case s: StaticVNode => s.toSnabbdom }
-        childProxies.sequence.map { proxies =>
-          hFunction(nodeType, dataObject, proxies.toJSArray)
-        }
+        val proxies = vnodes.map(_.toSnabbdom)
+        hFunction(nodeType, dataObject, proxies.toJSArray)
       case Children.StringModifiers(textChildren) =>
-        IO.pure(hFunction(nodeType, dataObject, textChildren.map(_.string).mkString))
+        hFunction(nodeType, dataObject, textChildren.map(_.string).mkString)
       case Children.Empty =>
-        IO.pure(hFunction(nodeType, dataObject))
+        hFunction(nodeType, dataObject)
     }
+  }
+}
+
+private[outwatch] trait SnabbdomState { self: VNodeState =>
+  private[outwatch] def toSnabbdom(nodeType: String)(implicit scheduler: Scheduler): VNodeProxy = {
+    modifiers.toSnabbdom(nodeType, Streams(stream))
   }
 }
