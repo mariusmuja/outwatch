@@ -1,7 +1,9 @@
 package outwatch.util
 
 import cats.effect.IO
+import monix.execution.Cancelable.IsDummy
 import monix.execution.Scheduler
+import monix.execution.cancelables.CompositeCancelable
 import org.scalajs.dom
 import outwatch.dom.helpers.STRef
 import outwatch.dom.{Observable, OutWatch, VNode}
@@ -36,13 +38,15 @@ object Store {
 
     Handler.create[Action].map { handler =>
 
+      val sub = CompositeCancelable()
       val fold: (State, Action) => State = (state, action) => Try { // guard against reducer throwing an exception
         val (newState, effects) = reducer.reducer(state, action)
 
-        effects.subscribe(
+        val cancelable = effects.subscribe(
           e => handler.observer.feed(e :: Nil),
           e => dom.console.error(e.getMessage) // just log the error, don't push it into the handler's observable, because it would stop the scan "loop"
         )
+        if (!cancelable.isInstanceOf[IsDummy]) sub += cancelable
         newState
       }.recover { case NonFatal(e) =>
         dom.console.error(e.getMessage)
@@ -52,8 +56,8 @@ object Store {
       handler.transformSource(source =>
         source
           .scan(initialState)(fold)
-          .share
-          .startWith(Seq(initialState))
+          .behavior(initialState).refCount
+          .doOnSubscriptionCancel(() => sub.cancel())
       )
     }
   }
