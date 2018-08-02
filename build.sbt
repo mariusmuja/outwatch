@@ -4,6 +4,7 @@ name := "OutWatch"
 
 normalizedName := "outwatch"
 
+
 // use sbt-git for versioning
 //version := "1.0.0-SNAPSHOT"
 enablePlugins(GitVersioning)

@@ -9,8 +9,6 @@ import snabbdom._
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.scalajs.js.JSON
-
 
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
@@ -27,10 +25,8 @@ private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
       case s: RemoveStyle => removeDict(s.title) = s.value
       case s: DestroyStyle => destroyDict(s.title) = s.value
       case a: AccumStyle =>
-        styleDict(a.title) = styleDict.get(a.title).map(s =>
-          a.accum(s.asInstanceOf[String], a.value): Style.Value
-        ).getOrElse(a.value)
-
+        styleDict(a.title) = styleDict.get(a.title)
+          .fold[Style.Value](a.value)(s => a.accum(s.asInstanceOf[String], a.value))
     }
 
     if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : Style.Value
@@ -49,7 +45,7 @@ private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
     attrs.foreach {
       case a: BasicAttr => attrsDict(a.title) = a.value
-      case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).map(a.accum(_, a.value)).getOrElse(a.value)
+      case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).fold(a.value)(a.accum(_, a.value))
     }
     props.foreach { p => propsDict(p.title) = p.value }
 
