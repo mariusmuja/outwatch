@@ -2,7 +2,7 @@ package outwatch.dom
 
 import cats.effect.IO
 import com.raquo.domtypes.generic.defs.sameRefTags._
-import com.raquo.domtypes.generic.defs.{attrs, props, reflectedAttrs, styles, tags}
+import com.raquo.domtypes.generic.defs._
 import com.raquo.domtypes.generic.{builders, codecs, keys}
 import com.raquo.domtypes.jsdom.defs.eventProps
 import monix.execution.{Ack, Cancelable}
@@ -43,6 +43,12 @@ private[outwatch] trait HtmlTagBuilder extends builders.HtmlTagBuilder[BuilderTy
 }
 
 
+trait TagModifiers {
+  def modifiers(mods: VDomModifier*): VDomModifier = VDomModifier(mods)
+
+  val empty: VDomModifier = VDomModifier.empty
+}
+
 trait Tags
   extends EmbedTags[BuilderTypes.Tag, VTree]
   with GroupingTags[BuilderTypes.Tag, VTree]
@@ -53,6 +59,7 @@ trait Tags
   with HtmlTagBuilder
   with TagHelpers
   with TagsCompat
+  with TagModifiers
 
 @deprecated("Use dsl.tags instead", "0.11.0")
 object Tags extends Tags

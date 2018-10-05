@@ -82,10 +82,6 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
     def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
       val proxy = modifiers.toSnabbdom(prev.sel, Streams(Observable.empty), Some(prev))
-//      println("--- Prev: ")
-//      dom.console.log(JSON.stringify(prev))
-//      println("--- New: ")
-//      dom.console.log(JSON.stringify(proxy))
       patch(prev, proxy)
     }
 
