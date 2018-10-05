@@ -1,5 +1,5 @@
 resolvers += "jgit-repo" at "http://download.eclipse.org/jgit/maven"
-addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.24")
+addSbtPlugin("org.scala-js" % "sbt-scalajs" % "0.6.25")
 addSbtPlugin("ch.epfl.scala" % "sbt-scalajs-bundler" % "0.13.0")
 addSbtPlugin("com.typesafe.sbt" % "sbt-git" % "0.9.3")
 addSbtPlugin("org.scalastyle" %% "scalastyle-sbt-plugin" % "1.0.0")
