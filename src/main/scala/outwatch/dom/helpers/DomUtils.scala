@@ -25,15 +25,36 @@ object VNodeState {
     )
   }
 
+  private def updater(index: Int, ms: VNodeStream): Observable[Updater] = {
+    ms.stream.switchMap[Updater](vm =>
+      Observable.fromIO(vm).map(m => s => s.update(index, m))
+    )
+  }
+
   private def updaters(modStream: Map[Int, ModifierStream]): Seq[Observable[Updater]] =
     modStream.map { case (index, ms) => updater(index, ms) }(breakOut)
 
-  private def modifierStream(separatedModifiers: SeparatedModifiers) : Observable[SeparatedModifiers] = {
+  private def vNodeUpdaters(modStream: Map[Int, VNodeStream]): Seq[Observable[Updater]] =
+    modStream.map { case (index, ms) => updater(index, ms) }(breakOut)
 
-    if (separatedModifiers.streams.nonEmpty) {
+
+  private def modifierStream(separatedModifiers: SeparatedModifiers): Observable[SeparatedModifiers] = {
+
+    val observables = List(
+      if (separatedModifiers.streams.nonEmpty) {
       Observable.merge(updaters(separatedModifiers.streams): _*)
         .scan(separatedModifiers)((state, updater) => updater(state))
-    } else Observable.empty
+    } else Observable.empty,
+      if (separatedModifiers.vnodeStreams.nonEmpty) {
+        Observable.merge(vNodeUpdaters(separatedModifiers.vnodeStreams): _*)
+          .scan(separatedModifiers)((state, updater) => updater(state))
+      }
+      else Observable.empty
+    )
+
+    val nonEmpty = observables.filter(_ != Observable.empty)
+
+    if (nonEmpty.isEmpty) Observable.empty else Observable.merge(nonEmpty: _*)
   }
 
   private[outwatch] def from(modifiers: Seq[Modifier]): VNodeState = {
@@ -64,22 +85,23 @@ case class Streams(
 private[outwatch] final case class SeparatedModifiers(
   modifiers: Array[Modifier],
   streams: Map[Int, ModifierStream] = Map.empty,
+  vnodeStreams: Map[Int, VNodeStream] = Map.empty,
   emitters: SeparatedEmitters = SeparatedEmitters(),
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
-  children: Children = Children.Empty,
+  children: Children = Children(),
   keys: List[Key] = Nil
 ) extends SnabbdomModifiers { self =>
 
   private def add(index: Int, m: Modifier): SeparatedModifiers = {
     m match {
       case ms: ModifierStream => copy(streams = streams + (index -> ms))
+      case vs: VNodeStream => copy(vnodeStreams = vnodeStreams + (index -> vs))
       case em: Emitter => copy(emitters = em :: emitters)
       case cm: CompositeModifier => cm.modifiers.foldRight(self)((sm, m) => m.add(index, sm))
       case attr: Attribute => copy(attributes = attr :: attributes)
       case hook: Hook[_] => copy(hooks = hook :: hooks)
       case sn: StaticVNode => copy(children = sn :: children)
-      case sm: StringModifier => copy(children = sm :: children)
       case key: Key => copy(keys = key :: keys)
       case EmptyModifier => self
     }
@@ -108,41 +130,17 @@ private[outwatch] final case class SeparatedModifiers(
     SeparatedModifiers(updated).updateAll()
   }
 
+  def update(index: Int, m: VTree): SeparatedModifiers = {
+    val updated = modifiers.updated(index, m)
+    SeparatedModifiers(updated).updateAll()
+  }
+
 }
 
-private[outwatch] trait Children {
-  def ::(mod: StringModifier): Children
+private[outwatch] case class Children(
+  nodes: List[StaticVNode] = List.empty) {
 
-  def ::(node: StaticVNode): Children
-}
-
-object Children {
-  private def toVNode(mod: StringModifier) = StringVNode(mod.string)
-  private def toModifier(node: StringVNode) = StringModifier(node.string)
-
-  private[outwatch] case object Empty extends Children {
-    override def ::(mod: StringModifier): Children = StringModifiers(mod :: Nil)
-
-    override def ::(node: StaticVNode): Children = node match {
-      case s: StringVNode => toModifier(s) :: this
-      case n => n :: VNodes(Nil)
-    }
-  }
-
-  private[outwatch] case class StringModifiers(modifiers: List[StringModifier]) extends Children {
-    override def ::(mod: StringModifier): Children = copy(mod :: modifiers)
-
-    override def ::(node: StaticVNode): Children = node match {
-      case s: StringVNode => toModifier(s) :: this // this should never happen
-      case n => n :: VNodes(modifiers.map(toVNode))
-    }
-  }
-
-  private[outwatch] case class VNodes(nodes: List[StaticVNode]) extends Children {
-    override def ::(mod: StringModifier): Children = copy(toVNode(mod) :: nodes)
-
-    override def ::(node: StaticVNode): Children = copy(nodes = node :: nodes)
-  }
+  def ::(node: StaticVNode): Children = copy(nodes = node :: nodes)
 }
 
 private[outwatch] final case class SeparatedStyles(

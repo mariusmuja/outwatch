@@ -47,7 +47,7 @@ object OutWatchDomSpec extends JSDomSuite {
       BasicAttr("class", "red"),
       EmptyModifier,
       Emitter("click", _ => Continue),
-      StringModifier("Test"),
+      StringVNode("Test"),
       div().unsafeRunSync(),
       ModifierStream(Observable()),
       CompositeModifier(
@@ -64,7 +64,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 2
     mods.attributes.attrs.length shouldBe 2
-    val Children.VNodes(nodes) = mods.children
+    val Children(nodes) = mods.children
     nodes.length shouldBe 3
     streams shouldNotBe Observable.empty
   }
@@ -78,7 +78,7 @@ object OutWatchDomSpec extends JSDomSuite {
       ModifierStream(Observable()),
       ModifierStream(Observable()),
       Emitter("keyup", _ => Continue),
-      StringModifier("text"),
+      StringVNode("text"),
       div().unsafeRunSync()
     )
 
@@ -86,7 +86,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
-    val Children.VNodes(nodes) = mods.children
+    val Children(nodes) = mods.children
     nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
@@ -100,7 +100,7 @@ object OutWatchDomSpec extends JSDomSuite {
       Emitter("keyup", _ => Continue),
       ModifierStream(Observable()),
       ModifierStream(Observable()),
-      StringModifier("text"),
+      StringVNode("text"),
       StringVNode("text2")
     )
 
@@ -108,8 +108,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
-    val Children.StringModifiers(stringMods) = mods.children
-    stringMods.map(_.string).toSet shouldBe Set("text", "text2")
+    mods.children.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
   }
 
@@ -127,7 +126,7 @@ object OutWatchDomSpec extends JSDomSuite {
       InsertHook(PublishSubject()),
       PrePatchHook(PublishSubject()),
       PostPatchHook(PublishSubject()),
-      StringModifier("text")
+      StringVNode("text")
     )
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
@@ -197,7 +196,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state =  VNodeState.from(mods)
-    val Children.VNodes(nodes) = state.modifiers.children
+    val Children(nodes) = state.modifiers.children
 
     nodes.length shouldBe 2
     state.stream shouldNotBe Observable.empty
@@ -223,7 +222,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state = VNodeState.from(mods)
-    val Children.VNodes(nodes) = state.modifiers.children
+    val Children(nodes) = state.modifiers.children
 
     nodes.length shouldBe 1
     state.stream shouldNotBe Observable.empty

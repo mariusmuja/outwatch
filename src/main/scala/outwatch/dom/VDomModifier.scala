@@ -44,6 +44,9 @@ private[outwatch] sealed trait Modifier extends Any
 
 private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends Modifier
 
+// optimization for streaming VNodes
+private[outwatch] final case class VNodeStream(stream: Observable[VNode]) extends Modifier
+
 private[outwatch] sealed trait StreamableModifier extends Modifier
 
 // Modifiers
@@ -63,8 +66,6 @@ private[outwatch] sealed trait Hook[T] extends StreamableModifier {
 private[outwatch] sealed trait StaticVNode extends StreamableModifier {
   def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
-
-private[outwatch] final case class StringModifier(string: String) extends StreamableModifier
 
 private[outwatch] final case class Key(value: Key.Value) extends StreamableModifier
 object Key {

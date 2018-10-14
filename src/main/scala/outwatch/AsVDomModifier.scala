@@ -1,7 +1,7 @@
 package outwatch
 
 import cats.effect.IO
-import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringModifier, VDomModifier}
+import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier, VNode, VNodeStream}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier
@@ -22,18 +22,21 @@ object AsVDomModifier {
   }
 
   implicit object StringAsVDomModifier extends AsVDomModifier[String] {
-    def asVDomModifier(value: String): VDomModifier = IO.pure(StringModifier(value))
+    def asVDomModifier(value: String): VDomModifier = IO.pure(StringVNode(value))
   }
 
   implicit object IntAsVDomModifier extends AsVDomModifier[Int] {
-    def asVDomModifier(value: Int): VDomModifier = IO.pure(StringModifier(value.toString))
+    def asVDomModifier(value: Int): VDomModifier = IO.pure(StringVNode(value.toString))
   }
 
   implicit object DoubleAsVDomModifier extends AsVDomModifier[Double] {
-    def asVDomModifier(value: Double): VDomModifier = IO.pure(StringModifier(value.toString))
+    def asVDomModifier(value: Double): VDomModifier = IO.pure(StringVNode(value.toString))
   }
 
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
     IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+
+  implicit val observableVNodeRender: AsVDomModifier[Observable[VNode]] = (valueStream: Observable[VNode]) =>
+    IO.pure(VNodeStream(valueStream))
 
 }

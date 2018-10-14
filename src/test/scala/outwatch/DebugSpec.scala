@@ -1,32 +1,40 @@
 package outwatch
 
-import cats.effect.IO
-import monix.reactive.Observable
-import org.scalajs.dom.document
+import org.scalajs.dom.{document, console}
+import outwatch.dom.OutWatch
 import outwatch.dom.dsl._
-import outwatch.dom.{ModifierStream, OutWatch, VDomModifier}
 
 object DebugSpec extends JSDomSuite{
+  test("The HTML DSL should correctly work with AsVomModifier conversions") {
 //
-//  test("Modifier stream should work for multiple nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
+//    val node = document.createElement("div")
 //
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
+////    OutWatch.renderReplace(node, div("one")).unsafeRunSync()
+////    node.innerHTML shouldBe "one"
 //
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
+//    OutWatch.renderReplace(node, div(Some("one"))).unsafeRunSync()
+//    console.log(node.outerHTML)
+//    node.innerHTML shouldBe "one"
 //
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(
-//      Observable[VDomModifier](
-//        VDomModifier(
-//          IO.pure(ModifierStream(Observable[VDomModifier]("a"))),
-//          IO.pure(ModifierStream(Observable(span("b")))))
-//      ))))
-//    element.innerHTML shouldBe """<div>a<span>b</span></div>"""
-//  }
+//    val node2 = document.createElement("div")
+//    OutWatch.renderReplace(node2, div(Option.empty[Int])).unsafeRunSync()
+//    node2.innerHTML shouldBe ""
+//
+//    OutWatch.renderReplace(node, div(1)).unsafeRunSync()
+//    node.innerHTML shouldBe "1"
+//
+//    OutWatch.renderReplace(node, div(1.0)).unsafeRunSync()
+//    node.innerHTML shouldBe "1"
+//
+//    OutWatch.renderReplace(node, div(Seq("one", "two"))).unsafeRunSync()
+//    node.innerHTML shouldBe "onetwo"
+//
+//    OutWatch.renderReplace(node, div(Seq(1, 2))).unsafeRunSync()
+//    node.innerHTML shouldBe "12"
+//
+//    OutWatch.renderReplace(node, div(Seq(1.0, 2.0))).unsafeRunSync()
+//    node.innerHTML shouldBe "12"
+  }
 
 
 }
