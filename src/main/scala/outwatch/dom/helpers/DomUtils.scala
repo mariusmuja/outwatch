@@ -3,6 +3,8 @@ package outwatch.dom.helpers
 import outwatch.dom._
 
 import scala.collection.breakOut
+import scala.scalajs.js
+import scala.scalajs.js.JSConverters._
 
 private[outwatch] case class VNodeState(
   modifiers: SeparatedModifiers,
@@ -12,17 +14,23 @@ private[outwatch] case class VNodeState(
 object VNodeState {
 
   private type Updater = SeparatedModifiers => SeparatedModifiers
-//
-//  private def updaterM(index: Int, m: Modifier): Observable[Updater] = m match {
-//    case m: ModifierStream => updater(index, m)
-//    case CompositeModifier(modifiers) => modifiers.map(m => updaterM(index, m)).reduce(_ ++ _)
-//    case m: StreamableModifier => Observable.pure[Updater](s => s.update(index, m))
-//  }
+
+
+  private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
+    case m: StreamableModifier => Observable.pure(s => s.update(index, m))
+//    case m: CompositeModifier => updater(index, m)
+    case m: ModifierStream => updater(index, m)
+    case m: VNodeStream => updater(index, m)
+  }
 
   private def updater(index: Int, ms: ModifierStream): Observable[Updater] = {
-    ms.stream.switchMap[Updater](vm =>
-      Observable.fromIO(vm).map(m => s => s.update(index, m))
-    )
+    ms.stream.switchMap[Updater] { vm =>
+      Observable.fromIO(vm).concatMap(m => updaterM(index, m))
+    }
+  }
+
+  private def updater(index: Int, cm: CompositeModifier): Observable[Updater] = {
+    Observable.concat(cm.modifiers.reverse.map(m => updaterM(index, m)) : _*)
   }
 
   private def updater(index: Int, ms: VNodeStream): Observable[Updater] = {
@@ -53,7 +61,6 @@ object VNodeState {
     )
 
     val nonEmpty = observables.filter(_ != Observable.empty)
-
     if (nonEmpty.isEmpty) Observable.empty else Observable.merge(nonEmpty: _*)
   }
 
@@ -71,7 +78,7 @@ object VNodeState {
       }
     } else modifiers
 
-    val mods = SeparatedModifiers(modifiersWithKey.toArray).updateAll()
+    val mods = SeparatedModifiers(modifiersWithKey.toJSArray).updateAll()
     VNodeState(mods, modifierStream(mods))
   }
 }
@@ -83,7 +90,8 @@ case class Streams(
 }
 
 private[outwatch] final case class SeparatedModifiers(
-  modifiers: Array[Modifier],
+  modifiers: js.Array[Modifier],
+//  counts: js.Array[Int],
   streams: Map[Int, ModifierStream] = Map.empty,
   vnodeStreams: Map[Int, VNodeStream] = Map.empty,
   emitters: SeparatedEmitters = SeparatedEmitters(),
@@ -113,7 +121,9 @@ private[outwatch] final case class SeparatedModifiers(
   }
 
 
-  def update(index: Int, m: Modifier): SeparatedModifiers = {
+  def update(index: Int, m: StreamableModifier): SeparatedModifiers = {
+
+//    println(s"Update: $index, $m")
 
     val filtered = m match {
       case attr: Attribute => modifiers.map {
@@ -122,17 +132,15 @@ private[outwatch] final case class SeparatedModifiers(
       }
       case _ => modifiers
     }
-
-    val updated = filtered.updated(index, m)
-
-//    println(updated.toList)
-
-    SeparatedModifiers(updated).updateAll()
+    filtered.update(index, m)
+    SeparatedModifiers(filtered).updateAll()
   }
 
   def update(index: Int, m: VTree): SeparatedModifiers = {
-    val updated = modifiers.updated(index, m)
-    SeparatedModifiers(updated).updateAll()
+//    println(s"Update: $index, $m")
+
+    modifiers.update(index, m)
+    SeparatedModifiers(modifiers).updateAll()
   }
 
 }

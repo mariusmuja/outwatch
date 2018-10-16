@@ -962,128 +962,128 @@ object OutWatchDomSpec extends JSDomSuite {
     assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"), None))
   }
 
-//  test("Modifier stream should work for modifier") {
-//    val myHandler = Handler.create[VDomModifier](Seq(cls := "hans", b("stark"))).unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe """<div class="hans"><b>stark</b></div>"""
-//
-//    myHandler.unsafeOnNext(Option(id := "fair"))
-//    element.innerHTML shouldBe """<div id="fair"></div>"""
-//  }
-//
-//  test("Modifier stream should work for multiple mods") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)), "bla")
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div>bla</div>"
-//
-//    myHandler.unsafeOnNext(cls := "hans")
-//    element.innerHTML shouldBe """<div class="hans">bla</div>"""
-//
-//    val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    myHandler.unsafeOnNext(div(
-//      IO.pure(ModifierStream(innerHandler)),
-//      cls := "no?",
-//      "yes?"
-//    ))
-//
-//    element.innerHTML shouldBe """<div><div class="no?">yes?</div>bla</div>"""
-//
-//    innerHandler.unsafeOnNext(Seq(span("question:"), id := "heidi"))
-//    element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question:</span>yes?</div>bla</div>"""
-//
-//    myHandler.unsafeOnNext(div(
-//      IO.pure(ModifierStream(innerHandler)),
-//      cls := "no?",
-//      "yes?",
-//      b("go!")
-//    ))
-//
-//    element.innerHTML shouldBe """<div><div class="no?">yes?<b>go!</b></div>bla</div>"""
-//
-//    innerHandler.unsafeOnNext(Seq(span("question and answer:"), id := "heidi"))
-//    element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question and answer:</span>yes?<b>go!</b></div>bla</div>"""
-//
-//    myHandler.unsafeOnNext(Seq(span("nope")))
-//    element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
-//
-//    innerHandler.unsafeOnNext(b("me?"))
-//    element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
-//  }
-//
-//  test("Modifier stream should work for nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
-//
-//    val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler)))
-//    element.innerHTML shouldBe """<div></div>"""
-//
-//    innerHandler.unsafeOnNext(VDomModifier(cls := "hans", "1"))
-//    element.innerHTML shouldBe """<div class="hans">1</div>"""
-//
-//    val innerHandler2 = Handler.create[VDomModifier](IO.pure(EmptyModifier)).unsafeRunSync()
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler2)))
-//    element.innerHTML shouldBe """<div></div>"""
-//
-//    innerHandler2.unsafeOnNext(VDomModifier(cls := "dieter", "2"))
-//    element.innerHTML shouldBe """<div class="dieter">2</div>"""
-//
-//    innerHandler.unsafeOnNext(b("me?"))
-//    element.innerHTML shouldBe """<div class="dieter">2</div>"""
-//
-//    myHandler.unsafeOnNext(span("the end"))
-//    element.innerHTML shouldBe """<div><span>the end</span></div>"""
-//  }
-//
-//  test("Modifier stream should work for double nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
-//
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](cls := "hans")))))))
-//    element.innerHTML shouldBe """<div class="hans"></div>"""
-//  }
-//
-//  test("Modifier stream should work for triple nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
-//
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable(cls := "hans"))))))))))
-//    element.innerHTML shouldBe """<div class="hans"></div>"""
-//  }
-//
+  test("Modifier stream should work for modifier") {
+    val myHandler = Handler.create[VDomModifier](Seq(cls := "hans", b("stark"))).unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe """<div class="hans"><b>stark</b></div>"""
+
+    myHandler.unsafeOnNext(Option(id := "fair"))
+    element.innerHTML shouldBe """<div id="fair"></div>"""
+  }
+
+  test("Modifier stream should work for multiple mods") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler, "bla")
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div>bla</div>"
+
+    myHandler.unsafeOnNext(cls := "hans")
+    element.innerHTML shouldBe """<div class="hans">bla</div>"""
+
+    val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    myHandler.unsafeOnNext(div(
+      innerHandler,
+      cls := "no?",
+      "yes?"
+    ))
+
+    element.innerHTML shouldBe """<div><div class="no?">yes?</div>bla</div>"""
+
+    innerHandler.unsafeOnNext(Seq(span("question:"), id := "heidi"))
+    element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question:</span>yes?</div>bla</div>"""
+
+    myHandler.unsafeOnNext(div(
+      innerHandler,
+      cls := "no?",
+      "yes?",
+      b("go!")
+    ))
+
+    element.innerHTML shouldBe """<div><div class="no?">yes?<b>go!</b></div>bla</div>"""
+
+    innerHandler.unsafeOnNext(Seq(span("question and answer:"), id := "heidi"))
+    element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question and answer:</span>yes?<b>go!</b></div>bla</div>"""
+
+    myHandler.unsafeOnNext(Seq(span("nope")))
+    element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
+
+    innerHandler.unsafeOnNext(b("me?"))
+    element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
+  }
+
+  test("Modifier stream should work for nested modifier stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    myHandler.unsafeOnNext(innerHandler)
+    element.innerHTML shouldBe """<div></div>"""
+
+    innerHandler.unsafeOnNext(VDomModifier(cls := "hans", "1"))
+    element.innerHTML shouldBe """<div class="hans">1</div>"""
+
+    val innerHandler2 = Handler.create[VDomModifier](IO.pure(EmptyModifier)).unsafeRunSync()
+    myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler2)))
+    element.innerHTML shouldBe """<div></div>"""
+
+    innerHandler2.unsafeOnNext(VDomModifier(cls := "dieter", "2"))
+    element.innerHTML shouldBe """<div class="dieter">2</div>"""
+
+    innerHandler.unsafeOnNext(b("me?"))
+    element.innerHTML shouldBe """<div class="dieter">2</div>"""
+
+    myHandler.unsafeOnNext(span("the end"))
+    element.innerHTML shouldBe """<div><span>the end</span></div>"""
+  }
+
+  test("Modifier stream should work for double nested modifier stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](cls := "hans")))))))
+    element.innerHTML shouldBe """<div class="hans"></div>"""
+  }
+
+  test("Modifier stream should work for triple nested modifier stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(IO.pure(ModifierStream(myHandler)))
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable(cls := "hans"))))))))))
+    element.innerHTML shouldBe """<div class="hans"></div>"""
+  }
+
 //  test("Modifier stream should work for multiple nested modifier stream receiver") {
 //    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
 //    val node = div(id := "strings",

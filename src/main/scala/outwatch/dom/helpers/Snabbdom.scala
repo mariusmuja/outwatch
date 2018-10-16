@@ -9,6 +9,7 @@ import snabbdom._
 
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
+import scala.collection.breakOut
 
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
@@ -168,8 +169,8 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
       if (stringNodes.size == children.nodes.size) {
         hFunction(nodeType, dataObject, stringNodes.mkString)
       } else {
-        val proxies = children.nodes.map(_.toSnabbdom)
-        hFunction(nodeType, dataObject, proxies.toJSArray)
+        val proxies: js.Array[VNodeProxy] = children.nodes.map(_.toSnabbdom)(breakOut)
+        hFunction(nodeType, dataObject, proxies)
       }
     }
   }

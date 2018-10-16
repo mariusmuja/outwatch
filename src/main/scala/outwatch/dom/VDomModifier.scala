@@ -49,11 +49,12 @@ private[outwatch] final case class VNodeStream(stream: Observable[VNode]) extend
 
 private[outwatch] sealed trait StreamableModifier extends Modifier
 
+private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends StreamableModifier
+
+
 // Modifiers
 
 private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends StreamableModifier
-
-private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends StreamableModifier
 
 private[outwatch] sealed trait Attribute extends StreamableModifier {
   val title: String
