@@ -1,7 +1,7 @@
 package outwatch
 
 import cats.effect.IO
-import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier, VNode, VNodeStream}
+import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier
@@ -35,8 +35,5 @@ object AsVDomModifier {
 
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
     IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
-
-  implicit val observableVNodeRender: AsVDomModifier[Observable[VNode]] = (valueStream: Observable[VNode]) =>
-    IO.pure(VNodeStream(valueStream))
 
 }

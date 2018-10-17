@@ -10,6 +10,7 @@ import snabbdom._
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 import scala.collection.breakOut
+import scala.scalajs.js.JSON
 
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
@@ -160,7 +161,6 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
   )(implicit scheduler: Scheduler): VNodeProxy = {
 
     val dataObject = createDataObject(previousProxy.map(_.data), streams)
-
 
     if (children.nodes.isEmpty) {
       hFunction(nodeType, dataObject)

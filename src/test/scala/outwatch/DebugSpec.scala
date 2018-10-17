@@ -1,32 +1,29 @@
 package outwatch
 
-import monix.reactive.Observable
+import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.document
+import outwatch.dom.OutWatch
 import outwatch.dom.dsl._
-import outwatch.dom.{OutWatch, VDomModifier}
 
 object DebugSpec extends JSDomSuite{
-
-//  test("Modifier stream should work for multiple nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(myHandler)
-//    )
 //
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
+//  test("The HTML DSL should update merged node attributes correctly") {
+//    val messages = PublishSubject[String]
+//    val otherMessages = PublishSubject[String]
+//    val vNode = div(data.noise <-- messages)(data.noise <-- otherMessages)
 //
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
+//    val node = document.createElement("div")
+//    document.body.appendChild(node)
+//    OutWatch.renderInto(node, vNode).unsafeRunSync()
 //
-//    myHandler.unsafeOnNext(
-//      Observable[VDomModifier](
-//        VDomModifier(
-//          Observable[VDomModifier]("a"),
-//          Observable(span("b"))
-//        )
-//      )
-//    )
-//    element.innerHTML shouldBe """<div>a<span>b</span></div>"""
+//    otherMessages.onNext("otherMessage")
+//    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
+//
+//    messages.onNext("message")
+//    node.children(0).getAttribute("data-noise") shouldBe "message"
+//
+//    otherMessages.onNext("genus")
+//    node.children(0).getAttribute("data-noise") shouldBe "genus"
 //  }
 
 }

@@ -28,7 +28,7 @@ object OutWatchDomSpec extends JSDomSuite {
       PostPatchHook(PublishSubject())
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.hooks.insertHooks.length shouldBe 2
     mods.hooks.prePatchHooks.length shouldBe 1
@@ -60,7 +60,7 @@ object OutWatchDomSpec extends JSDomSuite {
       )
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 2
     mods.attributes.attrs.length shouldBe 2
@@ -82,7 +82,7 @@ object OutWatchDomSpec extends JSDomSuite {
       div().unsafeRunSync()
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
@@ -104,7 +104,7 @@ object OutWatchDomSpec extends JSDomSuite {
       StringVNode("text2")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
@@ -129,7 +129,7 @@ object OutWatchDomSpec extends JSDomSuite {
       StringVNode("text")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.map(_.eventType) shouldBe List("click", "input", "keyup")
     mods.hooks.insertHooks.length shouldBe 1
@@ -195,7 +195,7 @@ object OutWatchDomSpec extends JSDomSuite {
       // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
     )
 
-    val state =  VNodeState.from(mods)
+    val state =  VNodeState.from(mods.toArray)
     val Children(nodes) = state.modifiers.children
 
     nodes.length shouldBe 2
@@ -221,7 +221,7 @@ object OutWatchDomSpec extends JSDomSuite {
       div()(IO.pure(Key(5678))).unsafeRunSync()
     )
 
-    val state = VNodeState.from(mods)
+    val state = VNodeState.from(mods.toArray)
     val Children(nodes) = state.modifiers.children
 
     nodes.length shouldBe 1
@@ -742,7 +742,7 @@ object OutWatchDomSpec extends JSDomSuite {
     node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
 
     messages.onNext("message")
-    node.children(0).getAttribute("data-noise") shouldBe "message"
+    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
 
     otherMessages.onNext("genus")
     node.children(0).getAttribute("data-noise") shouldBe "genus"
@@ -761,7 +761,7 @@ object OutWatchDomSpec extends JSDomSuite {
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     messages.onNext("blue")
-    node.children(0).asInstanceOf[html.Element].style.color shouldBe "blue"
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     otherMessages.onNext("green")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"
@@ -780,7 +780,7 @@ object OutWatchDomSpec extends JSDomSuite {
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     messages.onNext("blue")
-    node.children(0).asInstanceOf[html.Element].style.color shouldBe "blue"
+    node.children(0).asInstanceOf[html.Element].style.color shouldBe "red"
 
     otherMessages.onNext("green")
     node.children(0).asInstanceOf[html.Element].style.color shouldBe "green"

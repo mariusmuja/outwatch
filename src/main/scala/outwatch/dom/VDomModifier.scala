@@ -44,9 +44,6 @@ private[outwatch] sealed trait Modifier extends Any
 
 private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends Modifier
 
-// optimization for streaming VNodes
-private[outwatch] final case class VNodeStream(stream: Observable[VNode]) extends Modifier
-
 private[outwatch] sealed trait StreamableModifier extends Modifier
 
 private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends StreamableModifier
@@ -131,7 +128,7 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Seq[Modifi
   def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy(modifiers = modifiers ++ args))
 
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
-    VNodeState.from(modifiers).toSnabbdom(nodeType)
+    VNodeState.from(modifiers.toArray).toSnabbdom(nodeType)
   }
 }
 

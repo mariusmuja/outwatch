@@ -2,10 +2,6 @@ package outwatch.dom.helpers
 
 import outwatch.dom._
 
-import scala.collection.breakOut
-import scala.scalajs.js
-import scala.scalajs.js.JSConverters._
-
 private[outwatch] case class VNodeState(
   modifiers: SeparatedModifiers,
   stream: Observable[SeparatedModifiers] = Observable.empty
@@ -13,73 +9,58 @@ private[outwatch] case class VNodeState(
 
 object VNodeState {
 
-  private type Updater = SeparatedModifiers => SeparatedModifiers
+  private type Updater = Array[Modifier] => Array[Modifier]
 
-
+//
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
-    case m: StreamableModifier => Observable.pure(s => s.update(index, m))
+    case m: StreamableModifier => Observable.pure{s =>
+//      println(s"Update: $index -> $m")
+      s.updated(index, m)}
 //    case m: CompositeModifier => updater(index, m)
     case m: ModifierStream => updater(index, m)
-    case m: VNodeStream => updater(index, m)
   }
-
+//
   private def updater(index: Int, ms: ModifierStream): Observable[Updater] = {
     ms.stream.switchMap[Updater] { vm =>
       Observable.fromIO(vm).concatMap(m => updaterM(index, m))
     }
   }
+//
+//  private def updater(index: Int, cm: CompositeModifier): Observable[Updater] = {
+//    Observable.concat(cm.modifiers.reverse.map(m => updaterM(index, m)) : _*)
+//  }
 
-  private def updater(index: Int, cm: CompositeModifier): Observable[Updater] = {
-    Observable.concat(cm.modifiers.reverse.map(m => updaterM(index, m)) : _*)
-  }
+//  private def modifierStreamObs(modifiers: Array[Modifier]): Observable[Array[Modifier]] = {
+//
+//    val streams = modifiers.zipWithIndex.collect { case (s: ModifierStream, index) => (s, index)}
+//
+//    if (streams.nonEmpty) {
+//      Observable.merge(
+//        streams.map { case (s, index) => updater(index, s)}: _*
+//      ).scan(modifiers)((mods, func) => func(mods))
+//    } else Observable.empty
+//  }
 
-  private def updater(index: Int, ms: VNodeStream): Observable[Updater] = {
-    ms.stream.switchMap[Updater](vm =>
-      Observable.fromIO(vm).map(m => s => s.update(index, m))
-    )
-  }
+  private[outwatch] def from(mods: Array[Modifier]): VNodeState = {
 
-  private def updaters(modStream: Map[Int, ModifierStream]): Seq[Observable[Updater]] =
-    modStream.map { case (index, ms) => updater(index, ms) }(breakOut)
+    val streams = mods.zipWithIndex.collect { case (s: ModifierStream, index) => (s, index)}
 
-  private def vNodeUpdaters(modStream: Map[Int, VNodeStream]): Seq[Observable[Updater]] =
-    modStream.map { case (index, ms) => updater(index, ms) }(breakOut)
-
-
-  private def modifierStream(separatedModifiers: SeparatedModifiers): Observable[SeparatedModifiers] = {
-
-    val observables = List(
-      if (separatedModifiers.streams.nonEmpty) {
-      Observable.merge(updaters(separatedModifiers.streams): _*)
-        .scan(separatedModifiers)((state, updater) => updater(state))
-    } else Observable.empty,
-      if (separatedModifiers.vnodeStreams.nonEmpty) {
-        Observable.merge(vNodeUpdaters(separatedModifiers.vnodeStreams): _*)
-          .scan(separatedModifiers)((state, updater) => updater(state))
-      }
-      else Observable.empty
-    )
-
-    val nonEmpty = observables.filter(_ != Observable.empty)
-    if (nonEmpty.isEmpty) Observable.empty else Observable.merge(nonEmpty: _*)
-  }
-
-  private[outwatch] def from(modifiers: Seq[Modifier]): VNodeState = {
-
-    val hasStreams = modifiers.exists {
-      case _: ModifierStream => true
-      case _ => false
-    }
-
-    val modifiersWithKey = if (hasStreams) {
-      modifiers.map {
+    val modifiers = if (streams.nonEmpty) {
+      mods.map {
         case vtree: VTree => vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
         case m => m
       }
-    } else modifiers
+    } else mods
 
-    val mods = SeparatedModifiers(modifiersWithKey.toJSArray).updateAll()
-    VNodeState(mods, modifierStream(mods))
+    val modifierStream = if (streams.nonEmpty) {
+      Observable.merge(
+        streams.map { case (s, index) => updater(index, s) }: _*
+      )
+        .scan(modifiers)((mods, func) => func(mods))
+        .map(SeparatedModifiers.from)
+    } else Observable.empty
+
+    VNodeState(SeparatedModifiers.from(modifiers), modifierStream)
   }
 }
 
@@ -90,10 +71,6 @@ case class Streams(
 }
 
 private[outwatch] final case class SeparatedModifiers(
-  modifiers: js.Array[Modifier],
-//  counts: js.Array[Int],
-  streams: Map[Int, ModifierStream] = Map.empty,
-  vnodeStreams: Map[Int, VNodeStream] = Map.empty,
   emitters: SeparatedEmitters = SeparatedEmitters(),
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
@@ -103,8 +80,7 @@ private[outwatch] final case class SeparatedModifiers(
 
   private def add(index: Int, m: Modifier): SeparatedModifiers = {
     m match {
-      case ms: ModifierStream => copy(streams = streams + (index -> ms))
-      case vs: VNodeStream => copy(vnodeStreams = vnodeStreams + (index -> vs))
+      case _: ModifierStream => self
       case em: Emitter => copy(emitters = em :: emitters)
       case cm: CompositeModifier => cm.modifiers.foldRight(self)((sm, m) => m.add(index, sm))
       case attr: Attribute => copy(attributes = attr :: attributes)
@@ -116,33 +92,14 @@ private[outwatch] final case class SeparatedModifiers(
   }
 
 
-  def updateAll(): SeparatedModifiers = {
+  def updateFrom(modifiers: Array[Modifier]): SeparatedModifiers = {
     modifiers.zipWithIndex.foldRight(this) { case ((m, index), sm) => sm.add(index, m) }
   }
 
+}
 
-  def update(index: Int, m: StreamableModifier): SeparatedModifiers = {
-
-//    println(s"Update: $index, $m")
-
-    val filtered = m match {
-      case attr: Attribute => modifiers.map {
-        case a: Attribute if a.title == attr.title => EmptyModifier
-        case m => m
-      }
-      case _ => modifiers
-    }
-    filtered.update(index, m)
-    SeparatedModifiers(filtered).updateAll()
-  }
-
-  def update(index: Int, m: VTree): SeparatedModifiers = {
-//    println(s"Update: $index, $m")
-
-    modifiers.update(index, m)
-    SeparatedModifiers(modifiers).updateAll()
-  }
-
+object SeparatedModifiers {
+  def from(mods: Array[Modifier]): SeparatedModifiers = SeparatedModifiers().updateFrom(mods)
 }
 
 private[outwatch] case class Children(
