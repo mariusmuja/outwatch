@@ -26,7 +26,7 @@ object VNodeState {
   private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
 
     val modifiers = cm.modifiers.toArray
-    val streams = modifiers.zipWithIndex.collect { case (s: ModifierStream, index) => (s, index) }
+    val streams = modifiers.zipWithIndex.collect { case (s: ModifierStream, idx) => (s, idx) }
 
     if (streams.nonEmpty) {
       Observable.merge(streams.map { case (s, idx) => updaterMS(idx, s) }: _*)
@@ -73,11 +73,11 @@ private[outwatch] final case class SeparatedModifiers(
   keys: List[Key] = Nil
 ) extends SnabbdomModifiers { self =>
 
-  private def add(index: Int, m: Modifier): SeparatedModifiers = {
+  private def add(m: Modifier): SeparatedModifiers = {
     m match {
       case _: ModifierStream => self
       case em: Emitter => copy(emitters = em :: emitters)
-      case cm: CompositeModifier => cm.modifiers.foldRight(self)((sm, m) => m.add(index, sm))
+      case cm: CompositeModifier => cm.modifiers.foldRight(self)((sm, m) => m.add(sm))
       case attr: Attribute => copy(attributes = attr :: attributes)
       case hook: Hook[_] => copy(hooks = hook :: hooks)
       case sn: StaticVNode => copy(children = sn :: children)
@@ -88,7 +88,7 @@ private[outwatch] final case class SeparatedModifiers(
 
 
   def updateFrom(modifiers: Array[Modifier]): SeparatedModifiers = {
-    modifiers.zipWithIndex.foldRight(this) { case ((m, index), sm) => sm.add(index, m) }
+    modifiers.foldRight(this) { case (m, sm) => sm.add(m) }
   }
 
 }
