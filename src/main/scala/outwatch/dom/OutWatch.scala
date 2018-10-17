@@ -7,8 +7,6 @@ import org.scalajs.dom._
 import outwatch.util.Store
 import snabbdom.patch
 
-import scala.scalajs.js.JSON
-
 object OutWatch {
 
   def renderInto(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {

@@ -9,7 +9,7 @@ normalizedName := "outwatch"
 //version := "1.0.0-SNAPSHOT"
 enablePlugins(GitVersioning)
 
-organization := "io.github.mariusmuja"
+organization := "com.github.mariusmuja"
 
 scalaVersion := "2.12.7"
 
