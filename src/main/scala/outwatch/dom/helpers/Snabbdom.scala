@@ -7,10 +7,9 @@ import org.scalajs.dom
 import outwatch.dom._
 import snabbdom._
 
+import scala.collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
-import scala.collection.breakOut
-import scala.scalajs.js.JSON
 
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>

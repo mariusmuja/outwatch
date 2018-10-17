@@ -46,7 +46,7 @@ private[outwatch] final case class ModifierStream(stream: Observable[VDomModifie
 
 private[outwatch] sealed trait StreamableModifier extends Modifier
 
-private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends StreamableModifier
+private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
 
 // Modifiers

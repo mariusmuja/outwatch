@@ -6,6 +6,7 @@ import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{document, html}
 import outwatch.dom._
 import outwatch.dom.dsl._
+import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
 import org.scalajs.dom.window.localStorage
@@ -1044,14 +1045,63 @@ object OutWatchDomSpec extends JSDomSuite {
     myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler2)))
     element.innerHTML shouldBe """<div></div>"""
 
-    innerHandler2.unsafeOnNext(VDomModifier(cls := "dieter", "2"))
-    element.innerHTML shouldBe """<div class="dieter">2</div>"""
+    myHandler.unsafeOnNext(IO.pure(CompositeModifier(ModifierStream(innerHandler2) :: Nil)))
+    element.innerHTML shouldBe """<div></div>"""
+
+    myHandler.unsafeOnNext(IO.pure(CompositeModifier(StringVNode("pete") :: ModifierStream(innerHandler2) :: Nil)))
+    element.innerHTML shouldBe """<div>pete</div>"""
+    innerHandler2.unsafeOnNext(VDomModifier(id := "dieter", "r"))
+    element.innerHTML shouldBe """<div id="dieter">peter</div>"""
 
     innerHandler.unsafeOnNext(b("me?"))
-    element.innerHTML shouldBe """<div class="dieter">2</div>"""
+    element.innerHTML shouldBe """<div id="dieter">peter</div>"""
 
     myHandler.unsafeOnNext(span("the end"))
     element.innerHTML shouldBe """<div><span>the end</span></div>"""
+  }
+
+
+  test("Modifier stream should work for nested observables with seq modifiers ") {
+    val innerHandler = Handler.create("b").unsafeRunSync()
+    val outerHandler = Handler.create(Seq[VDomModifier]("a", data.test := "v", innerHandler)).unsafeRunSync
+    val node = div(
+      id := "strings",
+      outerHandler
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.outerHTML shouldBe """<div id="strings" data-test="v">ab</div>"""
+
+    innerHandler.unsafeOnNext("c")
+    element.outerHTML shouldBe """<div id="strings" data-test="v">ac</div>"""
+
+    outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
+    element.outerHTML shouldBe """<div id="strings">meh</div>"""
+  }
+
+  test("Modifier stream should work for nested observables with seq modifiers and attribute stream") {
+    val innerHandler = Handler.create[String]().unsafeRunSync()
+    val outerHandler = Handler.create(Seq[VDomModifier]("a", data.test := "v", href <-- innerHandler)).unsafeRunSync()
+    val node = div(
+      id := "strings",
+      outerHandler
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.outerHTML shouldBe """<div id="strings" data-test="v">a</div>"""
+
+    innerHandler.unsafeOnNext("c")
+    element.outerHTML shouldBe """<div id="strings" data-test="v" href="c">a</div>"""
+
+    innerHandler.unsafeOnNext("d")
+    element.outerHTML shouldBe """<div id="strings" data-test="v" href="d">a</div>"""
+
+    outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
+    element.outerHTML shouldBe """<div id="strings">meh</div>"""
   }
 
   test("Modifier stream should work for double nested modifier stream receiver") {
@@ -1084,24 +1134,63 @@ object OutWatchDomSpec extends JSDomSuite {
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
-//  test("Modifier stream should work for multiple nested modifier stream receiver") {
-//    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
-//    val node = div(id := "strings",
-//      div(IO.pure(ModifierStream(myHandler)))
-//    )
-//
-//    OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//    val element = document.getElementById("strings")
-//    element.innerHTML shouldBe "<div></div>"
-//
-//    myHandler.unsafeOnNext(IO.pure(ModifierStream(
-//      Observable[VDomModifier](
-//        VDomModifier(
-//          IO.pure(ModifierStream(Observable[VDomModifier]("a"))),
-//          IO.pure(ModifierStream(Observable(span("b")))))
-//      ))))
-//    element.innerHTML shouldBe """<div>a<span>b</span></div>"""
-//  }
+  test("Modifier stream should work for multiple nested modifier stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(IO.pure(ModifierStream(myHandler)))
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    myHandler.unsafeOnNext(IO.pure(ModifierStream(
+      Observable[VDomModifier](
+        VDomModifier(
+          IO.pure(ModifierStream(Observable[VDomModifier]("a"))),
+          IO.pure(ModifierStream(Observable(span("b")))))
+      ))))
+    element.innerHTML shouldBe """<div>a<span>b</span></div>"""
+  }
+
+
+  test("Modifier stream should work for nested attribute stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    myHandler.unsafeOnNext(cls <-- Observable("hans"))
+    element.innerHTML shouldBe """<div class="hans"></div>"""
+  }
+
+  test("Modifier stream should work for nested emitter") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(id := "click", myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe """<div id="click"></div>"""
+
+    var clickCounter = 0
+    myHandler.unsafeOnNext(onClick --> sideEffect(_ => clickCounter += 1))
+    element.innerHTML shouldBe """<div id="click"></div>"""
+
+    clickCounter shouldBe 0
+    val event = document.createEvent("Events")
+    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    document.getElementById("click").dispatchEvent(event)
+    clickCounter shouldBe 1
+  }
+
 
 }

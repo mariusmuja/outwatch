@@ -1,29 +1,28 @@
 package outwatch
 
-import monix.reactive.subjects.PublishSubject
-import org.scalajs.dom.document
-import outwatch.dom.OutWatch
-import outwatch.dom.dsl._
-
 object DebugSpec extends JSDomSuite{
+
+//    test("Modifier stream should work for nested observables with seq modifiers and attribute stream") {
+//      val innerHandler = Handler.create[String]().unsafeRunSync()
+//      val outerHandler = Handler.create(Seq[VDomModifier]("a", data.test := "v", href <-- innerHandler)).unsafeRunSync()
+//      val node = div(
+//        id := "strings",
+//        outerHandler
+//      )
 //
-//  test("The HTML DSL should update merged node attributes correctly") {
-//    val messages = PublishSubject[String]
-//    val otherMessages = PublishSubject[String]
-//    val vNode = div(data.noise <-- messages)(data.noise <-- otherMessages)
+//      OutWatch.renderInto("#app", node).unsafeRunSync()
 //
-//    val node = document.createElement("div")
-//    document.body.appendChild(node)
-//    OutWatch.renderInto(node, vNode).unsafeRunSync()
+//      val element = document.getElementById("strings")
+//      element.outerHTML shouldBe """<div id="strings" data-test="v">a</div>"""
 //
-//    otherMessages.onNext("otherMessage")
-//    node.children(0).getAttribute("data-noise") shouldBe "otherMessage"
+//      innerHandler.unsafeOnNext("c")
+//      element.outerHTML shouldBe """<div id="strings" data-test="v" href="c">a</div>"""
 //
-//    messages.onNext("message")
-//    node.children(0).getAttribute("data-noise") shouldBe "message"
+//      innerHandler.unsafeOnNext("d")
+//      element.outerHTML shouldBe """<div id="strings" data-test="v" href="d">a</div>"""
 //
-//    otherMessages.onNext("genus")
-//    node.children(0).getAttribute("data-noise") shouldBe "genus"
-//  }
+//      outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
+//      element.outerHTML shouldBe """<div id="strings">meh</div>"""
+//    }
 
 }
