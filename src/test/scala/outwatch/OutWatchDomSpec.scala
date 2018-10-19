@@ -132,7 +132,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
-    mods.emitters.emitters.map(_.eventType) shouldBe List("click", "input", "keyup")
+    mods.emitters.emitters.map(_.eventType).toList shouldBe List("click", "input", "keyup")
     mods.hooks.insertHooks.length shouldBe 1
     mods.hooks.prePatchHooks.length shouldBe 1
     mods.hooks.updateHooks.length shouldBe 1

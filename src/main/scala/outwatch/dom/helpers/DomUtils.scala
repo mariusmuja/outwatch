@@ -2,6 +2,8 @@ package outwatch.dom.helpers
 
 import outwatch.dom._
 
+import scala.scalajs.js
+
 private[outwatch] case class VNodeState(
   modifiers: SeparatedModifiers,
   stream: Observable[SeparatedModifiers] = Observable.empty
@@ -70,76 +72,76 @@ private[outwatch] final case class SeparatedModifiers(
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
   children: Children = Children(),
-  keys: List[Key] = Nil
+  keys: js.Array[Key] = js.Array()
 ) extends SnabbdomModifiers { self =>
 
-  private def add(m: Modifier): SeparatedModifiers = {
+  private def add(m: Modifier): Unit = {
     m match {
-      case _: ModifierStream => self
-      case em: Emitter => copy(emitters = em :: emitters)
-      case cm: CompositeModifier => cm.modifiers.foldRight(self)((sm, m) => m.add(sm))
-      case attr: Attribute => copy(attributes = attr :: attributes)
-      case hook: Hook[_] => copy(hooks = hook :: hooks)
-      case sn: StaticVNode => copy(children = sn :: children)
-      case key: Key => copy(keys = key :: keys)
-      case EmptyModifier => self
+      case _: ModifierStream => 0
+      case EmptyModifier => 0
+      case e: Emitter => emitters.push(e)
+      case cm: CompositeModifier => cm.modifiers.foreach(self.add)
+      case attr: Attribute => attributes.push(attr)
+      case hook: Hook[_] => hooks.push(hook)
+      case sn: StaticVNode => children.push(sn)
+      case key: Key => keys.push(key)
     }
-  }
-
-
-  def updateFrom(modifiers: Array[Modifier]): SeparatedModifiers = {
-    modifiers.foldRight(this) { case (m, sm) => sm.add(m) }
   }
 
 }
 
 object SeparatedModifiers {
-  def from(mods: Array[Modifier]): SeparatedModifiers = SeparatedModifiers().updateFrom(mods)
+  def from(mods: Array[Modifier]): SeparatedModifiers = {
+    val sm = SeparatedModifiers()
+    mods.foreach(sm.add)
+    sm
+  }
 }
 
 private[outwatch] case class Children(
-  nodes: List[StaticVNode] = List.empty) {
+  nodes: js.Array[StaticVNode] = js.Array()
+) {
 
-  def ::(node: StaticVNode): Children = copy(nodes = node :: nodes)
+  def push(node: StaticVNode): Int = nodes.push(node)
 }
 
 private[outwatch] final case class SeparatedStyles(
-  styles: List[Style] = Nil
+  styles: js.Array[Style] = js.Array()
 ) extends SnabbdomStyles {
-  @inline def ::(s: Style): SeparatedStyles = copy(styles = s :: styles)
+  @inline def push(s: Style): Int = styles.push(s)
 }
 
 
 private[outwatch] final case class SeparatedAttributes(
-  attrs: List[Attr] = Nil,
-  props: List[Prop] = Nil,
+  attrs: js.Array[Attr] = js.Array(),
+  props: js.Array[Prop] = js.Array(),
   styles: SeparatedStyles = SeparatedStyles()
 ) extends SnabbdomAttributes {
-  @inline def ::(a: Attribute): SeparatedAttributes = a match {
-    case a : Attr => copy(attrs = a :: attrs)
-    case p : Prop => copy(props = p :: props)
-    case s : Style => copy(styles= s :: styles)
+  @inline def push(a: Attribute): Int = a match {
+    case a : Attr => attrs.push(a)
+    case p : Prop => props.push(p)
+    case s : Style => styles.push(s)
   }
 }
 
 private[outwatch] final case class SeparatedHooks(
-  insertHooks: List[InsertHook] = Nil,
-  prePatchHooks: List[PrePatchHook] = Nil,
-  updateHooks: List[UpdateHook] = Nil,
-  postPatchHooks: List[PostPatchHook] = Nil,
-  destroyHooks: List[DestroyHook] = Nil
+  insertHooks: js.Array[InsertHook] = js.Array(),
+  prePatchHooks: js.Array[PrePatchHook] = js.Array(),
+  updateHooks: js.Array[UpdateHook] = js.Array(),
+  postPatchHooks: js.Array[PostPatchHook] = js.Array(),
+  destroyHooks: js.Array[DestroyHook] = js.Array()
 ) extends SnabbdomHooks {
-  def ::(h: Hook[_]): SeparatedHooks = h match {
-    case ih: InsertHook => copy(insertHooks = ih :: insertHooks)
-    case pph: PrePatchHook => copy(prePatchHooks = pph :: prePatchHooks)
-    case uh: UpdateHook => copy(updateHooks = uh :: updateHooks)
-    case pph: PostPatchHook => copy(postPatchHooks = pph :: postPatchHooks)
-    case dh: DestroyHook => copy(destroyHooks = dh :: destroyHooks)
+  def push(h: Hook[_]): Int = h match {
+    case ih: InsertHook => insertHooks.push(ih)
+    case pph: PrePatchHook => prePatchHooks.push(pph)
+    case uh: UpdateHook => updateHooks.push(uh)
+    case pph: PostPatchHook => postPatchHooks.push(pph)
+    case dh: DestroyHook => destroyHooks.push(dh)
   }
 }
 
 private[outwatch] final case class SeparatedEmitters(
-  emitters: List[Emitter] = Nil
+  emitters: js.Array[Emitter] = js.Array()
 ) extends SnabbdomEmitters {
-  def ::(e: Emitter): SeparatedEmitters = copy(emitters = e :: emitters)
+  def push(e: Emitter): Int = emitters.push(e)
 }
