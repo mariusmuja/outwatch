@@ -134,16 +134,28 @@ object patch {
 
 @js.native
 trait VNodeProxy extends js.Object {
-  val sel: String
-  val data: DataObject
-  val children: js.UndefOr[js.Array[VNodeProxy]]
-  val elm: js.UndefOr[Element]
-  val text: js.UndefOr[String]
-  val key: js.UndefOr[DataObject.KeyValue]
+  var sel: String
+  var data: DataObject
+  var children: js.UndefOr[js.Array[VNodeProxy]]
+  var elm: js.UndefOr[Element]
+  var text: js.UndefOr[String]
+  var key: js.UndefOr[DataObject.KeyValue]
 }
 
 object VNodeProxy {
   def fromString(string: String): VNodeProxy = string.asInstanceOf[VNodeProxy]
+
+  implicit class VNodeProxyExt(vproxy: VNodeProxy) {
+    def copyFrom(newProxy: VNodeProxy): VNodeProxy = {
+      vproxy.children = newProxy.children
+      vproxy.text = newProxy.text
+      vproxy.data = newProxy.data
+      vproxy.elm = newProxy.elm
+      vproxy.key= newProxy.key
+      vproxy.sel= newProxy.sel
+      vproxy
+    }
+  }
 }
 
 

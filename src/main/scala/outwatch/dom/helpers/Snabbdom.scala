@@ -82,14 +82,17 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   )(implicit s: Scheduler): Hooks.HookSingleFn = (vproxy: VNodeProxy) => {
 
     def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
-      val proxy = modifiers.toSnabbdom(prev.sel, Streams(Observable.empty), Some(prev))
+      val proxy = modifiers.toSnabbdom(prev.sel, Streams.empty, Some(prev))
       patch(prev, proxy)
     }
 
     subscription := streams.observable
       .scan(vproxy)(patchProxy)
       .subscribe(
-        _ => Continue,
+        { newProxy =>
+          vproxy.copyFrom(newProxy)
+          Continue
+        },
         e => dom.console.error(e.getMessage + "\n" + e.getStackTrace.mkString("\n"))
       )
 
@@ -142,24 +145,25 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
-  private def createDataObject(obj: Option[DataObject], streams: Streams)(implicit s: Scheduler): DataObject = {
+  private def createDataObject(prev: Option[DataObject], streams: Streams)(implicit s: Scheduler): DataObject = {
 
     val (attrs, props, style) = attributes.toSnabbdom
     val eventHandlers = emitters.toSnabbdom
-    val snbHooks = hooks.toSnabbdom(streams)
+    //if (prev.nonEmpty && streams.nonEmpty) assert(false) // Cannot have prev proxy and non-empty streams
+    val snbHooks = prev.fold(hooks.toSnabbdom(streams))(_.hook)
 
     val key = keys.lastOption.map(_.value)
-      .orElse(obj.flatMap(_.key.toOption))
+      .orElse(prev.flatMap(_.key.toOption))
       .orElse(Option(streams).filter(_.nonEmpty).map[Key.Value](_.hashCode))
 
     DataObject(attrs, props, style, eventHandlers, snbHooks, key.orUndefined)
   }
 
   private[outwatch] def toSnabbdom(
-    nodeType: String, streams: Streams, previousProxy: Option[VNodeProxy] = None
+    nodeType: String, streams: Streams, prev: Option[VNodeProxy] = None
   )(implicit scheduler: Scheduler): VNodeProxy = {
 
-    val dataObject = createDataObject(previousProxy.map(_.data), streams)
+    val dataObject = createDataObject(prev.map(_.data), streams)
 
     if (children.nodes.isEmpty) {
       hFunction(nodeType, dataObject)

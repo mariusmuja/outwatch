@@ -61,10 +61,12 @@ object VNodeState {
   }
 }
 
-case class Streams(
-  observable: Observable[SeparatedModifiers]
-) {
+case class Streams(observable: Observable[SeparatedModifiers]) extends AnyVal {
   def nonEmpty: Boolean = observable != Observable.empty
+}
+
+object Streams {
+  def empty = Streams(Observable.empty)
 }
 
 private[outwatch] final case class SeparatedModifiers(
