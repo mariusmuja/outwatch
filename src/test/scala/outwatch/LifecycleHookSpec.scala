@@ -254,44 +254,10 @@ object LifecycleHookSpec extends JSDomSuite {
 
 
   test("Hooks should be called in the correct order for modified node") {
-    val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create { _: Element =>
-      hooks += "insert"
-      Continue
-    }
-    val prepatchSink = Sink.create { _: (Option[Element], Option[Element]) =>
-      hooks += "prepatch"
-      Continue
-    }
-    val updateSink = Sink.create { _: (Element, Element) =>
-      hooks += "update"
-      Continue
-    }
-    val postpatchSink = Sink.create { _: (Element, Element) =>
-      hooks += "postpatch"
-      Continue
-
-    }
-    val destroySink = Sink.create { _: Element =>
-      hooks += "destroy"
-      Continue
-    }
+    val (hooks, log) = logLifecycle
 
     val message = PublishSubject[String]()
-    val node = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      destroySink <- destroySink
-      prepatchSink <- prepatchSink
-      postpatchSink <- postpatchSink
-      node <- div(message,
-        onInsert --> insertSink,
-        onPrePatch --> prepatchSink,
-        onUpdate --> updateSink,
-        onPostPatch --> postpatchSink,
-        onDestroy --> destroySink
-      )
-    } yield node
+    val node = div(message, log)
 
     hooks.toList shouldBe List.empty
 
@@ -459,6 +425,116 @@ object LifecycleHookSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     operations.toList shouldBe List("div", "insert")
+  }
+
+
+  def logLifecycle: (Seq[String], VDomModifier) = {
+
+    val hooks = mutable.ArrayBuffer.empty[String]
+    val insertSink = Sink.create { _: Element =>
+      hooks += "insert"
+      Continue
+    }
+    val prepatchSink = Sink.create { _: (Option[Element], Option[Element]) =>
+      hooks += "prepatch"
+      Continue
+    }
+    val updateSink = Sink.create { _: (Element, Element) =>
+      hooks += "update"
+      Continue
+    }
+    val postpatchSink = Sink.create { _: (Element, Element) =>
+      hooks += "postpatch"
+      Continue
+
+    }
+    val destroySink = Sink.create { _: Element =>
+      hooks += "destroy"
+      Continue
+    }
+
+    val logSinks = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      destroySink <- destroySink
+      prepatchSink <- prepatchSink
+      postpatchSink <- postpatchSink
+      mod <- modifiers(
+        onInsert --> insertSink,
+        onPrePatch --> prepatchSink,
+        onUpdate --> updateSink,
+        onPostPatch --> postpatchSink,
+        onDestroy --> destroySink
+      )
+    } yield mod
+
+    (hooks, logSinks)
+  }
+
+//  import org.scalajs.{dom => dm}
+//
+//  def debug(msg: String) = VDomModifier(
+//    Sink.create[dm.Element] { _ => dm.console.log("Insert: " + msg); Continue }.flatMap(onInsert --> _),
+//    Sink.create[dm.Element] { _ => dm.console.log("Destroy: " + msg); Continue }.flatMap(onDestroy --> _),
+//    Sink.create[(dm.Element, dm.Element)] { _ => dm.console.log("PostPatch: " + msg); Continue}.flatMap(onPostPatch --> _),
+//    //    Sink.create[dom.Element] { _ => dom.console.log("Insert: " + msg); Continue }.flatMap(onDomMount --> _),
+//    //    Sink.create[dom.Element] { _ => dom.console.log("Destroy: " + msg); Continue }.flatMap(onDomUnmount --> _),
+//    //    Sink.create[dom.Element] { _ => dom.console.log("PostPatch: " + msg); Continue}.flatMap(onDomUpdate --> _),
+//  )
+
+
+  test("Hooks properly unsubscribe streams after nodes are patched") {
+
+    val (hooks, log) = logLifecycle
+
+    val tab = PublishSubject[Int]
+    val child = PublishSubject[Int]
+
+    def page(num: Int) = num match {
+      case 1 =>
+        div("Test 1",
+          div(
+            "Child: ",
+            child.map { ch =>
+              div(s"Child: $ch", log)
+            }
+          )
+        )
+      case 2 => div(
+        div("Test 2")
+      )
+    }
+
+    val node = div(
+      tab.map(page)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    tab.onNext(2)
+    tab.onNext(1)
+
+    hooks.count(_ == "insert") shouldBe 0
+    hooks.count(_ == "postpatch") shouldBe 0
+    hooks.count(_ == "destroy") shouldBe 0
+
+    child.onNext(1)
+
+    hooks.count(_ == "insert") shouldBe 1
+    hooks.count(_ == "postpatch") shouldBe 0
+    hooks.count(_ == "destroy") shouldBe 0
+
+    child.onNext(2)
+
+    hooks.count(_ == "insert") shouldBe 1
+    hooks.count(_ == "postpatch") shouldBe 1
+    hooks.count(_ == "destroy") shouldBe 0
+
+    tab.onNext(2)
+
+    hooks.count(_ == "insert") shouldBe 1
+    hooks.count(_ == "postpatch") shouldBe 1
+    hooks.count(_ == "destroy") shouldBe 1
 
   }
 
