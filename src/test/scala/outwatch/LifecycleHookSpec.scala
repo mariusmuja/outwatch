@@ -253,11 +253,55 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
 
+  private def createLifecycleHooks: (Seq[String], VDomModifier) = {
+
+    val hooks = mutable.ArrayBuffer.empty[String]
+    val insertSink = Sink.create { _: Element =>
+      hooks += "insert"
+      Continue
+    }
+    val prepatchSink = Sink.create { _: (Option[Element], Option[Element]) =>
+      hooks += "prepatch"
+      Continue
+    }
+    val updateSink = Sink.create { _: (Element, Element) =>
+      hooks += "update"
+      Continue
+    }
+    val postpatchSink = Sink.create { _: (Element, Element) =>
+      hooks += "postpatch"
+      Continue
+
+    }
+    val destroySink = Sink.create { _: Element =>
+      hooks += "destroy"
+      Continue
+    }
+
+    val logSinks = for {
+      insertSink <- insertSink
+      updateSink <- updateSink
+      destroySink <- destroySink
+      prepatchSink <- prepatchSink
+      postpatchSink <- postpatchSink
+      mod <- modifiers(
+        onInsert --> insertSink,
+        onPrePatch --> prepatchSink,
+        onUpdate --> updateSink,
+        onPostPatch --> postpatchSink,
+        onDestroy --> destroySink
+      )
+    } yield mod
+
+    (hooks, logSinks)
+  }
+
+
   test("Hooks should be called in the correct order for modified node") {
-    val (hooks, log) = logLifecycle
+    val (hooks, lifecycleHooks) = createLifecycleHooks
 
     val message = PublishSubject[String]()
-    val node = div(message, log)
+    val node = div(message, lifecycleHooks)
 
     hooks.toList shouldBe List.empty
 
@@ -272,25 +316,10 @@ object LifecycleHookSpec extends JSDomSuite {
 
 
   test("Empty single children receiver should not trigger node update on render") {
-    val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create { _: Element =>
-      hooks += "insert"
-      Continue
-    }
-    val updateSink = Sink.create { _: (Element, Element) =>
-      hooks += "update"
-      Continue
-    }
+    val (hooks, lifecycleHooks) = createLifecycleHooks
 
     val messageList = PublishSubject[Seq[String]]()
-    val node = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      node <- div("Hello", messageList.map(_.map(span(_))),
-        onInsert --> insertSink,
-        onUpdate --> updateSink
-      )
-    } yield node
+    val node = div("Hello", messageList.map(_.map(span(_))), lifecycleHooks)
 
     hooks.toList shouldBe List.empty
 
@@ -300,29 +329,12 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
   test("Static child nodes should not be destroyed and inserted when child stream emits") {
-    val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create { _: Element =>
-      hooks += "insert"
-      Continue
-    }
-    val updateSink = Sink.create { _: (Element, Element) =>
-      hooks += "update"
-      Continue
-    }
-    val destroySink = Sink.create { _: Element =>
-      hooks += "destroy"
-      Continue
-    }
+    val (hooks, lifecycleHooks) = createLifecycleHooks
 
     val message = PublishSubject[String]()
-    val node = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      destroySink <- destroySink
-      node <- div(span("Hello", onInsert --> insertSink, onUpdate --> updateSink, onDestroy --> destroySink),
-        message.map(span(_))
-      )
-    } yield node
+    val node = div(span("Hello", lifecycleHooks),
+      message.map(span(_))
+    )
 
     hooks.toList shouldBe List.empty
 
@@ -334,30 +346,13 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
   test("Static child nodes should be only inserted once when children stream emits") {
-    val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create { _: Element =>
-      hooks += "insert"
-      Continue
-    }
-    val updateSink = Sink.create { _: (Element, Element) =>
-      hooks += "update"
-      Continue
-    }
-    val destroySink = Sink.create { _: Element =>
-      hooks += "destroy"
-      Continue
-    }
+    val (hooks, lifecycleHooks) = createLifecycleHooks
 
     val messageList = PublishSubject[Seq[String]]()
-    val node = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      destroySink <- destroySink
-      node <- div(
-        messageList.map(_.map(span(_))),
-        span("Hello", onInsert --> insertSink, onUpdate --> updateSink, onDestroy --> destroySink)
-      )
-    } yield node
+    val node = div(
+      messageList.map(_.map(span(_))),
+      span("Hello", lifecycleHooks)
+    )
 
     hooks.toList shouldBe List.empty
 
@@ -428,48 +423,7 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
 
-  def logLifecycle: (Seq[String], VDomModifier) = {
 
-    val hooks = mutable.ArrayBuffer.empty[String]
-    val insertSink = Sink.create { _: Element =>
-      hooks += "insert"
-      Continue
-    }
-    val prepatchSink = Sink.create { _: (Option[Element], Option[Element]) =>
-      hooks += "prepatch"
-      Continue
-    }
-    val updateSink = Sink.create { _: (Element, Element) =>
-      hooks += "update"
-      Continue
-    }
-    val postpatchSink = Sink.create { _: (Element, Element) =>
-      hooks += "postpatch"
-      Continue
-
-    }
-    val destroySink = Sink.create { _: Element =>
-      hooks += "destroy"
-      Continue
-    }
-
-    val logSinks = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      destroySink <- destroySink
-      prepatchSink <- prepatchSink
-      postpatchSink <- postpatchSink
-      mod <- modifiers(
-        onInsert --> insertSink,
-        onPrePatch --> prepatchSink,
-        onUpdate --> updateSink,
-        onPostPatch --> postpatchSink,
-        onDestroy --> destroySink
-      )
-    } yield mod
-
-    (hooks, logSinks)
-  }
 
 //  import org.scalajs.{dom => dm}
 //
@@ -485,7 +439,7 @@ object LifecycleHookSpec extends JSDomSuite {
 
   test("Hooks properly unsubscribe streams after nodes are patched") {
 
-    val (hooks, log) = logLifecycle
+    val (hooks, lifecycleHooks) = createLifecycleHooks
 
     val tab = PublishSubject[Int]
     val child = PublishSubject[Int]
@@ -496,7 +450,7 @@ object LifecycleHookSpec extends JSDomSuite {
           div(
             "Child: ",
             child.map { ch =>
-              div(s"Child: $ch", log)
+              div(s"Child: $ch", lifecycleHooks)
             }
           )
         )
