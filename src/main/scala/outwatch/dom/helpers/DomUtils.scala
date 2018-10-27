@@ -2,6 +2,7 @@ package outwatch.dom.helpers
 
 import outwatch.dom._
 
+import scala.collection.mutable.ArrayBuffer
 import scala.scalajs.js
 
 private[outwatch] case class VNodeState(
@@ -9,12 +10,31 @@ private[outwatch] case class VNodeState(
   stream: Observable[SeparatedModifiers] = Observable.empty
 ) extends SnabbdomState
 
+
+
 object VNodeState {
+
+
+  def flatten(mods: Array[Modifier]): Array[Modifier] = {
+    val flattened = ArrayBuffer[Modifier]()
+
+    def flattenHelper(mods: Array[Modifier]): Unit = {
+      mods.foreach{
+        case CompositeModifier(inner) => flattenHelper(inner.toArray)
+        case m => flattened += m
+      }
+    }
+
+    flattened.sizeHint(mods.length)
+    flattenHelper(mods)
+    flattened.toArray
+  }
+
 
   private type Updater = Array[Modifier] => Array[Modifier]
 
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
-    case m: StreamableModifier => Observable.pure(s => s.updated(index, m))
+    case m: SimpleModifier => Observable.pure(s => s.updated(index, m))
     case m: CompositeModifier => updaterCM(index, m)
     case m: ModifierStream => updaterMS(index, m)
   }
@@ -27,7 +47,7 @@ object VNodeState {
 
   private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
 
-    val modifiers = cm.modifiers.toArray
+    val modifiers = flatten(cm.modifiers.toArray)
     val streams = modifiers.zipWithIndex.collect { case (s: ModifierStream, idx) => (s, idx) }
 
     if (streams.nonEmpty) {
@@ -42,14 +62,16 @@ object VNodeState {
 
   private[outwatch] def from(mods: Array[Modifier]): VNodeState = {
 
-    val streams = mods.zipWithIndex.collect { case (s: ModifierStream, index) => (s, index)}
+    val flattened = flatten(mods)
+
+    val streams = flattened.zipWithIndex.collect { case (s: ModifierStream, index) => (s, index)}
 
     val modifiers = if (streams.nonEmpty) {
-      mods.map {
+      flattened.map {
         case vtree: VTree => vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
         case m => m
       }
-    } else mods
+    } else flattened
 
     val modifierStream = if (streams.nonEmpty) {
       Observable.merge(streams.map { case (s, index) => updaterMS(index, s) }: _*)
@@ -80,11 +102,9 @@ private[outwatch] final case class SeparatedModifiers(
   private def add(m: Modifier): Int = {
     m match {
       case _: ModifierStream => 0
+      case _: CompositeModifier => 0
       case EmptyModifier => 0
       case e: Emitter => emitters.push(e)
-      case cm: CompositeModifier =>
-        cm.modifiers.foreach(self.add)
-        0
       case attr: Attribute => attributes.push(attr)
       case hook: Hook[_] => hooks.push(hook)
       case sn: StaticVNode => nodes.push(sn)
@@ -97,7 +117,7 @@ private[outwatch] final case class SeparatedModifiers(
 object SeparatedModifiers {
   def from(mods: Array[Modifier]): SeparatedModifiers = {
     val sm = SeparatedModifiers()
-    mods.foreach(sm.add)
+    VNodeState.flatten(mods).foreach(sm.add)
     sm
   }
 }

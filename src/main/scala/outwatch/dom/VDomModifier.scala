@@ -42,33 +42,32 @@ private[outwatch] sealed trait Modifier extends Any
 
 private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends Modifier
 
-private[outwatch] sealed trait StreamableModifier extends Modifier
-
 private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
+private[outwatch] sealed trait SimpleModifier extends Modifier
 
 // Modifiers
 
-private[outwatch] final case class Emitter(eventType: String, trigger: Event => Unit) extends StreamableModifier
+private[outwatch] final case class Emitter(eventType: String, trigger: Event => Unit) extends SimpleModifier
 
-private[outwatch] sealed trait Attribute extends StreamableModifier {
+private[outwatch] sealed trait Attribute extends SimpleModifier {
   val title: String
 }
 
-private[outwatch] sealed trait Hook[T] extends StreamableModifier {
+private[outwatch] sealed trait Hook[T] extends SimpleModifier {
   def observer: Observer[T]
 }
 
-private[outwatch] sealed trait StaticVNode extends StreamableModifier {
+private[outwatch] sealed trait StaticVNode extends SimpleModifier {
   def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
 
-private[outwatch] final case class Key(value: Key.Value) extends StreamableModifier
+private[outwatch] final case class Key(value: Key.Value) extends SimpleModifier
 object Key {
   type Value = DataObject.KeyValue
 }
 
-private[outwatch] case object EmptyModifier extends StreamableModifier
+private[outwatch] case object EmptyModifier extends SimpleModifier
 
 // Attributes
 private[outwatch] sealed trait Attr extends Attribute {
