@@ -1,11 +1,10 @@
 package outwatch
 
-import cats.effect.IO
-import monix.execution.Scheduler
-import monix.execution.{Ack, Cancelable}
+import monix.execution.{Ack, Cancelable, Scheduler}
+import monix.reactive.Observer
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
-import monix.reactive.{Observable, Observer}
+import outwatch.dom.{IO, Observable}
 
 import scala.concurrent.Future
 

@@ -1,12 +1,11 @@
 package outwatch.util
 
-import cats.effect.IO
 import monix.execution.Cancelable.IsDummy
 import monix.execution.Scheduler
 import monix.execution.cancelables.CompositeCancelable
 import org.scalajs.dom
 import outwatch.dom.helpers.STRef
-import outwatch.dom.{Observable, OutWatch, VNode}
+import outwatch.dom.{IO, Observable, OutWatch, VNode}
 import outwatch.{Handler, Pipe}
 
 import scala.util.Try

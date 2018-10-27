@@ -1,7 +1,5 @@
 package outwatch
 
-import cats.effect.IO
-
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
   type VNode = IO[VTree]
@@ -27,4 +25,7 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
 
   type Handler[T] = outwatch.Handler[T]
   val Handler = outwatch.Handler
+
+  type IO[+T] = cats.effect.IO[T]
+  val IO = cats.effect.IO
 }

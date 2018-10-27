@@ -1,7 +1,6 @@
 package outwatch
 
-import cats.effect.IO
-import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier}
+import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier, IO}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier

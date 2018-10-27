@@ -1,7 +1,6 @@
 package outwatch.util
 
-import cats.effect.IO
-import outwatch.dom.{ModifierStream, Observable, VDomModifier}
+import outwatch.dom.{IO, ModifierStream, Observable, VDomModifier}
 
 
 object SyntaxSugar {

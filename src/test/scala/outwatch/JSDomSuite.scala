@@ -28,11 +28,10 @@ trait TestDSL { self: TestSuite[_] =>
     def shouldBe(expected: => T)(implicit pos: SourceLocation): Unit = assertEquals(received, expected)
     def shouldNotBe(expected: => T)(implicit pos: SourceLocation): Unit = assert(received != expected)
   }
-
 }
 
 
-trait LocalStorageMock {
+trait LocalStorageHelper {
   import scala.scalajs.js
 
   def dispatchStorageEvent(key: String, newValue: String, oldValue: String): Unit = {
@@ -51,8 +50,10 @@ trait LocalStorageMock {
 }
 
 
-
-trait JSDomSuite extends TestSuite[Unit] with EasySubscribe with TestDSL with LocalStorageMock {
+trait JSDomSuite extends TestSuite[Unit]
+                 with EasySubscribe
+                 with TestDSL
+                 with LocalStorageHelper {
 
   implicit val scheduler: Scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
 

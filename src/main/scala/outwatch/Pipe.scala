@@ -1,9 +1,8 @@
 package outwatch
 
-import cats.effect.IO
 import monix.execution.Scheduler
 import outwatch.Sink.{ObservableSink, SubjectSink}
-import outwatch.dom.Observable
+import outwatch.dom.{IO, Observable}
 
 
 object Pipe {

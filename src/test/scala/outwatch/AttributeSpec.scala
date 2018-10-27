@@ -70,7 +70,7 @@ object AttributeSpec extends JSDomSuite {
       prop("num") := 12,
       style("baz") := "baz",
       contentEditable := false,
-      autoComplete := false,
+      unselectable := false,
       disabled := false
     ).map(_.toSnabbdom).unsafeRunSync()
 
@@ -80,7 +80,7 @@ object AttributeSpec extends JSDomSuite {
       "boo" -> true,
       "yoo" -> "yes",
       "contenteditable" -> "false",
-      "autocomplete" -> "off",
+      "unselectable" -> "off",
       "disabled" -> false
     )
 

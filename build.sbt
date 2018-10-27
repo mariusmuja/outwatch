@@ -19,14 +19,14 @@ crossScalaVersions := Seq("2.11.12", "2.12.7")
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "3.0.0-RC1",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.6",
-  "com.raquo"       %%% "domtypes" % "0.7",
+  "com.raquo"       %%% "domtypes" % "0.9",
   "org.typelevel" %%% "cats-core" % "1.1.0",
   "org.typelevel" %%% "cats-effect" % "0.10",
   "io.monix" %%% "minitest" % "2.1.1" % Test
 )
 
 npmDependencies in Compile ++= Seq(
-  "snabbdom" -> "0.7.1"
+  "snabbdom" -> "0.7.2"
 )
 
 scalacOptions += {

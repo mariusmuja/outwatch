@@ -1,6 +1,5 @@
 package outwatch.dom
 
-import cats.effect.IO
 import monix.execution.Scheduler
 import org.scalajs.dom.{ClipboardEvent, DragEvent, KeyboardEvent, MouseEvent}
 import outwatch.dom.helpers.ChildStreamBuilder

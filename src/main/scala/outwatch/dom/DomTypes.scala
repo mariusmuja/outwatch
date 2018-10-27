@@ -1,8 +1,8 @@
 package outwatch.dom
 
-import cats.effect.IO
 import com.raquo.domtypes.generic.defs.sameRefTags._
 import com.raquo.domtypes.generic.defs._
+import com.raquo.domtypes.generic.defs.complex.canonical
 import com.raquo.domtypes.generic.{builders, codecs, keys}
 import com.raquo.domtypes.jsdom.defs.eventProps
 import monix.execution.{Ack, Cancelable}
@@ -39,7 +39,7 @@ private[outwatch] object CodecBuilder {
 
 private[outwatch] trait HtmlTagBuilder extends builders.HtmlTagBuilder[BuilderTypes.Tag, VTree] {
   // we can ignore information about void tags here, because snabbdom handles this automatically for us based on the tagname.
-  protected override def htmlTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
+  protected override def htmlTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName)
 }
 
 
@@ -73,7 +73,7 @@ trait TagsSvg
   extends BuilderTypes.SameRefSvgTags[BuilderTypes.Tag, VTree]
   with builders.SvgTagBuilder[BuilderTypes.Tag, VTree] {
 
-  protected override def svgTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName, Seq.empty)
+  protected override def svgTag[Ref <: VTree](tagName: String, void: Boolean): VTree = VTree(tagName)
 }
 
 
@@ -81,8 +81,6 @@ trait TagsSvg
 
 trait Attributes
   extends Attrs
-  with ReflectedAttrs
-  with Props
   with Events
   with AttributeHelpers
   with OutwatchAttributes
@@ -95,33 +93,16 @@ object Attributes extends Attributes
 // Attrs
 
 trait Attrs
-  extends attrs.Attrs[BasicAttrBuilder]
-  with builders.HtmlAttrBuilder[BasicAttrBuilder] {
+  extends attrs.HtmlAttrs[BasicAttrBuilder]
+  with reflectedAttrs.ReflectedHtmlAttrs[BuilderTypes.Attribute]
+  with props.Props[BuilderTypes.Property]
+  with canonical.CanonicalComplexHtmlKeys[BuilderTypes.Attribute, BasicAttrBuilder, BuilderTypes.Property]
+  with builders.HtmlAttrBuilder[BasicAttrBuilder]
+  with builders.ReflectedHtmlAttrBuilder[BuilderTypes.Attribute]
+  with builders.PropBuilder[BuilderTypes.Property] {
 
   override protected def htmlAttr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
     new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
-}
-
-// Svg attributes
-trait AttrsSvg
-  extends attrs.SvgAttrs[BasicAttrBuilder]
-  with builders.SvgAttrBuilder[BasicAttrBuilder] {
-
-  override protected def svgAttr[V](key: String, codec: codecs.Codec[V, String]): BasicAttrBuilder[V] =
-    new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
-}
-
-// Reflected attrs
-
-trait ReflectedAttrs
-  extends reflectedAttrs.ReflectedAttrs[BuilderTypes.Attribute]
-  with builders.ReflectedAttrBuilder[BuilderTypes.Attribute] {
-
-  // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
-  override lazy val className = new AccumAttrBuilder[String]("class",
-    stringReflectedAttr(attrKey = "class", propKey = "className"),
-    _ + " " + _
-  )
 
   override protected def reflectedAttr[V, DomPropV](
     attrKey: String,
@@ -129,16 +110,26 @@ trait ReflectedAttrs
     attrCodec: codecs.Codec[V, String],
     propCodec: codecs.Codec[V, DomPropV]
   ) = new BasicAttrBuilder(attrKey, CodecBuilder.encodeAttribute(attrCodec))
-    //or: new PropertyBuilder(propKey, propCodec.encode)
-}
-
-// Props
-trait Props
-  extends props.Props[BuilderTypes.Property]
-  with builders.PropBuilder[BuilderTypes.Property] {
+  //or: new PropertyBuilder(propKey, propCodec.encode)
 
   override protected def prop[V, DomV](key: String, codec: codecs.Codec[V, DomV]): PropBuilder[V] =
     new PropBuilder(key, codec.encode)
+
+
+  // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
+  override lazy val className = new AccumAttrBuilder[String]("class",
+    stringReflectedAttr(attrKey = "class", propKey = "className"),
+    _ + " " + _
+  )
+}
+
+// Svg attributes
+trait AttrsSvg
+  extends attrs.SvgAttrs[BasicAttrBuilder]
+  with builders.SvgAttrBuilder[BasicAttrBuilder] {
+
+  override protected def svgAttr[V](key: String, codec: codecs.Codec[V, String], namespace: Option[String]): BasicAttrBuilder[V] =
+    new BasicAttrBuilder(key, CodecBuilder.encodeAttribute(codec))
 }
 
 

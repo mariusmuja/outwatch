@@ -129,7 +129,7 @@ private[outwatch] final case class SeparatedHooks(
   postPatchHooks: js.Array[PostPatchHook] = js.Array(),
   destroyHooks: js.Array[DestroyHook] = js.Array()
 ) extends SnabbdomHooks {
-  def push(h: Hook[_]): Int = h match {
+  @inline def push(h: Hook[_]): Int = h match {
     case ih: InsertHook => insertHooks.push(ih)
     case pph: PrePatchHook => prePatchHooks.push(pph)
     case uh: UpdateHook => updateHooks.push(uh)
@@ -141,5 +141,5 @@ private[outwatch] final case class SeparatedHooks(
 private[outwatch] final case class SeparatedEmitters(
   emitters: js.Array[Emitter] = js.Array()
 ) extends SnabbdomEmitters {
-  def push(e: Emitter): Int = emitters.push(e)
+  @inline def push(e: Emitter): Int = emitters.push(e)
 }

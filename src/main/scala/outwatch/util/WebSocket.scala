@@ -1,12 +1,11 @@
 package outwatch.util
 
-import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.OverflowStrategy.Unbounded
 import org.scalajs.dom.{CloseEvent, Event, MessageEvent}
 import outwatch.Sink
-import outwatch.dom.Observable
+import outwatch.dom.{IO, Observable}
 
 object WebSocket {
   implicit def toSink(socket: WebSocket): IO[Sink[String]] = socket.sink

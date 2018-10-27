@@ -1,6 +1,6 @@
 package outwatch.dom.helpers
 
-import cats.effect.IO
+import outwatch.dom.IO
 
 class STRef[A](private var unsafeGet: A) {
   def put(a: A): IO[A] = IO { unsafeGet = a; a }

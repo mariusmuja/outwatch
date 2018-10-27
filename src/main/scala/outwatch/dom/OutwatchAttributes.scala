@@ -61,5 +61,5 @@ trait AttributeHelpers { self: Attributes =>
 }
 
 trait TagHelpers { self: Tags =>
-  def tag(name: String): VTree = VTree(name, Seq.empty)
+  def tag(name: String): VTree = VTree(name)
 }

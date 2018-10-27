@@ -1,6 +1,5 @@
 package outwatch.dom
 
-import cats.effect.IO
 import monix.execution.Ack.Continue
 import monix.execution.cancelables.CompositeCancelable
 import monix.execution.{Cancelable, Scheduler}

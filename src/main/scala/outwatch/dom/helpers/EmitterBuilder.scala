@@ -1,10 +1,9 @@
 package outwatch.dom.helpers
 
-import cats.effect.IO
 import monix.reactive.Observer
 import org.scalajs.dom.Event
 import outwatch.Sink
-import outwatch.dom.{Emitter, Observable}
+import outwatch.dom.{Emitter, IO, Observable}
 
 
 trait EmitterBuilder[E, O, R] extends Any {

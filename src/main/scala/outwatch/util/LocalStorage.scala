@@ -1,12 +1,11 @@
 package outwatch.util
 
-import cats.effect.IO
 import monix.execution.Scheduler
 import org.scalajs.dom
 import org.scalajs.dom.StorageEvent
 import org.scalajs.dom.window.localStorage
 import org.scalajs.dom.window.sessionStorage
-import outwatch.dom.Observable
+import outwatch.dom.{IO, Observable}
 import outwatch.dom.dsl.events
 import cats.implicits._
 import outwatch.Handler

@@ -1,6 +1,5 @@
 package outwatch.dom
 
-import cats.effect.IO
 import cats.syntax.apply._
 import com.raquo.domtypes.generic.keys
 import outwatch.AsVDomModifier

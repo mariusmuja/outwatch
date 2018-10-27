@@ -1,8 +1,7 @@
 package outwatch
 
-import cats.effect.IO
 import monix.execution.Scheduler
-import outwatch.dom.Observable
+import outwatch.dom.{IO, Observable}
 
 object Handler {
   private[outwatch] def apply[T](sink: Sink[T], source: Observable[T]): Handler[T] = Pipe(sink, source)

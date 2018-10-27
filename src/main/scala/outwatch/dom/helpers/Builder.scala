@@ -1,10 +1,10 @@
 package outwatch.dom.helpers
 
-import cats.effect.IO
 import outwatch.AsVDomModifier
 import outwatch.dom._
 
 import scala.language.dynamics
+
 
 trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   protected def name: String

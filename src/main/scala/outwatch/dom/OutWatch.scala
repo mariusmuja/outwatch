@@ -1,6 +1,5 @@
 package outwatch.dom
 
-import cats.effect.IO
 import monix.execution.Scheduler
 import org.scalajs.dom
 import org.scalajs.dom._
