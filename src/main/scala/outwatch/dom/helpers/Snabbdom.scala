@@ -165,14 +165,14 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
     val dataObject = createDataObject(prev.map(_.data), streams)
 
-    if (children.nodes.isEmpty) {
+    if (nodes.isEmpty) {
       hFunction(nodeType, dataObject)
     } else {
-      val stringNodes = children.nodes.collect { case StringVNode(s) => s }
-      if (stringNodes.size == children.nodes.size) {
+      val stringNodes = nodes.collect { case StringVNode(s) => s }
+      if (stringNodes.size == nodes.size) {
         hFunction(nodeType, dataObject, stringNodes.mkString)
       } else {
-        val proxies: js.Array[VNodeProxy] = children.nodes.map(_.toSnabbdom)(breakOut)
+        val proxies: js.Array[VNodeProxy] = nodes.map(_.toSnabbdom)(breakOut)
         hFunction(nodeType, dataObject, proxies)
       }
     }

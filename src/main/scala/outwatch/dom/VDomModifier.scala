@@ -1,12 +1,10 @@
 package outwatch.dom
 
-import monix.execution.{Ack, Scheduler}
+import monix.execution.Scheduler
 import monix.reactive.Observer
 import org.scalajs.dom._
 import outwatch.dom.helpers.VNodeState
 import snabbdom.{DataObject, VNodeProxy}
-
-import scala.concurrent.Future
 
 /*
 Modifier
@@ -51,7 +49,7 @@ private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) e
 
 // Modifiers
 
-private[outwatch] final case class Emitter(eventType: String, trigger: Event => Future[Ack]) extends StreamableModifier
+private[outwatch] final case class Emitter(eventType: String, trigger: Event => Unit) extends StreamableModifier
 
 private[outwatch] sealed trait Attribute extends StreamableModifier {
   val title: String

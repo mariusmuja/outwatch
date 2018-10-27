@@ -70,6 +70,8 @@ testFrameworks += new TestFramework("minitest.runner.Framework")
 
 requiresDOM in Test := true
 
+version in installJsdom := "11.12.0"
+
 useYarn := true
 
 publishMavenStyle := true

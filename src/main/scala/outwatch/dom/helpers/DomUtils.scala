@@ -73,19 +73,21 @@ private[outwatch] final case class SeparatedModifiers(
   emitters: SeparatedEmitters = SeparatedEmitters(),
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
-  children: Children = Children(),
+  nodes: js.Array[StaticVNode] = js.Array(),
   keys: js.Array[Key] = js.Array()
 ) extends SnabbdomModifiers { self =>
 
-  private def add(m: Modifier): Unit = {
+  private def add(m: Modifier): Int = {
     m match {
       case _: ModifierStream => 0
       case EmptyModifier => 0
       case e: Emitter => emitters.push(e)
-      case cm: CompositeModifier => cm.modifiers.foreach(self.add)
+      case cm: CompositeModifier =>
+        cm.modifiers.foreach(self.add)
+        0
       case attr: Attribute => attributes.push(attr)
       case hook: Hook[_] => hooks.push(hook)
-      case sn: StaticVNode => children.push(sn)
+      case sn: StaticVNode => nodes.push(sn)
       case key: Key => keys.push(key)
     }
   }
@@ -100,12 +102,6 @@ object SeparatedModifiers {
   }
 }
 
-private[outwatch] case class Children(
-  nodes: js.Array[StaticVNode] = js.Array()
-) {
-
-  def push(node: StaticVNode): Int = nodes.push(node)
-}
 
 private[outwatch] final case class SeparatedStyles(
   styles: js.Array[Style] = js.Array()

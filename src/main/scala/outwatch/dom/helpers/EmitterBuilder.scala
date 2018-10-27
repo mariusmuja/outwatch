@@ -29,7 +29,9 @@ trait EmitterBuilder[E, O, R] extends Any {
 
 object EmitterBuilder extends EmitterOps {
   def apply[E <: Event](eventType: String): SimpleEmitterBuilder[E, Emitter] =
-    SimpleEmitterBuilder[E, Emitter](observer => Emitter(eventType, event => observer.onNext(event.asInstanceOf[E])))
+    SimpleEmitterBuilder[E, Emitter](observer =>
+      Emitter(eventType, { event => observer.onNext(event.asInstanceOf[E]); ()})
+    )
 }
 
 final case class TransformingEmitterBuilder[E, O, R] private[helpers](

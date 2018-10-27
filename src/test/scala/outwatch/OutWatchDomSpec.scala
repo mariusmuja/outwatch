@@ -47,7 +47,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers = Seq(
       BasicAttr("class", "red"),
       EmptyModifier,
-      Emitter("click", _ => Continue),
+      Emitter("click", _ => ()),
       StringVNode("Test"),
       div().unsafeRunSync(),
       ModifierStream(Observable()),
@@ -65,8 +65,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 2
     mods.attributes.attrs.length shouldBe 2
-    val Children(nodes) = mods.children
-    nodes.length shouldBe 3
+    mods.nodes.length shouldBe 3
     streams shouldNotBe Observable.empty
   }
 
@@ -74,11 +73,11 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers = Seq(
       BasicAttr("class", "red"),
       EmptyModifier,
-      Emitter("click", _ => Continue),
-      Emitter("input", _ => Continue),
+      Emitter("click", _ => ()),
+      Emitter("input", _ => ()),
       ModifierStream(Observable()),
       ModifierStream(Observable()),
-      Emitter("keyup", _ => Continue),
+      Emitter("keyup", _ => ()),
       StringVNode("text"),
       div().unsafeRunSync()
     )
@@ -87,8 +86,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
-    val Children(nodes) = mods.children
-    nodes.length shouldBe 2
+    mods.nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
 
@@ -96,9 +94,9 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers: Seq[Modifier] = Seq(
       BasicAttr("class","red"),
       EmptyModifier,
-      Emitter("click", _ => Continue),
-      Emitter("input", _ => Continue),
-      Emitter("keyup", _ => Continue),
+      Emitter("click", _ => ()),
+      Emitter("input", _ => ()),
+      Emitter("keyup", _ => ()),
       ModifierStream(Observable()),
       ModifierStream(Observable()),
       StringVNode("text"),
@@ -109,7 +107,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.length shouldBe 1
-    mods.children.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
+    mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
   }
 
@@ -117,13 +115,13 @@ object OutWatchDomSpec extends JSDomSuite {
     val modifiers = Seq(
       BasicAttr("class","red"),
       EmptyModifier,
-      Emitter("click", _ => Continue),
-      Emitter("input", _ => Continue),
+      Emitter("click", _ => ()),
+      Emitter("input", _ => ()),
       UpdateHook(PublishSubject()),
       ModifierStream(Observable()),
       ModifierStream(Observable()),
       ModifierStream(Observable()),
-      Emitter("keyup", _ => Continue),
+      Emitter("keyup", _ => ()),
       InsertHook(PublishSubject()),
       PrePatchHook(PublishSubject()),
       PostPatchHook(PublishSubject()),
@@ -197,7 +195,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state =  VNodeState.from(mods.toArray)
-    val Children(nodes) = state.modifiers.children
+    val nodes = state.modifiers.nodes
 
     nodes.length shouldBe 2
     state.stream shouldNotBe Observable.empty
@@ -223,7 +221,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state = VNodeState.from(mods.toArray)
-    val Children(nodes) = state.modifiers.children
+    val nodes = state.modifiers.nodes
 
     nodes.length shouldBe 1
     state.stream shouldNotBe Observable.empty
@@ -919,48 +917,50 @@ object OutWatchDomSpec extends JSDomSuite {
     val key = "banana"
     val triggeredHandlerEvents = mutable.ArrayBuffer.empty[Option[String]]
 
-    assert(localStorage.getItem(key) == null)
+    localStorage.getItem(key) shouldBe null
 
     val storageHandler = util.LocalStorage.handler(key).unsafeRunSync()
-    storageHandler.foreach{e => triggeredHandlerEvents += e}
-    assert(localStorage.getItem(key) == null)
-    assert(triggeredHandlerEvents.toList == List(None))
+    storageHandler.foreach { e => triggeredHandlerEvents += e }
+    localStorage.getItem(key) shouldBe null
+    triggeredHandlerEvents.toList shouldBe List(None)
 
     storageHandler.unsafeOnNext(Some("joe"))
-    assert(localStorage.getItem(key) == "joe")
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe")))
+    localStorage.getItem(key) shouldBe "joe"
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"))
 
-    var initialValue:Option[String] = null
-    util.LocalStorage.handler(key).unsafeRunSync().foreach {initialValue = _}
-    assert(initialValue == Some("joe"))
+    var initialValue: Option[String] = null
+    util.LocalStorage.handler(key).unsafeRunSync().foreach {
+      initialValue = _
+    }
+    initialValue shouldBe Some("joe")
 
     storageHandler.unsafeOnNext(None)
-    assert(localStorage.getItem(key) == null)
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None))
+    localStorage.getItem(key) shouldBe null
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None)
 
     // localStorage.setItem(key, "split") from another window
     dispatchStorageEvent(key, newValue = "split", null)
-    assert(localStorage.getItem(key) == "split")
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split")))
+    localStorage.getItem(key) shouldBe "split"
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"))
 
     // localStorage.removeItem(key) from another window
     dispatchStorageEvent(key, null, "split")
-    assert(localStorage.getItem(key) == null)
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None))
+    localStorage.getItem(key) shouldBe "null"
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None)
 
     // only trigger handler if value changed
     storageHandler.unsafeOnNext(None)
-    assert(localStorage.getItem(key) == null)
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None))
+    localStorage.getItem(key) shouldBe null
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None)
 
     storageHandler.unsafeOnNext(Some("rhabarbar"))
-    assert(localStorage.getItem(key) == "rhabarbar")
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar")))
+    localStorage.getItem(key) shouldBe "rhabarbar"
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"))
 
     // localStorage.clear() from another window
     dispatchStorageEvent(null, null, null)
-    assert(localStorage.getItem(key) == null)
-    assert(triggeredHandlerEvents.toList == List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"), None))
+    localStorage.getItem(key) shouldBe null
+    triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"), None)
   }
 
   test("Modifier stream should work for modifier") {

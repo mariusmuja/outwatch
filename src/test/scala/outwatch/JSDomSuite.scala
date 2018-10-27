@@ -31,28 +31,9 @@ trait TestDSL { self: TestSuite[_] =>
 
 }
 
-// TODO: We need this mock until localStorage is implemented in jsdom (https://github.com/tmpvar/jsdom/pull/2076)
+
 trait LocalStorageMock {
-  import scala.collection.mutable
   import scala.scalajs.js
-
-  if (js.isUndefined(window.localStorage)) {
-    js.Dynamic.global.window.updateDynamic("localStorage")(new js.Object {
-      private val map = new mutable.HashMap[String, String]
-
-      def getItem(key: String): String = map.getOrElse(key, null)
-
-      def setItem(key: String, value: String): Unit = {
-        map += key -> value
-      }
-
-      def removeItem(key: String): Unit = {
-        map -= key
-      }
-
-      def clear(): Unit = map.clear()
-    })
-  }
 
   def dispatchStorageEvent(key: String, newValue: String, oldValue: String): Unit = {
     if (key == null) window.localStorage.clear()
