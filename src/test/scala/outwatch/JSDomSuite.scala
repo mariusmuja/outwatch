@@ -1,5 +1,7 @@
 package outwatch
 
+import cats.effect.implicits._
+import cats.effect.{Effect, IO}
 import minitest.TestSuite
 import minitest.api.{SourceLocation, Void}
 import monix.execution.Ack.Continue
@@ -10,7 +12,7 @@ import org.scalajs.dom.{document, window}
 import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom.Observable
 
-import scala.concurrent.Future
+import scala.concurrent.{Future, Promise}
 
 
 trait EasySubscribe {
@@ -53,7 +55,7 @@ trait LocalStorageHelper {
 trait JSDomSuite extends TestSuite[Unit]
                  with EasySubscribe
                  with TestDSL
-                 with LocalStorageHelper {
+                 with LocalStorageHelper { self =>
 
   implicit val scheduler: Scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
 
@@ -69,6 +71,12 @@ trait JSDomSuite extends TestSuite[Unit]
   def tearDown(env: Unit): Unit = {}
 
   def test(name: String)(f: => Void): Unit = super.test(name)(_ => f)
+
+  def testEffect[F[_]: Effect](name: String)(f: F[Unit]): Unit = {
+    val p = Promise[Unit]
+    f.runAsync(cb => IO(cb.fold[Unit](p.failure, p.success))).unsafeRunSync()
+    super.testAsync(name)(_ => p.future)
+  }
 
   def testAsync(name: String)(f: => Future[Unit]): Unit = super.testAsync(name)(_ => f)
 }

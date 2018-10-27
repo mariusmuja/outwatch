@@ -1,28 +1,33 @@
 package outwatch
 
+import org.scalajs.dom.document
+import outwatch.dom.OutWatch
+import outwatch.dom.dsl.{cls, div, id, modifiers}
+
 object DebugSpec extends JSDomSuite{
 
-//    test("Modifier stream should work for nested observables with seq modifiers and attribute stream") {
-//      val innerHandler = Handler.create[String]().unsafeRunSync()
-//      val outerHandler = Handler.create(Seq[VDomModifier]("a", data.test := "v", href <-- innerHandler)).unsafeRunSync()
-//      val node = div(
-//        id := "strings",
-//        outerHandler
-//      )
-//
-//      OutWatch.renderInto("#app", node).unsafeRunSync()
-//
-//      val element = document.getElementById("strings")
-//      element.outerHTML shouldBe """<div id="strings" data-test="v">a</div>"""
-//
-//      innerHandler.unsafeOnNext("c")
-//      element.outerHTML shouldBe """<div id="strings" data-test="v" href="c">a</div>"""
-//
-//      innerHandler.unsafeOnNext("d")
-//      element.outerHTML shouldBe """<div id="strings" data-test="v" href="d">a</div>"""
-//
-//      outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
-//      element.outerHTML shouldBe """<div id="strings">meh</div>"""
-//    }
+  test("Modifier stream should work for streaming accum attributes") {
+    val myClasses = Handler.create[String]("second").unsafeRunSync()
+    val myClasses2 = Handler.create[String]().unsafeRunSync()
+    val node = div(
+      id := "strings",
+      div(
+        cls := "first",
+        myClasses.map { cls := _ },
+//        modifiers(
+          cls <-- myClasses2
+//        )
+      )
+    )
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe """<div class="first second"></div>"""
+    myClasses2.unsafeOnNext("third")
+    element.innerHTML shouldBe """<div class="first second third"></div>"""
+    myClasses2.unsafeOnNext("more")
+    element.innerHTML shouldBe """<div class="first second more"></div>"""
+    myClasses.unsafeOnNext("yeah")
+    element.innerHTML shouldBe """<div class="first yeah more"></div>"""
+  }
 
 }
