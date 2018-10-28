@@ -15,7 +15,10 @@ object VNodeState {
 
   private type Updater = Array[SimpleModifier] => Array[SimpleModifier]
 
-  private def flatten(mods: Seq[Modifier]): Array[FlatModifier] = {
+  // separates modifiers into SimpleModifier(s) and ModifierStream(s)
+  private def separateMods(mods: Seq[Modifier]): (Array[SimpleModifier], Array[(ModifierStream, Int)]) = {
+
+    // flatten first
     val flattened = ArrayBuffer[FlatModifier]()
     flattened.sizeHint(mods.length)
 
@@ -27,32 +30,30 @@ object VNodeState {
     }
     flattenHelper(mods)
 
-    flattened.toArray
-  }
+    // separate
+    val simple = ArrayBuffer.fill[SimpleModifier](flattened.size)(EmptyModifier)
+    val streams = ArrayBuffer.empty[(ModifierStream, Int)]
 
-  private def separateMods(mods: Seq[FlatModifier]): (Array[SimpleModifier], Array[(ModifierStream, Int)]) = {
-    val simple = ArrayBuffer[SimpleModifier]()
-    simple.sizeHint(mods.size)
-    val streams = ArrayBuffer[(ModifierStream, Int)]()
-
-    mods.zipWithIndex.foreach {
-      case (m: SimpleModifier, _) => simple += m
-      case (m: ModifierStream, index) =>
-        simple += EmptyModifier
-        streams += m -> index
+    flattened.indices.foreach { index =>
+      flattened(index) match {
+        case m: SimpleModifier => simple(index) = m
+        case m: ModifierStream => streams += m -> index
+      }
     }
 
+    // ensure key present for VTrees with stream siblings
     if (streams.nonEmpty) {
-      simple.zipWithIndex.foreach {
-        case (vtree: VTree, index) =>
-          simple(index) = vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
-        case _ =>
+      simple.indices.foreach { index =>
+        simple(index) match {
+          case vtree: VTree =>
+            simple(index) = vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
+          case _ =>
+        }
       }
     }
 
     (simple.toArray, streams.toArray)
   }
-
 
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
     case m: SimpleModifier => Observable.pure(_.updated(index, m))
@@ -67,8 +68,7 @@ object VNodeState {
   }
 
   private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
-    val flattened = flatten(cm.modifiers)
-    val (modifiers, streams) = separateMods(flattened)
+    val (modifiers, streams) = separateMods(cm.modifiers)
 
     if (streams.nonEmpty) {
       Observable.merge(streams.map { case (s, idx) => updaterMS(idx, s) }: _*)
@@ -79,9 +79,9 @@ object VNodeState {
     else Observable.pure(_.updated(index, SimpleCompositeModifier(modifiers)))
   }
 
+
   private[outwatch] def from(mods: Array[Modifier]): VNodeState = {
-    val flattened = flatten(mods)
-    val (modifiers, streams) = separateMods(flattened)
+    val (modifiers, streams) = separateMods(mods)
 
     val modifierStream = if (streams.nonEmpty) {
       Observable.merge(streams.map { case (s, index) => updaterMS(index, s) }: _*)
@@ -109,18 +109,15 @@ private[outwatch] final case class SeparatedModifiers(
   keys: js.Array[Key] = js.Array()
 ) extends SnabbdomModifiers { self =>
 
-  private def add(m: SimpleModifier): Int = {
-    m match {
-      case SimpleCompositeModifier(mods) => mods.foreach(add); 0
-      case EmptyModifier => 0
-      case e: Emitter => emitters.push(e)
-      case attr: Attribute => attributes.push(attr)
-      case hook: Hook[_] => hooks.push(hook)
-      case sn: StaticVNode => nodes.push(sn)
-      case key: Key => keys.push(key)
-    }
+  private def add(m: SimpleModifier): Int = m match {
+    case SimpleCompositeModifier(mods) => mods.foreach(add); 0
+    case EmptyModifier => 0
+    case e: Emitter => emitters.push(e)
+    case attr: Attribute => attributes.push(attr)
+    case hook: Hook[_] => hooks.push(hook)
+    case sn: StaticVNode => nodes.push(sn)
+    case key: Key => keys.push(key)
   }
-
 }
 
 object SeparatedModifiers {
