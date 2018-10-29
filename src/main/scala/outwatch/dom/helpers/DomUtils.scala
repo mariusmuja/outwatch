@@ -7,7 +7,7 @@ import scala.scalajs.js
 
 private[outwatch] case class VNodeState(
   modifiers: SeparatedModifiers,
-  stream: Observable[SeparatedModifiers] = Observable.empty
+  stream: Observable[SeparatedModifiers]
 ) extends SnabbdomState
 
 
@@ -16,7 +16,7 @@ object VNodeState {
   private type Updater = Array[SimpleModifier] => Array[SimpleModifier]
 
   // separates modifiers into SimpleModifier(s) and ModifierStream(s)
-  private def separateMods(mods: Seq[Modifier]): (Array[SimpleModifier], Array[(ModifierStream, Int)]) = {
+  private def separateStreams(mods: Seq[Modifier]): (Array[SimpleModifier], Array[(Int, ModifierStream)]) = {
 
     // flatten first
     val flattened = ArrayBuffer[FlatModifier]()
@@ -32,12 +32,12 @@ object VNodeState {
 
     // separate
     val simple = ArrayBuffer.fill[SimpleModifier](flattened.size)(EmptyModifier)
-    val streams = ArrayBuffer.empty[(ModifierStream, Int)]
+    val streams = ArrayBuffer.empty[(Int, ModifierStream)]
 
     flattened.indices.foreach { index =>
       flattened(index) match {
         case m: SimpleModifier => simple(index) = m
-        case m: ModifierStream => streams += m -> index
+        case m: ModifierStream => streams += index -> m
       }
     }
 
@@ -68,10 +68,10 @@ object VNodeState {
   }
 
   private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
-    val (modifiers, streams) = separateMods(cm.modifiers)
+    val (modifiers, streams) = separateStreams(cm.modifiers)
 
     if (streams.nonEmpty) {
-      Observable.merge(streams.map { case (s, idx) => updaterMS(idx, s) }: _*)
+      Observable.merge(streams.map { case (idx, ms) => updaterMS(idx, ms) }: _*)
         .scan(modifiers)((mods, func) => func(mods))
         .startWith(Seq(modifiers))
         .map(mods => _.updated(index, SimpleCompositeModifier(mods)))
@@ -81,10 +81,10 @@ object VNodeState {
 
 
   private[outwatch] def from(mods: Array[Modifier]): VNodeState = {
-    val (modifiers, streams) = separateMods(mods)
+    val (modifiers, streams) = separateStreams(mods)
 
     val modifierStream = if (streams.nonEmpty) {
-      Observable.merge(streams.map { case (s, index) => updaterMS(index, s) }: _*)
+      Observable.merge(streams.map { case (index, ms) => updaterMS(index, ms) }: _*)
         .scan(modifiers)((mods, func) => func(mods))
         .map(SeparatedModifiers.from)
     } else Observable.empty

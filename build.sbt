@@ -22,7 +22,7 @@ libraryDependencies ++= Seq(
   "com.raquo"       %%% "domtypes" % "0.9",
   "org.typelevel" %%% "cats-core" % "1.1.0",
   "org.typelevel" %%% "cats-effect" % "0.10",
-  "io.monix" %%% "minitest" % "2.1.1" % Test
+  "io.monix" %%% "minitest" % "2.2.2" % Test
 )
 
 npmDependencies in Compile ++= Seq(

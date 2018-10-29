@@ -7,7 +7,6 @@ import org.scalajs.dom
 import outwatch.dom._
 import snabbdom._
 
-import scala.collection.breakOut
 import scala.scalajs.js
 import scala.scalajs.js.JSConverters._
 
@@ -172,7 +171,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
       if (stringNodes.size == nodes.size) {
         hFunction(nodeType, dataObject, stringNodes.mkString)
       } else {
-        val proxies: js.Array[VNodeProxy] = nodes.map(_.toSnabbdom)(breakOut)
+        val proxies: js.Array[VNodeProxy] = nodes.map(_.toSnabbdom)
         hFunction(nodeType, dataObject, proxies)
       }
     }
