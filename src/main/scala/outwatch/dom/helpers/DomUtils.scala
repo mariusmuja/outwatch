@@ -113,7 +113,7 @@ private[outwatch] final case class SeparatedModifiers(
     case SimpleCompositeModifier(mods) => mods.foreach(add); 0
     case EmptyModifier => 0
     case e: Emitter => emitters.push(e)
-    case attr: Attribute => attributes.push(attr)
+    case attr: Attribute => attributes.push(attr); 0
     case hook: Hook[_] => hooks.push(hook)
     case sn: StaticVNode => nodes.push(sn)
     case key: Key => keys.push(key)
@@ -130,21 +130,33 @@ object SeparatedModifiers {
 
 
 private[outwatch] final case class SeparatedStyles(
-  styles: js.Array[Style] = js.Array()
+  styleDict: js.Dictionary[Style.Value] = js.Dictionary[Style.Value](),
+  delayedDict: js.Dictionary[String] = js.Dictionary[String](),
+  removeDict: js.Dictionary[String] = js.Dictionary[String](),
+  destroyDict: js.Dictionary[String] = js.Dictionary[String]()
 ) extends SnabbdomStyles {
-  @inline def push(s: Style): Int = styles.push(s)
+  @inline def push(s: Style): Unit = s match {
+    case s: BasicStyle => styleDict(s.title) = s.value
+    case s: DelayedStyle => delayedDict(s.title) = s.value
+    case s: RemoveStyle => removeDict(s.title) = s.value
+    case s: DestroyStyle => destroyDict(s.title) = s.value
+    case a: AccumStyle =>
+      styleDict(a.title) = styleDict.get(a.title)
+        .fold[Style.Value](a.value)(s => a.accum(s.asInstanceOf[String], a.value))
+  }
 }
 
 
 private[outwatch] final case class SeparatedAttributes(
-  attrs: js.Array[Attr] = js.Array(),
-  props: js.Array[Prop] = js.Array(),
+  attrs: js.Dictionary[Attr.Value] = js.Dictionary[Attr.Value](),
+  props: js.Dictionary[Prop.Value] = js.Dictionary[Prop.Value](),
   styles: SeparatedStyles = SeparatedStyles()
 ) extends SnabbdomAttributes {
-  @inline def push(a: Attribute): Int = a match {
-    case a : Attr => attrs.push(a)
-    case p : Prop => props.push(p)
-    case s : Style => styles.push(s)
+  @inline def push(a: Attribute): Unit = a match {
+    case a: BasicAttr => attrs(a.title) = a.value
+    case a: AccumAttr => attrs(a.title) = attrs.get(a.title).fold(a.value)(a.accum(_, a.value))
+    case p: Prop => props(p.title) = p.value
+    case s: Style => styles.push(s)
   }
 }
 

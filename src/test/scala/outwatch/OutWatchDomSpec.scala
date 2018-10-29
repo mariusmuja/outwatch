@@ -35,7 +35,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.updateHooks.length shouldBe 1
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 1
-    mods.attributes.attrs.length shouldBe 1
+    mods.attributes.attrs.size shouldBe 1
     mods.keys.length shouldBe 0
     streams shouldBe Observable.empty
   }
@@ -63,7 +63,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 2
-    mods.attributes.attrs.length shouldBe 2
+    mods.attributes.attrs.size shouldBe 1
     mods.nodes.length shouldBe 3
     streams shouldNotBe Observable.empty
   }
@@ -84,7 +84,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 3
-    mods.attributes.attrs.length shouldBe 1
+    mods.attributes.attrs.size shouldBe 1
     mods.nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
@@ -105,7 +105,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
 
     mods.emitters.emitters.length shouldBe 3
-    mods.attributes.attrs.length shouldBe 1
+    mods.attributes.attrs.size shouldBe 1
     mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
   }
@@ -135,7 +135,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.updateHooks.length shouldBe 1
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 0
-    mods.attributes.attrs.length shouldBe 1
+    mods.attributes.attrs.size shouldBe 1
     mods.keys.length shouldBe 0
 //    nodes.length shouldBe 2
     streams shouldNotBe Observable.empty

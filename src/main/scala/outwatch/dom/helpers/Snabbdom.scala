@@ -13,22 +13,6 @@ import scala.scalajs.js.JSConverters._
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
   def toSnabbdom: js.Dictionary[Style.Value] = {
-    val styleDict = js.Dictionary[Style.Value]()
-
-    val delayedDict = js.Dictionary[String]()
-    val removeDict = js.Dictionary[String]()
-    val destroyDict = js.Dictionary[String]()
-
-    styles.foreach {
-      case s: BasicStyle => styleDict(s.title) = s.value
-      case s: DelayedStyle => delayedDict(s.title) = s.value
-      case s: RemoveStyle => removeDict(s.title) = s.value
-      case s: DestroyStyle => destroyDict(s.title) = s.value
-      case a: AccumStyle =>
-        styleDict(a.title) = styleDict.get(a.title)
-          .fold[Style.Value](a.value)(s => a.accum(s.asInstanceOf[String], a.value))
-    }
-
     if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : Style.Value
     if (removeDict.nonEmpty) styleDict("remove") = removeDict : Style.Value
     if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict : Style.Value
@@ -40,16 +24,7 @@ private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
 private[outwatch] trait SnabbdomAttributes { self: SeparatedAttributes =>
 
   def toSnabbdom: (js.Dictionary[Attr.Value], js.Dictionary[Prop.Value], js.Dictionary[Style.Value]) = {
-    val attrsDict = js.Dictionary[Attr.Value]()
-    val propsDict = js.Dictionary[Prop.Value]()
-
-    attrs.foreach {
-      case a: BasicAttr => attrsDict(a.title) = a.value
-      case a: AccumAttr => attrsDict(a.title) = attrsDict.get(a.title).fold(a.value)(a.accum(_, a.value))
-    }
-    props.foreach { p => propsDict(p.title) = p.value }
-
-    (attrsDict, propsDict, styles.toSnabbdom)
+    (attrs, props, styles.toSnabbdom)
   }
 }
 
