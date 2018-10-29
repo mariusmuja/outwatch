@@ -6,37 +6,6 @@ import org.scalajs.dom._
 import outwatch.dom.helpers.VNodeState
 import snabbdom.{DataObject, VNodeProxy}
 
-/*
-Modifier
-  ModifierStream
-  StreamableModifier
-    Emitter
-    CompositeModifier
-    Attribute
-      Attr
-        BasicAttr
-        AccumAttr
-      Prop
-      Style
-        BasicStyle
-        AccumStyle
-        DelayedStyle
-        RemoveStyle
-        DestroyStyle
-    Hook
-      InsertHook
-      PrePatchHook
-      UpdateHook
-      PostPatchHook
-      DestroyHook
-    StaticVNode
-      StringVNode
-      VTree
-    StringModifier
-    Key
-    EmptyModifier
- */
-
 
 private[outwatch] sealed trait Modifier extends Any
 
@@ -122,6 +91,18 @@ private[outwatch] final case class StringVNode(string: String) extends StaticVNo
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = VNodeProxy.fromString(string)
 }
 
+
+private class Memoized[T] {
+  private var value: T = _
+
+  def getOrUpdate(v: => T): T = this.synchronized {
+    if (value == null) {
+      value = v
+    }
+    value
+  }
+}
+
 // TODO: instead of Seq[VDomModifier] use Vector or JSArray?
 // Fast concatenation and lastOption operations are important
 // Needs to be benchmarked in the Browser
@@ -129,8 +110,9 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Array[Modi
 
   def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy(modifiers = modifiers ++ args.toArray[Modifier]))
 
+  private val proxy = new Memoized[VNodeProxy]
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
-    VNodeState.from(modifiers).toSnabbdom(nodeType)
+    proxy.getOrUpdate(VNodeState.from(modifiers).toSnabbdom(nodeType))
   }
 }
 
