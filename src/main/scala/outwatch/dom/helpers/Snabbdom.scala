@@ -126,7 +126,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     //if (prev.nonEmpty && streams.nonEmpty) assert(false) // Cannot have prev proxy and non-empty streams
     val snbHooks = prev.fold(hooks.toSnabbdom(streams))(_.hook)
 
-    val key = keys.lastOption.map(_.value)
+    val key = keyOption.map(_.value)
       .orElse(prev.flatMap(_.key.toOption))
       .orElse(Option(streams).filter(_.nonEmpty).map[Key.Value](_.hashCode))
 
@@ -142,12 +142,11 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     if (nodes.isEmpty) {
       hFunction(nodeType, dataObject)
     } else {
-      val stringNodes = nodes.collect { case StringVNode(s) => s }
-      if (stringNodes.size == nodes.size) {
-        hFunction(nodeType, dataObject, stringNodes.mkString)
-      } else {
+      if (hasVtrees) {
         val proxies: js.Array[VNodeProxy] = nodes.map(_.toSnabbdom)
         hFunction(nodeType, dataObject, proxies)
+      } else {
+        hFunction(nodeType, dataObject, nodes.map(_.asInstanceOf[StringVNode].string).mkString)
       }
     }
   }
@@ -155,6 +154,6 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
 private[outwatch] trait SnabbdomState { self: VNodeState =>
   private[outwatch] def toSnabbdom(nodeType: String)(implicit scheduler: Scheduler): VNodeProxy = {
-    modifiers.toSnabbdom(nodeType, Streams(stream))
+    initial.toSnabbdom(nodeType, Streams(stream))
   }
 }

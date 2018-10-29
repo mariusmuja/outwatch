@@ -6,7 +6,7 @@ import scala.collection.mutable.ArrayBuffer
 import scala.scalajs.js
 
 private[outwatch] case class VNodeState(
-  modifiers: SeparatedModifiers,
+  initial: SeparatedModifiers,
   stream: Observable[SeparatedModifiers]
 ) extends SnabbdomState
 
@@ -106,7 +106,8 @@ private[outwatch] final case class SeparatedModifiers(
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
   nodes: js.Array[StaticVNode] = js.Array(),
-  keys: js.Array[Key] = js.Array()
+  var hasVtrees: Boolean = false,
+  var keyOption: Option[Key] = None
 ) extends SnabbdomModifiers { self =>
 
   private def add(m: SimpleModifier): Int = m match {
@@ -115,8 +116,11 @@ private[outwatch] final case class SeparatedModifiers(
     case e: Emitter => emitters.push(e)
     case attr: Attribute => attributes.push(attr); 0
     case hook: Hook[_] => hooks.push(hook)
-    case sn: StaticVNode => nodes.push(sn)
-    case key: Key => keys.push(key)
+    case sn: StringVNode => nodes.push(sn)
+    case sn: VTree =>
+      hasVtrees = true
+      nodes.push(sn)
+    case key: Key => keyOption = Some(key); 0
   }
 }
 

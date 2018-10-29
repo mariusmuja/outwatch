@@ -36,7 +36,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 1
     mods.attributes.attrs.size shouldBe 1
-    mods.keys.length shouldBe 0
+    mods.keyOption shouldBe None
     streams shouldBe Observable.empty
   }
 
@@ -136,7 +136,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 0
     mods.attributes.attrs.size shouldBe 1
-    mods.keys.length shouldBe 0
+    mods.keyOption shouldBe None
 //    nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
@@ -194,7 +194,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state =  VNodeState.from(mods.toArray)
-    val nodes = state.modifiers.nodes
+    val nodes = state.initial.nodes
 
     nodes.length shouldBe 2
     state.stream shouldNotBe Observable.empty
@@ -220,7 +220,7 @@ object OutWatchDomSpec extends JSDomSuite {
     )
 
     val state = VNodeState.from(mods.toArray)
-    val nodes = state.modifiers.nodes
+    val nodes = state.initial.nodes
 
     nodes.length shouldBe 1
     state.stream shouldNotBe Observable.empty
