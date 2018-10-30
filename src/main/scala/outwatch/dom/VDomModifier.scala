@@ -103,12 +103,12 @@ private class Memoized[T] {
   }
 }
 
-// TODO: instead of Seq[VDomModifier] use Vector or JSArray?
-// Fast concatenation and lastOption operations are important
-// Needs to be benchmarked in the Browser
+
 private[outwatch] final case class VTree(nodeType: String, modifiers: Array[Modifier] = Array.empty) extends StaticVNode {
 
-  def apply(args: VDomModifier*): VNode = args.sequence.map(args => copy(modifiers = modifiers ++ args.toArray[Modifier]))
+  def apply(args: VDomModifier*): VNode = {
+    args.sequence.map(args => copy(modifiers = modifiers ++ args))
+  }
 
   private val proxy = new Memoized[VNodeProxy]
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
