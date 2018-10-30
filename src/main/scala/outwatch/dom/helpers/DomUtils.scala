@@ -56,7 +56,7 @@ object VNodeState {
   }
 
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
-    case m: SimpleModifier => Observable.pure(_.updated(index, m))
+    case m: SimpleModifier => Observable.pure { a => a.update(index, m); a }  // (_.updated(index,m))
     case m: CompositeModifier => updaterCM(index, m)
     case m: ModifierStream => updaterMS(index, m)
   }
@@ -80,7 +80,7 @@ object VNodeState {
   }
 
 
-  private[outwatch] def from(mods: Array[Modifier]): VNodeState = {
+  private[outwatch] def from(mods: Seq[Modifier]): VNodeState = {
     val (modifiers, streams) = separateStreams(mods)
 
     val modifierStream = if (streams.nonEmpty) {
