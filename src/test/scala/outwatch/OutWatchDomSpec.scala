@@ -2,13 +2,13 @@ package outwatch
 
 import monix.execution.Ack.Continue
 import monix.reactive.subjects.PublishSubject
+import org.scalajs.dom.window.localStorage
 import org.scalajs.dom.{document, html}
+import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom._
 import outwatch.dom.dsl._
-import outwatch.Deprecated.IgnoreWarnings.initEvent
 import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
-import org.scalajs.dom.window.localStorage
 
 import scala.collection.mutable
 import scala.language.reflectiveCalls
@@ -28,7 +28,7 @@ object OutWatchDomSpec extends JSDomSuite {
       PostPatchHook(PublishSubject())
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
     mods.hooks.insertHooks.length shouldBe 2
     mods.hooks.prePatchHooks.length shouldBe 1
@@ -60,7 +60,7 @@ object OutWatchDomSpec extends JSDomSuite {
       )
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
     mods.emitters.emitters.length shouldBe 2
     mods.attributes.attrs.size shouldBe 1
@@ -81,7 +81,7 @@ object OutWatchDomSpec extends JSDomSuite {
       div().unsafeRunSync()
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.size shouldBe 1
@@ -102,7 +102,7 @@ object OutWatchDomSpec extends JSDomSuite {
       StringVNode("text2")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
     mods.emitters.emitters.length shouldBe 3
     mods.attributes.attrs.size shouldBe 1
@@ -127,7 +127,7 @@ object OutWatchDomSpec extends JSDomSuite {
       StringVNode("text")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers.toArray)
+    val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
     mods.emitters.emitters.map(_.eventType).toList shouldBe List("click", "input", "keyup")
     mods.hooks.insertHooks.length shouldBe 1
@@ -186,14 +186,14 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
-    val mods = Seq(
+    val mods = Seq[Modifier](
       ModifierStream(Observable()),
       div(id := "1").unsafeRunSync(),
       div(id := "2").unsafeRunSync()
       // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
     )
 
-    val state =  VNodeState.from(mods.toArray)
+    val state =  VNodeState.from(mods)
     val nodes = state.initial.nodes
 
     nodes.length shouldBe 2
@@ -219,7 +219,7 @@ object OutWatchDomSpec extends JSDomSuite {
       div()(IO.pure(Key(5678))).unsafeRunSync()
     )
 
-    val state = VNodeState.from(mods.toArray)
+    val state = VNodeState.from(mods)
     val nodes = state.initial.nodes
 
     nodes.length shouldBe 1
