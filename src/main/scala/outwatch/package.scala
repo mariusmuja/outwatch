@@ -4,7 +4,7 @@ package object outwatch {
   type Pipe[-I, +O] = Observable[O] with Sink[I]
   type Handler[T] = Pipe[T, T]
 
-  implicit class PipeOps[-I, +O](val self: Pipe[I, O]) extends AnyVal {
+  implicit class PipeOps[I, O](val self: Pipe[I, O]) extends AnyVal {
 
     def mapSink[I2](f: I2 => I): Pipe[I2, O] = Pipe(self.redirectMap(f), self)
 
@@ -21,6 +21,7 @@ package object outwatch {
       self.redirect(_.collect(f)), self.collect(g)
     )
 
+    def filterSink(f: I => Boolean): Pipe[I, O] = Pipe(self.redirect(_.filter(f)), self)
 
     def filterSource(f: O => Boolean): Pipe[I, O] = Pipe(self, self.filter(f))
 
@@ -32,12 +33,7 @@ package object outwatch {
     def transformPipe[I2, O2](f: Observable[I2] => Observable[I])(g: Observable[O] => Observable[O2]): Pipe[I2, O2] =
       Pipe(self.redirect(f), g(self))
   }
-
-  // This is not in PipeOps, because I is contravariant
-  implicit class FilterSink[I, +O](val self: Pipe[I, O]) extends AnyVal {
-    def filterSink(f: I => Boolean): Pipe[I, O] = Pipe(self.redirect(_.filter(f)), self)
-  }
-
+  
   implicit class HandlerOps[T](val self: Handler[T]) extends AnyVal {
 
     def imap[S](read: T => S)(write: S => T): Handler[S] = self.mapPipe(write)(read)

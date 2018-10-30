@@ -1,7 +1,9 @@
 package outwatch
 
+import monix.execution.Ack.Stop
+import monix.execution.misc.NonFatal
 import monix.execution.{Ack, Cancelable, Scheduler}
-import monix.reactive.Observer
+import monix.reactive.{Observer, Pipe => MonixPipe}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
 import outwatch.dom.{IO, Observable}
@@ -25,6 +27,10 @@ sealed trait Sink[-T] extends Any {
 
   def unsafeOnNext(value: T): Future[Ack] = observer.onNext(value)
 
+  def feed(values: Iterator[T]): Future[Ack] = observer.feed(values)
+
+  def feed(values: Iterable[T]): Future[Ack] = observer.feed(values)
+
   /**
     * Creates a new sink. That sink will transform the values it receives and then forward them along to this sink.
     * The transformation is described by a function from an Observable to another Observable, i.e. an operator on Observable.
@@ -37,16 +43,6 @@ sealed trait Sink[-T] extends Any {
     Sink.redirect(this)(projection)
   }
 
-  /**
-    * Same as redirect, but it doesn't try to ensure that the observable end of the created sink gets closed when the
-    * observable end of this sink is closed
-    * @param projection the operator to use
-    * @tparam R the type of the resulting sink
-    * @return the resulting sink, that will forward the values
-    */
-  def unsafeRedirect[R](projection: Observable[R] => Observable[T]): Sink[R] = {
-    Sink.unsafeRedirect(this)(projection)
-  }
   /**
     * Creates a new sink. That sink will transform each value it receives and then forward it along to the this sink.
     * The transformation is a simple map from one type to another, i.e. a 'map'.
@@ -101,17 +97,6 @@ object Sink {
     }
   }
 
-  private def completionObservable[T](sink: Sink[T]): Option[Observable[Unit]] = {
-    sink match {
-      case subject@SubjectSink() =>
-        Some(subject.ignoreElements.defaultIfEmpty(()))
-      case observable@ObservableSink(_, _) =>
-        Some(observable.ignoreElements.defaultIfEmpty(()))
-      case ObserverSink(_) =>
-        None
-    }
-  }
-
   /**
     * Creates a new sink. This sink will transform the values it receives and then forward them along to the passed sink.
     * The transformation is described by a function from an Observable to another Observable, i.e. an operator on Observable.
@@ -124,86 +109,32 @@ object Sink {
     */
   def redirect[T,R](sink: Sink[T])(project: Observable[R] => Observable[T]): Sink[R] = {
     implicit val scheduler = sink.observer.scheduler
-    val forward = SubjectSink[R]()
 
-    completionObservable(sink)
-      .fold(project(forward))(completed => project(forward).takeUntil(completed))
-      .subscribe(sink.observer)
+    val (input, output) = MonixPipe.publish[R].transform(project).multicast
+    output.unsafeSubscribeFn(sink.observer)
 
-    forward
+    ObserverSink(input)
   }
 
-  /**
-    * Same as redirect, but it doesn't try to ensure that the observable end of the created sink gets closed when the
-    * observable end of argument sink is closed.
-    *
-    * @param sink    the Sink to forward values to
-    * @param project the operator to use
-    * @tparam R the type of the resulting sink
-    * @tparam T the type of the original sink
-    * @return the resulting sink, that will forward the values
-    */
+  private class ContramapObserver[R, T](obs: Observer[T])(f: R => T) extends Observer[R] {
+    override def onNext(elem: R): Future[Ack] = {
+      var streamError = true
+      try {
+        val a = f(elem)
+        streamError = false
+        obs.onNext(a)
+      } catch {
+        case NonFatal(ex) if streamError =>
+          onError(ex)
+          Stop
+      }
+    }
 
-  def unsafeRedirect[T,R](sink: Sink[T])(project: Observable[R] => Observable[T]): Sink[R] = {
-    implicit val scheduler = sink.observer.scheduler
-    val forward = SubjectSink[R]()
+    override def onError(ex: Throwable): Unit = obs.onError(ex)
 
-    project(forward).subscribe(sink.observer)
-
-    forward
+    override def onComplete(): Unit = obs.onComplete()
   }
 
-  /**
-    * Creates two new sinks. These sinks will transform the values it receives and then forward them along to the passed sink.
-    * The transformation is described by a function from two Observables to another Observable, i.e. an operator on Observable.
-    * (e.g. `merge`)
-    * This function applies the operator to the newly created sinks and forwards the value to the original sink.
-    * @param sink the Sink to forward values to
-    * @param project the operator to use
-    * @tparam R the type of one of the resulting sinks
-    * @tparam U the type of the other of the resulting sinks
-    * @tparam T the type of the original sink
-    * @return the two resulting sinks, that will forward the values
-    */
-  def redirect2[T,U,R](sink: Sink[T])(project: (Observable[R], Observable[U]) => Observable[T]): (Sink[R], Sink[U]) = {
-    implicit val scheduler = sink.observer.scheduler
-    val r = SubjectSink[R]()
-    val u = SubjectSink[U]()
-
-    completionObservable(sink)
-      .fold(project(r, u))(completed => project(r, u).takeUntil(completed))
-      .subscribe(sink.observer)
-
-    (r, u)
-  }
-
-  /**
-    * Creates three new sinks. These sinks will transform the values it receives and then forward them along to the passed sink.
-    * The transformation is described by a function from three Observables to another Observable, i.e. an operator on Observable.
-    * (e.g. `combineLatest`)
-    * This function applies the operator to the newly created sinks and forwards the value to the original sink.
-    * @param sink the Sink to forward values to
-    * @param project the operator to use
-    * @tparam R the type of one of the resulting sinks
-    * @tparam U the type of one of the other of the resulting sinks
-    * @tparam V the type of the other of the resulting sinks
-    * @tparam T the type of the original sink
-    * @return the two resulting sinks, that will forward the values
-    */
-  def redirect3[T,U,V,R](sink: Sink[T])
-                       (project: (Observable[R], Observable[U], Observable[V]) => Observable[T])
-                       :(Sink[R], Sink[U], Sink[V]) = {
-    implicit val scheduler = sink.observer.scheduler
-    val r = SubjectSink[R]()
-    val u = SubjectSink[U]()
-    val v = SubjectSink[V]()
-
-    completionObservable(sink)
-      .fold(project(r, u, v))(completed => project(r, u, v).takeUntil(completed))
-      .subscribe(sink.observer)
-
-    (r, u, v)
-  }
 
   /**
     * Creates a new sink. This sink will transform each value it receives and then forward it along to the passed sink.
@@ -216,7 +147,8 @@ object Sink {
     * @return the resulting sink, that will forward the values
     */
   def redirectMap[T, R](sink: Sink[T])(f: R => T): Sink[R] = {
-    redirect(sink)(_.map(f))
+    implicit val scheduler = sink.observer.scheduler
+    ObserverSink(new ContramapObserver(sink.observer)(f))
   }
 
 }
