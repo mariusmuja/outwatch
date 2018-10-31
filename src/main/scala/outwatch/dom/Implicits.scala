@@ -5,8 +5,6 @@ import com.raquo.domtypes.generic.keys
 import outwatch.AsVDomModifier
 import outwatch.dom.helpers.BasicStyleBuilder
 
-import scala.collection.mutable.ArrayBuffer
-
 trait Implicits {
 
   implicit def asVDomModifier[T](value: T)(implicit vm: AsVDomModifier[T]): VDomModifier = vm.asVDomModifier(value)
@@ -21,13 +19,7 @@ trait Implicits {
     val sequence: IO[Seq[T]] = {
       if (args.isEmpty) IO.pure(Seq.empty)
       else if (args.lengthCompare(1) == 0) args.head.map(t => Seq(t))
-      else args.foldLeft(
-        IO {
-          val empty = ArrayBuffer.empty[T]
-          empty.sizeHint(args.length)
-          empty
-        }
-      )((a, l) => a.map2(l)(_ += _))
+      else args.foldRight(IO.pure(List.empty[T]))((a, l) => a.map2(l)(_ :: _))
     }
   }
 
