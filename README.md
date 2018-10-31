@@ -8,19 +8,9 @@ Create a new SBT project and add the ScalaJS plugin to your `plugins.sbt`.
 Then add the following line to your `build.sbt`.
 
 ```scala
-libraryDependencies += "io.github.outwatch" %%% "outwatch" % "0.10.2"
-```
-
-If you are curious and want to try the state of the current `master` branch, add the following instead:
-
-```scala
+libraryDependencies += "com.github.mariusmuja" % "outwatch" % "master-SNAPSHOT"
 resolvers += "jitpack" at "https://jitpack.io"
-libraryDependencies += "com.github.outwatch" % "outwatch" % "master-SNAPSHOT"
 ```
-
-And you're done, you can now start building your own OutWatch app!
-Please check out the [documentation](https://outwatch.github.io/) on how to proceed.
-
 
 ## Three main goals of OutWatch
 
@@ -32,7 +22,7 @@ Please check out the [documentation](https://outwatch.github.io/) on how to proc
 
 ## Bugs and Feedback
 
-For bugs, questions and discussions please use the [Github Issues](https://github.com/OutWatch/outwatch/issues).
+For bugs, questions and discussions please use the [Github Issues](https://github.com/OutWatch/mariusmuja/issues).
 
 ## Community
 
