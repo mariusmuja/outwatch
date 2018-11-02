@@ -99,7 +99,8 @@ object OutWatchDomSpec extends JSDomSuite {
       ModifierStream(Observable()),
       ModifierStream(Observable()),
       StringVNode("text"),
-      StringVNode("text2")
+      StringVNode("text2"),
+      Key("123")
     )
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
@@ -108,6 +109,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.attributes.attrs.size shouldBe 1
     mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
+    mods.keyOption shouldBe Some(Key("123"))
   }
 
   test("VDomModifiers should be separated correctly with children and properties") {
@@ -136,7 +138,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 0
     mods.attributes.attrs.size shouldBe 1
-    mods.keyOption shouldBe None
+    mods.keyOption shouldNotBe None // because ModifierStreams present
 //    nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }

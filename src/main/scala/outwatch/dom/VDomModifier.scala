@@ -32,6 +32,10 @@ private[outwatch] sealed trait Hook[T] extends SimpleModifier {
   def observer: Observer[T]
 }
 
+private[outwatch] sealed trait LifecycleHook extends SimpleModifier {
+  def fn: (VNodeProxy, Scheduler) => Unit
+}
+
 private[outwatch] sealed trait StaticVNode extends SimpleModifier {
   def toSnabbdom(implicit s: Scheduler): VNodeProxy
 }
@@ -78,6 +82,8 @@ private[outwatch] final case class DelayedStyle(title: String, value: String) ex
 private[outwatch] final case class RemoveStyle(title: String, value: String) extends Style
 private[outwatch] final case class DestroyStyle(title: String, value: String) extends Style
 
+
+
 // Hooks
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]
 private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])]) extends Hook[(Option[Element], Option[Element])]
@@ -85,6 +91,8 @@ private[outwatch] final case class UpdateHook(observer: Observer[(Element, Eleme
 private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
 
+private[outwatch] final case class InsertProxyHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
+private[outwatch] final case class DestroyProxyHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends StaticVNode {

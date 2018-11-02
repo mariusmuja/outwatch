@@ -6,7 +6,7 @@ normalizedName := "outwatch"
 
 
 // use sbt-git for versioning
-//version := "1.0.0-SNAPSHOT"
+version := "1.0.0-RC1-" + git.gitHeadCommit.value.get.take(8)
 enablePlugins(GitVersioning)
 
 organization := "com.github.mariusmuja"

@@ -1,6 +1,10 @@
 package outwatch.dom.helpers
 
+import monix.execution.Ack.Continue
+import monix.execution.{Cancelable, Scheduler}
+import org.scalajs.dom
 import outwatch.dom._
+import snabbdom.{VNodeProxy, patch}
 
 import scala.collection.mutable.ArrayBuffer
 import scala.scalajs.js
@@ -41,22 +45,26 @@ object VNodeState {
       }
     }
 
-    // ensure key present for VTrees with stream siblings
+    // ensure key present for VTrees with stream siblings, as well as for the VTree containing the streams
     if (streams.nonEmpty) {
+      var hasKey = false
       simple.indices.foreach { index =>
         simple(index) match {
           case vtree: VTree =>
             simple(index) = vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
+          case _: Key => hasKey = true
           case _ =>
         }
       }
+      // key must be appended at the end, original positions can be updated by the streams
+      if (!hasKey) simple += Key(streams.hashCode())
     }
 
     (simple.toArray, streams.toArray)
   }
 
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
-    case m: SimpleModifier => Observable.pure { a => a.update(index, m); a }  // (_.updated(index,m))
+    case m: SimpleModifier => Observable.pure { a => a.update(index, m); a } // (_.updated(index,m))
     case m: CompositeModifier => updaterCM(index, m)
     case m: ModifierStream => updaterMS(index, m)
   }
@@ -79,8 +87,39 @@ object VNodeState {
     else Observable.pure(_.updated(index, SimpleCompositeModifier(modifiers)))
   }
 
+  def lifecycleHooks(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
 
-  private[outwatch] def from(mods: Seq[Modifier]): VNodeState = {
+    var cancelable: Option[Cancelable] = None
+    val insertHook = InsertProxyHook{ (vproxy, scheduler) =>
+      implicit val s: Scheduler = scheduler
+
+      def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
+        val proxy = modifiers.toSnabbdom(prev.sel)
+        patch(prev, proxy)
+      }
+
+      cancelable = Some(
+        observable
+        .scan(vproxy)(patchProxy)
+        .subscribe(
+          newProxy => {
+            vproxy.copyFrom(newProxy)
+            Continue
+          },
+          e => dom.console.error(e.getMessage + "\n" + e.getStackTrace.mkString("\n"))
+        )
+      )
+    }
+
+    val destroyHook = DestroyProxyHook { (_, _) =>
+      cancelable.foreach(_.cancel())
+      cancelable = None
+    }
+
+    Seq(insertHook, destroyHook)
+  }
+
+  private[outwatch] def from(mods: Seq[Modifier])(implicit scheduler: Scheduler): VNodeState = {
     val (modifiers, streams) = separateStreams(mods)
 
     val modifierStream = if (streams.nonEmpty) {
@@ -89,7 +128,12 @@ object VNodeState {
         .map(SeparatedModifiers.from)
     } else Observable.empty
 
-    VNodeState(SeparatedModifiers.from(modifiers), modifierStream)
+    val withLifecycle = if (streams.nonEmpty) {
+      // hooks must be appended at the end, original positions can be updated by the streams
+      modifiers ++ lifecycleHooks(modifierStream)
+    } else modifiers
+
+    VNodeState(SeparatedModifiers.from(withLifecycle), modifierStream)
   }
 }
 
@@ -116,6 +160,7 @@ private[outwatch] final case class SeparatedModifiers(
     case e: Emitter => emitters.push(e)
     case attr: Attribute => attributes.push(attr); 0
     case hook: Hook[_] => hooks.push(hook)
+    case hook: LifecycleHook => hooks.push(hook)
     case sn: StringVNode => nodes.push(sn)
     case sn: VTree =>
       hasVtrees = true
@@ -155,7 +200,7 @@ private[outwatch] final case class SeparatedAttributes(
   attrs: js.Dictionary[Attr.Value] = js.Dictionary[Attr.Value](),
   props: js.Dictionary[Prop.Value] = js.Dictionary[Prop.Value](),
   styles: SeparatedStyles = SeparatedStyles()
-) extends SnabbdomAttributes {
+) {
   @inline def push(a: Attribute): Unit = a match {
     case a: BasicAttr => attrs(a.title) = a.value
     case a: AccumAttr => attrs(a.title) = attrs.get(a.title).fold(a.value)(a.accum(_, a.value))
@@ -166,10 +211,12 @@ private[outwatch] final case class SeparatedAttributes(
 
 private[outwatch] final case class SeparatedHooks(
   insertHooks: js.Array[InsertHook] = js.Array(),
+  insertProxyHooks: js.Array[InsertProxyHook] = js.Array(),
   prePatchHooks: js.Array[PrePatchHook] = js.Array(),
   updateHooks: js.Array[UpdateHook] = js.Array(),
   postPatchHooks: js.Array[PostPatchHook] = js.Array(),
-  destroyHooks: js.Array[DestroyHook] = js.Array()
+  destroyHooks: js.Array[DestroyHook] = js.Array(),
+  destroyProxyHooks: js.Array[DestroyProxyHook] = js.Array()
 ) extends SnabbdomHooks {
   @inline def push(h: Hook[_]): Int = h match {
     case ih: InsertHook => insertHooks.push(ih)
@@ -177,6 +224,11 @@ private[outwatch] final case class SeparatedHooks(
     case uh: UpdateHook => updateHooks.push(uh)
     case pph: PostPatchHook => postPatchHooks.push(pph)
     case dh: DestroyHook => destroyHooks.push(dh)
+  }
+
+  @inline def push(h: LifecycleHook): Int = h match {
+    case h: InsertProxyHook => insertProxyHooks.push(h)
+    case h: DestroyProxyHook => destroyProxyHooks.push(h)
   }
 }
 
