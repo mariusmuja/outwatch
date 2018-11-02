@@ -79,3 +79,5 @@ publishMavenStyle := true
 licenses += ("Apache 2", url("https://www.apache.org/licenses/LICENSE-2.0.txt"))
 
 pomIncludeRepository := { _ => false }
+
+maxErrors := 5

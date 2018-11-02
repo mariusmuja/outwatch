@@ -9,9 +9,12 @@ trait Implicits {
 
   implicit def asVDomModifier[T](value: T)(implicit vm: AsVDomModifier[T]): VDomModifier = vm.asVDomModifier(value)
 
-  implicit class ioVTreeMerge(vnode: VNode) {
-    def apply(args: VDomModifier*): VNode = vnode.flatMap(_.apply(args: _*))
-  }
+
+  implicit def vTreeToVNode(vtree: VNode): IO[VNode] = IO.pure(vtree)
+
+//  implicit class ioVTreeMerge(vnode: VNode) {
+//    def apply(args: VDomModifier*): VNode = vnode.flatMap(n => n.apply(args: _*))
+//  }
 
   implicit def StyleIsBuilder[T](style: keys.Style[T]): BasicStyleBuilder[T] = new BasicStyleBuilder[T](style.cssName)
 

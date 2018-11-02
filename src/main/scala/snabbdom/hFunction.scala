@@ -14,12 +14,16 @@ object hProvider extends js.Object {
 
 @js.native
 trait hFunction extends js.Any {
+  def apply(nodeType: String): VNodeProxy = js.native
   def apply(nodeType: String, dataObject: DataObject): VNodeProxy = js.native
   def apply(nodeType: String, dataObject: DataObject, text: js.UndefOr[String]): VNodeProxy = js.native
   def apply(nodeType: String, dataObject: DataObject, children: js.Array[VNodeProxy]): VNodeProxy = js.native
 }
 
 object hFunction {
+  def apply(nodeType: String): VNodeProxy = {
+    hProvider.default.apply(nodeType)
+  }
   def apply(nodeType: String, dataObject: DataObject): VNodeProxy = {
     hProvider.default.apply(nodeType, dataObject)
   }
@@ -84,6 +88,9 @@ object DataObject {
   type AttrValue = String | Boolean
   type StyleValue = String | js.Dictionary[String]
   type KeyValue = String | Double  // https://github.com/snabbdom/snabbdom#key--string--number
+
+
+  val empty = apply(js.Dictionary.empty, js.Dictionary.empty)
 
   def apply(attrs: js.Dictionary[AttrValue],
             on: js.Dictionary[js.Function1[Event, Unit]],

@@ -284,7 +284,7 @@ object LifecycleHookSpec extends JSDomSuite {
       destroySink <- destroySink
       prepatchSink <- prepatchSink
       postpatchSink <- postpatchSink
-      mod <- modifiers(
+      mod = modifiers(
         onInsert --> insertSink,
         onPrePatch --> prepatchSink,
         onUpdate --> updateSink,
@@ -293,7 +293,7 @@ object LifecycleHookSpec extends JSDomSuite {
       )
     } yield mod
 
-    (hooks, logSinks)
+    (hooks, ModifierIO(logSinks))
   }
 
 

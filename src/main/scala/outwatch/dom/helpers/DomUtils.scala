@@ -61,6 +61,7 @@ object VNodeState {
       flattened(index) match {
         case m: SimpleModifier => modifiers(index) = m
         case m: ModifierStream => streams += index -> m
+        case m: ModifierIO => streams += index -> ModifierStream(Observable.fromTaskLike(m.inner))
       }
     }
 
@@ -77,9 +78,7 @@ object VNodeState {
   }
 
   private def updaterMS(index: Int, ms: ModifierStream): Observable[Updater] = {
-    ms.stream.switchMap[Updater] { vm =>
-      Observable.fromTaskLike(vm).concatMap(m => updaterM(index, m))
-    }
+    ms.stream.switchMap[Updater](m => updaterM(index, m))
   }
 
   private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
@@ -94,10 +93,10 @@ object VNodeState {
     else Observable.pure(_.updated(index, SimpleCompositeModifier(modifiers)))
   }
 
-  def lifecycleHooks(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
+  private def lifecycleHooks(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
 
     var cancelable: Option[Cancelable] = None
-    val insertHook = InsertProxyHook{ (vproxy, scheduler) =>
+    val insertHook = InsertProxyHook { (vproxy, scheduler) =>
       implicit val s: Scheduler = scheduler
 
       def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
@@ -110,14 +109,16 @@ object VNodeState {
       }
       cancelable = Some(
         observable
-        .scan(vproxy)(patchProxy)
-        .subscribe(
-          newProxy => {
-            vproxy.copyFrom(newProxy)
-            Continue
-          },
-          e => dom.console.error(e.getMessage + "\n" + e.getStackTrace.mkString("\n"))
-        )
+          .scan(vproxy)(patchProxy)
+          .subscribe(
+            newProxy => {
+              vproxy.copyFrom(newProxy)
+              Continue
+            },
+            e => {
+              dom.console.error(e.getMessage + "\n" + e.getStackTrace.mkString("\n"))
+            }
+          )
       )
     }
 
@@ -135,7 +136,6 @@ object VNodeState {
     if (streams.isEmpty) {
       VNodeState(SeparatedModifiers.from(modifiers), Observable.empty)
     } else {
-
       val modifierStream =
         Observable(streams.map { case (index, ms) => updaterMS(index, ms) }: _*).merge
           .scan(modifiers)((mods, func) => func(mods))
@@ -154,7 +154,7 @@ private[outwatch] final case class SeparatedModifiers(
   attributes: SeparatedAttributes = SeparatedAttributes(),
   hooks: SeparatedHooks = SeparatedHooks(),
   nodes: js.Array[StaticVNode] = js.Array(),
-  var hasVtrees: Boolean = false,
+  var hasVTrees: Boolean = false,
   var keyOption: Option[Key] = None
 ) extends SnabbdomModifiers { self =>
 
@@ -167,14 +167,14 @@ private[outwatch] final case class SeparatedModifiers(
     case hook: LifecycleHook => hooks.push(hook)
     case sn: StringVNode => nodes.push(sn)
     case sn: VTree =>
-      hasVtrees = true
+      hasVTrees = true
       nodes.push(sn)
     case key: Key => keyOption = Some(key); 0
   }
 }
 
 object SeparatedModifiers {
-  def from(mods: Array[SimpleModifier]): SeparatedModifiers = {
+  private[outwatch] def from(mods: Array[SimpleModifier]): SeparatedModifiers = {
     val sm = SeparatedModifiers()
     mods.foreach(sm.add)
     sm

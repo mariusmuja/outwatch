@@ -7,8 +7,27 @@ import outwatch.util.Store
 import snabbdom.patch
 
 object OutWatch {
+//
+//  def renderInto(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
+//    node <- IO(vNode)
+//  } yield {
+//    val proxy = node.toSnabbdom
+//    val elem = dom.document.createElement("app")
+//    element.appendChild(elem)
+//    patch(elem, proxy)
+//    ()
+//  }
+//
+//  def renderReplace(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
+//    node <- IO(vNode)
+//  } yield {
+//    val proxy = node.toSnabbdom
+//    patch(element, proxy)
+//    ()
+//  }
 
-  def renderInto(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
+
+  def renderInto(element: dom.Element, vNode: IO[VNode])(implicit s: Scheduler): IO[Unit] = for {
     node <- vNode
   } yield {
     val proxy = node.toSnabbdom
@@ -18,7 +37,7 @@ object OutWatch {
     ()
   }
 
-  def renderReplace(element: dom.Element, vNode: VNode)(implicit s: Scheduler): IO[Unit] = for {
+  def renderReplace(element: dom.Element, vNode: IO[VNode])(implicit s: Scheduler): IO[Unit] = for {
     node <- vNode
   } yield {
     val proxy = node.toSnabbdom
@@ -26,10 +45,10 @@ object OutWatch {
     ()
   }
 
-  def renderInto(querySelector: String, vNode: VNode)(implicit s: Scheduler): IO[Unit] =
+  def renderInto(querySelector: String, vNode: IO[VNode])(implicit s: Scheduler): IO[Unit] =
     renderInto(document.querySelector(querySelector), vNode)
 
-  def renderReplace(querySelector: String, vNode: VNode)(implicit s: Scheduler): IO[Unit] =
+  def renderReplace(querySelector: String, vNode: IO[VNode])(implicit s: Scheduler): IO[Unit] =
     renderReplace(document.querySelector(querySelector), vNode)
 
   @deprecated("Use renderInto instead (or renderReplace)", "0.11.0")

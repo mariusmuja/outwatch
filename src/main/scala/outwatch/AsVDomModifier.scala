@@ -11,7 +11,7 @@ object AsVDomModifier {
   @inline def apply[T](implicit avm: AsVDomModifier[T]): AsVDomModifier[T] = avm
 
   implicit def seqModifier[T : AsVDomModifier](implicit vm: AsVDomModifier[T]): AsVDomModifier[Seq[T]] =
-    (value: Seq[T]) => value.map(vm.asVDomModifier).sequence.map(CompositeModifier)
+    (value: Seq[T]) => CompositeModifier(value.map(vm.asVDomModifier))
 
   implicit def optionModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[Option[T]] =
     (value: Option[T]) => value.fold(VDomModifier.empty)(vm.asVDomModifier)
@@ -21,18 +21,18 @@ object AsVDomModifier {
   }
 
   implicit object StringAsVDomModifier extends AsVDomModifier[String] {
-    def asVDomModifier(value: String): VDomModifier = IO.pure(StringVNode(value))
+    def asVDomModifier(value: String): VDomModifier = StringVNode(value)
   }
 
   implicit object IntAsVDomModifier extends AsVDomModifier[Int] {
-    def asVDomModifier(value: Int): VDomModifier = IO.pure(StringVNode(value.toString))
+    def asVDomModifier(value: Int): VDomModifier = StringVNode(value.toString)
   }
 
   implicit object DoubleAsVDomModifier extends AsVDomModifier[Double] {
-    def asVDomModifier(value: Double): VDomModifier = IO.pure(StringVNode(value.toString))
+    def asVDomModifier(value: Double): VDomModifier = StringVNode(value.toString)
   }
 
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
-    IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+    ModifierStream(valueStream.map(r.asVDomModifier))
 
 }

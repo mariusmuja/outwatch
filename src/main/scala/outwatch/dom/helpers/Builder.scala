@@ -10,16 +10,16 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   protected def name: String
   private[outwatch] def assign(value: T): A
 
-  def :=(value: T): IO[A] = IO.pure(assign(value))
+  def :=(value: T): A = assign(value)
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
-  def <--(valueStream: Observable[T]): IO[ModifierStream] = {
-    IO.pure(ModifierStream(valueStream.map(s => IO.pure(assign(s)))))
+  def <--(valueStream: Observable[T]): ModifierStream = {
+    ModifierStream(valueStream.map(s => assign(s)))
   }
 }
 
 object AttributeBuilder {
-  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): IO[Attr] = builder := true
-  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): IO[Prop] = builder := true
+  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): Attr = builder := true
+  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): Prop = builder := true
 }
 
 // Attr
@@ -97,7 +97,7 @@ final class AccumStyleBuilder[T](val name: String, reducer: (String, String) => 
 // Keys
 
 object KeyBuilder {
-  def :=(key: Key.Value): IO[Key] = IO.pure(Key(key))
+  def :=(key: Key.Value): Key = Key(key)
 }
 
 // Child / Children
@@ -106,10 +106,9 @@ object ChildStreamBuilder {
 
   implicit object ChildrenTag
 
-  def <--(valueStream: Observable[VNode]): IO[ModifierStream] =
-    IO.pure(ModifierStream(valueStream))
+  def <--(valueStream: Observable[VNode]): ModifierStream = ModifierStream(valueStream)
 
-  def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): IO[ModifierStream] =
-    IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+  def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): ModifierStream =
+    ModifierStream(valueStream.map(r.asVDomModifier))
 }
 

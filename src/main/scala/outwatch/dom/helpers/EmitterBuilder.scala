@@ -10,7 +10,7 @@ trait EmitterBuilder[E, O, R] extends Any {
 
   def transform[T](tr: Observable[O] => Observable[T]): EmitterBuilder[E, T, R]
 
-  def -->(sink: Sink[_ >: O]): IO[R]
+  def -->(sink: Sink[_ >: O]): R
 
   def apply[T](value: T): EmitterBuilder[E, T, R] = map(_ => value)
 
@@ -42,9 +42,9 @@ final case class TransformingEmitterBuilder[E, O, R] private[helpers](
     transformer = tr compose transformer
   )
 
-  def -->(sink: Sink[_ >: O]): IO[R] = {
+  def -->(sink: Sink[_ >: O]): R = {
     val redirected: Sink[E] = sink.redirect[E](transformer)
-    IO.pure(create(redirected.observer))
+    create(redirected.observer)
   }
 }
 
@@ -53,5 +53,5 @@ final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends An
   def transform[T](tr: Observable[E] => Observable[T]): EmitterBuilder[E, T, R] =
     new TransformingEmitterBuilder[E, T, R](tr, create)
 
-  def -->(sink: Sink[_ >: E]): IO[R] = IO.pure(create(sink.observer))
+  def -->(sink: Sink[_ >: E]): R = create(sink.observer)
 }

@@ -1,17 +1,15 @@
 package outwatch
 
-import scala.collection.mutable.ArrayBuffer
-
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
-  type VNode = IO[VTree]
-  type VDomModifier = IO[Modifier]
+  type VNode = StaticVNode
+  type VDomModifier = Modifier
 
   object VDomModifier {
-    val empty: VDomModifier = IO.pure(EmptyModifier)
+    val empty: VDomModifier = EmptyModifier
 
     def apply(modifier: VDomModifier, modifier2: VDomModifier, modifiers: VDomModifier*): VDomModifier = {
-      (ArrayBuffer(modifier, modifier2) ++ modifiers).sequence.map(CompositeModifier)
+      CompositeModifier(Seq(modifier, modifier2) ++ modifiers)
     }
 
     def apply[T: AsVDomModifier](t: T): VDomModifier = AsVDomModifier[T].asVDomModifier(t)

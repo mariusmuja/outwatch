@@ -56,7 +56,7 @@ object OutWatchDomSpec extends JSDomSuite {
           attributes.`class` := "blue",
           attributes.onClick(1) --> Sink.create[Int](_ => Continue).unsafeRunSync(),
           attributes.hidden <-- Observable(false)
-        ).map(_.unsafeRunSync())
+        )
       )
     )
 
@@ -143,49 +143,49 @@ object OutWatchDomSpec extends JSDomSuite {
     streams shouldNotBe Observable.empty
   }
 
-  test("VDomModifiers should be run once") {
-    val list = new mutable.ListBuffer[String]
-
-    val vtree = div(
-      IO {
-        list += "child1"
-        ModifierStream(Observable(div()))
-      },
-      IO {
-        list += "child2"
-        ModifierStream(Observable())
-      },
-      IO {
-        list += "children1"
-        ModifierStream(Observable())
-      },
-      IO {
-        list += "children2"
-        ModifierStream(Observable())
-      },
-      div(
-        IO {
-          list += "attr1"
-          BasicAttr("attr1", "peter")
-        },
-        Seq(
-          IO {
-            list += "attr2"
-            BasicAttr("attr2", "hans")
-          }
-        )
-      )
-    )
-
-    val node = document.createElement("div")
-    document.body.appendChild(node)
-
-    list.isEmpty shouldBe true
-
-    OutWatch.renderInto(node, vtree).unsafeRunSync()
-
-    list.toSeq shouldBe Seq("child1", "child2", "children1", "children2", "attr1", "attr2")
-  }
+//  test("VDomModifiers should be run once") {
+//    val list = new mutable.ListBuffer[String]
+//
+//    val vtree = div(
+//      IO {
+//        list += "child1"
+//        ModifierStream(Observable(div()))
+//      },
+//      IO {
+//        list += "child2"
+//        ModifierStream(Observable())
+//      },
+//      IO {
+//        list += "children1"
+//        ModifierStream(Observable())
+//      },
+//      IO {
+//        list += "children2"
+//        ModifierStream(Observable())
+//      },
+//      div(
+//        IO {
+//          list += "attr1"
+//          BasicAttr("attr1", "peter")
+//        },
+//        Seq(
+//          IO {
+//            list += "attr2"
+//            BasicAttr("attr2", "hans")
+//          }
+//        )
+//      )
+//    )
+//
+//    val node = document.createElement("div")
+//    document.body.appendChild(node)
+//
+//    list.isEmpty shouldBe true
+//
+//    OutWatch.renderInto(node, vtree).unsafeRunSync()
+//
+//    list.toSeq shouldBe Seq("child1", "child2", "children1", "children2", "attr1", "attr2")
+//  }
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
     val mods = Seq[Modifier](
@@ -218,7 +218,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val mods = Seq(
       Key(1234),
       ModifierStream(Observable()),
-      div()(IO.pure(Key(5678))).unsafeRunSync()
+      div()(Key(5678)).unsafeRunSync()
     )
 
     val state = VNodeState.from(mods)
@@ -239,7 +239,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val attributes = List(BasicAttr("class", "red"), BasicAttr("id", "msg"))
     val message = "Hello"
     val child = span(message)
-    val vtree = div(IO.pure(attributes.head), IO.pure(attributes(1)), child)
+    val vtree = div(attributes.head, attributes(1), child)
 
     val proxy = fixture.proxy
 
@@ -250,73 +250,73 @@ object OutWatchDomSpec extends JSDomSuite {
     val attributes = List(BasicAttr("class", "red"), BasicAttr("id", "msg"))
     val message = "Hello"
     val child = span(message)
-    val vtree = div(IO.pure(attributes.head), IO.pure(attributes(1)), child)
+    val vtree = div(attributes.head, attributes(1), child)
 
     JSON.stringify(vtree.map(_.toSnabbdom).unsafeRunSync()) shouldBe JSON.stringify(fixture.proxy)
   }
 
 
-  test("VTrees should run its modifiers once!" ) {
-    val stringHandler = Handler.create[String]().unsafeRunSync()
-    var ioCounter = 0
-    var handlerCounter = 0
-    stringHandler { _ =>
-      handlerCounter += 1
-    }
+//  test("VTrees should run its modifiers once!" ) {
+//    val stringHandler = Handler.create[String]().unsafeRunSync()
+//    var ioCounter = 0
+//    var handlerCounter = 0
+//    stringHandler { _ =>
+//      handlerCounter += 1
+//    }
+//
+//    val vtree = div(
+//      div(
+//        IO {
+//          ioCounter += 1
+//          BasicAttr("hans", "")
+//        }
+//      ),
+//      stringHandler
+//    )
+//
+//    val node = document.createElement("div")
+//    document.body.appendChild(node)
+//
+//    ioCounter shouldBe 0
+//    handlerCounter shouldBe 0
+//    OutWatch.renderInto(node, vtree).unsafeRunSync()
+//    ioCounter shouldBe 1
+//    handlerCounter shouldBe 0
+//    stringHandler.observer.onNext("pups")
+//    ioCounter shouldBe 1
+//    handlerCounter shouldBe 1
+//  }
 
-    val vtree = div(
-      div(
-        IO {
-          ioCounter += 1
-          BasicAttr("hans", "")
-        }
-      ),
-      stringHandler
-    )
-
-    val node = document.createElement("div")
-    document.body.appendChild(node)
-
-    ioCounter shouldBe 0
-    handlerCounter shouldBe 0
-    OutWatch.renderInto(node, vtree).unsafeRunSync()
-    ioCounter shouldBe 1
-    handlerCounter shouldBe 0
-    stringHandler.observer.onNext("pups")
-    ioCounter shouldBe 1
-    handlerCounter shouldBe 1
-  }
-
-  test("VTrees should run its modifiers once in CompositeModifier!") {
-    val stringHandler = Handler.create[String]().unsafeRunSync()
-    var ioCounter = 0
-    var handlerCounter = 0
-    stringHandler { _ =>
-      handlerCounter += 1
-    }
-
-    val vtree = div(
-      div(Seq(
-        IO {
-          ioCounter += 1
-          BasicAttr("hans", "")
-        }
-      )),
-      stringHandler
-    )
-
-    val node = document.createElement("div")
-    document.body.appendChild(node)
-
-    ioCounter shouldBe 0
-    handlerCounter shouldBe 0
-    OutWatch.renderInto(node, vtree).unsafeRunSync()
-    ioCounter shouldBe 1
-    handlerCounter shouldBe 0
-    stringHandler.observer.onNext("pups")
-    ioCounter shouldBe 1
-    handlerCounter shouldBe 1
-  }
+//  test("VTrees should run its modifiers once in CompositeModifier!") {
+//    val stringHandler = Handler.create[String]().unsafeRunSync()
+//    var ioCounter = 0
+//    var handlerCounter = 0
+//    stringHandler { _ =>
+//      handlerCounter += 1
+//    }
+//
+//    val vtree = div(
+//      div(Seq(
+//        IO {
+//          ioCounter += 1
+//          BasicAttr("hans", "")
+//        }
+//      )),
+//      stringHandler
+//    )
+//
+//    val node = document.createElement("div")
+//    document.body.appendChild(node)
+//
+//    ioCounter shouldBe 0
+//    handlerCounter shouldBe 0
+//    OutWatch.renderInto(node, vtree).unsafeRunSync()
+//    ioCounter shouldBe 1
+//    handlerCounter shouldBe 0
+//    stringHandler.observer.onNext("pups")
+//    ioCounter shouldBe 1
+//    handlerCounter shouldBe 1
+//  }
 
   test("VTrees should be correctly patched into the DOM") {
     val id = "msg"
@@ -324,7 +324,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val attributes = List(BasicAttr("class", cls), BasicAttr("id", id))
     val message = "Hello"
     val child = span(message)
-    val vtree = div(IO.pure(attributes.head), IO.pure(attributes(1)), child)
+    val vtree = div(attributes.head, attributes(1), child)
 
 
     val node = document.createElement("div")
@@ -899,7 +899,7 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("Child stream should work for vnode options") {
-    val myOption: Handler[Option[VNode]] = Handler.create(Option(div("a"))).unsafeRunSync()
+    val myOption: Handler[Option[VTree]] = Handler.create(Option(div("a"))).unsafeRunSync()
     val node = div(id := "strings",
       myOption
     )
@@ -1042,14 +1042,14 @@ object OutWatchDomSpec extends JSDomSuite {
     innerHandler.unsafeOnNext(VDomModifier(cls := "hans", "1"))
     element.innerHTML shouldBe """<div class="hans">1</div>"""
 
-    val innerHandler2 = Handler.create[VDomModifier](IO.pure(EmptyModifier)).unsafeRunSync()
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler2)))
+    val innerHandler2 = Handler.create[VDomModifier](EmptyModifier).unsafeRunSync()
+    myHandler.unsafeOnNext(ModifierStream(innerHandler2))
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(IO.pure(CompositeModifier(ModifierStream(innerHandler2) :: Nil)))
+    myHandler.unsafeOnNext(CompositeModifier(ModifierStream(innerHandler2) :: Nil))
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(IO.pure(CompositeModifier(StringVNode("pete") :: ModifierStream(innerHandler2) :: Nil)))
+    myHandler.unsafeOnNext(CompositeModifier(StringVNode("pete") :: ModifierStream(innerHandler2) :: Nil))
     element.innerHTML shouldBe """<div>pete</div>"""
     innerHandler2.unsafeOnNext(VDomModifier(id := "dieter", "r"))
     element.innerHTML shouldBe """<div id="dieter">peter</div>"""
@@ -1116,14 +1116,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](cls := "hans")))))))
+    myHandler.unsafeOnNext(ModifierStream(Observable[VDomModifier](ModifierStream(Observable[VDomModifier](cls := "hans")))))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
   test("Modifier stream should work for triple nested modifier stream receiver") {
     val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
     val node = div(id := "strings",
-      div(IO.pure(ModifierStream(myHandler)))
+      div(ModifierStream(myHandler))
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -1131,14 +1131,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable(cls := "hans"))))))))))
+    myHandler.unsafeOnNext(ModifierStream(Observable[VDomModifier](ModifierStream(Observable[VDomModifier](ModifierStream(Observable(cls := "hans")))))))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
   test("Modifier stream should work for multiple nested modifier stream receiver") {
     val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
     val node = div(id := "strings",
-      div(IO.pure(ModifierStream(myHandler)))
+      div(ModifierStream(myHandler))
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -1146,12 +1146,12 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(
+    myHandler.unsafeOnNext(ModifierStream(
       Observable[VDomModifier](
         VDomModifier(
-          IO.pure(ModifierStream(Observable[VDomModifier]("a"))),
-          IO.pure(ModifierStream(Observable(span("b")))))
-      ))))
+          ModifierStream(Observable[VDomModifier]("a")),
+          ModifierStream(Observable(span("b"))))
+      )))
     element.innerHTML shouldBe """<div>a<span>b</span></div>"""
   }
 

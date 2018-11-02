@@ -2,9 +2,10 @@ package outwatch.dom
 
 import monix.execution.Scheduler
 import monix.reactive.Observer
+import org.scalajs.dom
 import org.scalajs.dom._
 import outwatch.dom.helpers.VNodeState
-import snabbdom.{DataObject, VNodeProxy}
+import snabbdom._
 
 
 private[outwatch] sealed trait Modifier extends Any
@@ -14,6 +15,8 @@ private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) e
 private[outwatch] sealed trait FlatModifier extends Modifier
 
 private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends FlatModifier
+
+private[outwatch] final case class ModifierIO(inner: IO[VDomModifier]) extends FlatModifier
 
 private[outwatch] sealed trait SimpleModifier extends FlatModifier
 
@@ -113,11 +116,23 @@ private class Memoized[T] {
 }
 
 
+private[outwatch] final case class VTreeIO(inner: IO[VTree]) extends StaticVNode {
+  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
+    val vnode = hFunction("!")
+    inner.unsafeRunAsync {
+      case Right(proxy) =>
+        patch(vnode, proxy.toSnabbdom)
+        ()
+      case Left(ex) =>
+        dom.console.error(ex.getMessage)
+    }
+    vnode
+  }
+}
+
 private[outwatch] final case class VTree(nodeType: String, modifiers: Array[Modifier] = Array.empty) extends StaticVNode {
 
-  def apply(args: VDomModifier*): VNode = {
-    args.sequence.map(args => copy(modifiers = modifiers ++ args))
-  }
+  def apply(args: VDomModifier*): VTree = copy(modifiers = modifiers ++ args)
 
   private val proxy = new Memoized[VNodeProxy]
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {

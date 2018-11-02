@@ -86,7 +86,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
     if (nodes.isEmpty) {
       hFunction(nodeType, dataObject)
     } else {
-      if (hasVtrees) {
+      if (hasVTrees) {
         val proxies: js.Array[VNodeProxy] = nodes.map(_.toSnabbdom)
         hFunction(nodeType, dataObject, proxies)
       } else {
