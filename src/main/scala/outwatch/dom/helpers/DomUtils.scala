@@ -19,6 +19,25 @@ object VNodeState {
 
   private type Updater = Array[SimpleModifier] => Array[SimpleModifier]
 
+  private var keyGen: Int = VNodeState.##
+  private def ensureKeys(mods: ArrayBuffer[SimpleModifier]): Unit = {
+    var hasKey = false
+    mods.indices.foreach { index =>
+      mods(index) match {
+        case vtree: VTree =>
+          mods(index) = vtree.copy(modifiers = Key(keyGen) +: vtree.modifiers)
+          keyGen += 1
+        case _: Key => hasKey = true
+        case _ =>
+      }
+    }
+    // key must be appended at the end, original positions can be updated by the streams
+    if (!hasKey) {
+      mods += Key(keyGen)
+      keyGen += 1
+    }
+  }
+
   // separates modifiers into SimpleModifier(s) and ModifierStream(s)
   private def separateStreams(mods: Seq[Modifier]): (Array[SimpleModifier], Array[(Int, ModifierStream)]) = {
 
@@ -35,32 +54,20 @@ object VNodeState {
     flattenHelper(mods)
 
     // separate
-    val simple = ArrayBuffer.fill[SimpleModifier](flattened.size)(EmptyModifier)
+    val modifiers = ArrayBuffer.fill[SimpleModifier](flattened.size)(EmptyModifier)
     val streams = ArrayBuffer.empty[(Int, ModifierStream)]
 
     flattened.indices.foreach { index =>
       flattened(index) match {
-        case m: SimpleModifier => simple(index) = m
+        case m: SimpleModifier => modifiers(index) = m
         case m: ModifierStream => streams += index -> m
       }
     }
 
     // ensure key present for VTrees with stream siblings, as well as for the VTree containing the streams
-    if (streams.nonEmpty) {
-      var hasKey = false
-      simple.indices.foreach { index =>
-        simple(index) match {
-          case vtree: VTree =>
-            simple(index) = vtree.copy(modifiers = Key(vtree.hashCode) +: vtree.modifiers)
-          case _: Key => hasKey = true
-          case _ =>
-        }
-      }
-      // key must be appended at the end, original positions can be updated by the streams
-      if (!hasKey) simple += Key(streams.hashCode())
-    }
+    if (streams.nonEmpty) ensureKeys(modifiers)
 
-    (simple.toArray, streams.toArray)
+    (modifiers.toArray, streams.toArray)
   }
 
   private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
@@ -98,6 +105,9 @@ object VNodeState {
         patch(prev, proxy)
       }
 
+      if (cancelable.isDefined) {
+        dom.console.error("Cancelable subscription already present on insert hook, this is indicative of a bug.")
+      }
       cancelable = Some(
         observable
         .scan(vproxy)(patchProxy)
@@ -119,30 +129,24 @@ object VNodeState {
     Seq(insertHook, destroyHook)
   }
 
-  private[outwatch] def from(mods: Seq[Modifier])(implicit scheduler: Scheduler): VNodeState = {
+  private[outwatch] def from(mods: Seq[Modifier]): VNodeState = {
     val (modifiers, streams) = separateStreams(mods)
 
-    val modifierStream = if (streams.nonEmpty) {
-      Observable(streams.map { case (index, ms) => updaterMS(index, ms) }: _*).merge
-        .scan(modifiers)((mods, func) => func(mods))
-        .map(SeparatedModifiers.from)
-    } else Observable.empty
+    if (streams.isEmpty) {
+      VNodeState(SeparatedModifiers.from(modifiers), Observable.empty)
+    } else {
 
-    val withLifecycle = if (streams.nonEmpty) {
+      val modifierStream =
+        Observable(streams.map { case (index, ms) => updaterMS(index, ms) }: _*).merge
+          .scan(modifiers)((mods, func) => func(mods))
+          .map(SeparatedModifiers.from)
+
       // hooks must be appended at the end, original positions can be updated by the streams
-      modifiers ++ lifecycleHooks(modifierStream)
-    } else modifiers
+      val modifiersWithLifecycle = modifiers ++ lifecycleHooks(modifierStream)
 
-    VNodeState(SeparatedModifiers.from(withLifecycle), modifierStream)
+      VNodeState(SeparatedModifiers.from(modifiersWithLifecycle), modifierStream)
+    }
   }
-}
-
-case class Streams(observable: Observable[SeparatedModifiers]) extends AnyVal {
-  def nonEmpty: Boolean = observable != Observable.empty
-}
-
-object Streams {
-  def empty = Streams(Observable.empty)
 }
 
 private[outwatch] final case class SeparatedModifiers(

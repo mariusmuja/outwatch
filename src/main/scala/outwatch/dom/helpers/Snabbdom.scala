@@ -21,25 +21,27 @@ private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
 
 private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
-  @inline private def createHookSingle(hooks: Seq[Hook[dom.Element]], proxyHooks: Seq[LifecycleHook])(implicit s: Scheduler): js.UndefOr[Hooks.HookSingleFn] = {
-    if (hooks.nonEmpty || proxyHooks.nonEmpty) ((p: VNodeProxy) => {
+  @inline private def createHookSingle(hooks: Seq[Hook[dom.Element]], lifecycleHooks: Seq[LifecycleHook]
+  )(implicit s: Scheduler): js.UndefOr[Hooks.HookSingleFn] = {
+    if (hooks.nonEmpty || lifecycleHooks.nonEmpty) { p: VNodeProxy =>
       for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
-      proxyHooks.foreach(_.fn(p, s))
-    }): Hooks.HookSingleFn
+      lifecycleHooks.foreach(_.fn(p, s))
+    }: Hooks.HookSingleFn
     else js.undefined
   }
 
   @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]]): js.UndefOr[Hooks.HookPairFn] = {
-    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
-      (old: VNodeProxy, cur: VNodeProxy) => for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
-    ).orUndefined
+    if (hooks.nonEmpty) { (old: VNodeProxy, cur: VNodeProxy) =>
+      for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
+    }: Hooks.HookPairFn
+    else js.undefined
   }
 
-  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]
-  ): js.UndefOr[Hooks.HookPairFn] = {
-    Option(hooks).filter(_.nonEmpty).map[Hooks.HookPairFn](hooks =>
-      (old: VNodeProxy, cur: VNodeProxy) => hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
-    ).orUndefined
+  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]): js.UndefOr[Hooks.HookPairFn] = {
+    if (hooks.nonEmpty) { (old: VNodeProxy, cur: VNodeProxy) =>
+      hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
+    }: Hooks.HookPairFn
+    else js.undefined
   }
 
   def toSnabbdom(implicit s: Scheduler): Hooks = {
