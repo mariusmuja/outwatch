@@ -17,7 +17,7 @@ object ScenarioTestSpec extends JSDomSuite {
       handleMinus <- Handler.create[MouseEvent]
       minusOne = handleMinus.map(_ => -1)
 
-      count = Observable.merge(plusOne, minusOne).scan(0)(_ + _).startWith(Seq(0))
+      count = Observable(plusOne, minusOne).merge.scan(0)(_ + _).startWith(Seq(0))
 
       div <- div(
         div(
@@ -183,7 +183,7 @@ object ScenarioTestSpec extends JSDomSuite {
       enterPressed = keyStream
         .filter(_.key == "Enter")
 
-      confirm = Observable.merge(enterPressed, clickStream)
+      confirm = Observable(enterPressed, clickStream).merge
         .withLatestFrom(textFieldStream)((_, input) => input)
 
       _ <- (outputStream <-- confirm)
@@ -215,7 +215,7 @@ object ScenarioTestSpec extends JSDomSuite {
       deletes = deleteHandler
         .map(removeFromList)
 
-      state = Observable.merge(adds, deletes)
+      state = Observable(adds, deletes).merge
         .scan(Vector[String]())((state, modify) => modify(state))
         .map(_.map(n => TodoComponent(n, deleteHandler)))
       textFieldComponent = TextFieldComponent("Todo: ", inputHandler)

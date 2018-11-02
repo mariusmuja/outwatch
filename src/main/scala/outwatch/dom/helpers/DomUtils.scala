@@ -63,7 +63,7 @@ object VNodeState {
 
   private def updaterMS(index: Int, ms: ModifierStream): Observable[Updater] = {
     ms.stream.switchMap[Updater] { vm =>
-      Observable.fromIO(vm).concatMap(m => updaterM(index, m))
+      Observable.fromTaskLike(vm).concatMap(m => updaterM(index, m))
     }
   }
 
@@ -71,7 +71,7 @@ object VNodeState {
     val (modifiers, streams) = separateStreams(cm.modifiers)
 
     if (streams.nonEmpty) {
-      Observable.merge(streams.map { case (idx, ms) => updaterMS(idx, ms) }: _*)
+      Observable(streams.map { case (idx, ms) => updaterMS(idx, ms) }: _*).merge
         .scan(modifiers)((mods, func) => func(mods))
         .startWith(Seq(modifiers))
         .map(mods => _.updated(index, SimpleCompositeModifier(mods)))
@@ -84,7 +84,7 @@ object VNodeState {
     val (modifiers, streams) = separateStreams(mods)
 
     val modifierStream = if (streams.nonEmpty) {
-      Observable.merge(streams.map { case (index, ms) => updaterMS(index, ms) }: _*)
+      Observable(streams.map { case (index, ms) => updaterMS(index, ms) }: _*).merge
         .scan(modifiers)((mods, func) => func(mods))
         .map(SeparatedModifiers.from)
     } else Observable.empty

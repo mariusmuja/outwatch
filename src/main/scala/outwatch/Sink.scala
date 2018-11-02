@@ -1,7 +1,6 @@
 package outwatch
 
 import monix.execution.Ack.Stop
-import monix.execution.misc.NonFatal
 import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.{Observer, Pipe => MonixPipe}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
@@ -9,6 +8,7 @@ import monix.reactive.subjects.PublishSubject
 import outwatch.dom.{IO, Observable}
 
 import scala.concurrent.Future
+import scala.util.control.NonFatal
 
 
 sealed trait Sink[-T] extends Any {

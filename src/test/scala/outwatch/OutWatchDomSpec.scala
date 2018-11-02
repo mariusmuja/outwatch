@@ -1215,4 +1215,38 @@ object OutWatchDomSpec extends JSDomSuite {
     element.innerHTML shouldBe """<div class="first yeah more"></div>"""
   }
 
+
+  test("Modifier stream should work correctly with nested streams and patching") {
+
+    val handler = Handler.create[Int](0).unsafeRunSync
+    val handler2 = Handler.create[Int](0).unsafeRunSync
+    val handler3 = Handler.create[Int](0).unsafeRunSync
+
+    val vtree = div( id := "main",
+      handler.map { i =>
+        (0 to i).map { _ =>
+          div()
+        }
+      },
+      handler2.map { i =>
+        (0 to i).map { _ =>
+          div(
+            div(handler3)
+          )
+        }
+      }
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+
+    handler.unsafeOnNext(1)
+    handler2.unsafeOnNext(1)
+    handler3.unsafeOnNext(1)
+
+    node.innerHTML shouldBe "<div id=\"main\"><div></div><div></div><div><div>1</div></div><div><div>1</div></div></div>"
+  }
+
 }

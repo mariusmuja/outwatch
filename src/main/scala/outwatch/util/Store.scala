@@ -56,7 +56,7 @@ object Store {
         source
           .scan(initialState)(fold)
           .behavior(initialState).refCount
-          .doOnSubscriptionCancel(() => sub.cancel())
+          .doOnSubscriptionCancelF(() => sub.cancel())
       )
     }
   }

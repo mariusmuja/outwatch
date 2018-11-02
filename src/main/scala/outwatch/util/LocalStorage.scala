@@ -46,7 +46,7 @@ class Storage(domStorage: dom.Storage) {
           None
       }
 
-    handlerWithTransform(key, Observable.merge(_, storageEvents))
+    handlerWithTransform(key, Observable(_, storageEvents).merge)
   }
 }
 

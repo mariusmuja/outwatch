@@ -93,13 +93,14 @@ private[outwatch] final case class StringVNode(string: String) extends StaticVNo
 
 
 private class Memoized[T] {
-  private var value: T = _
+  private var value: Option[T] = None
 
   def getOrUpdate(v: => T): T = this.synchronized {
-    if (value == null) {
-      value = v
+    value.getOrElse{
+      val v2 = v
+      value = Some(v2)
+      v2
     }
-    value
   }
 }
 
@@ -112,7 +113,9 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Array[Modi
 
   private val proxy = new Memoized[VNodeProxy]
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
-    proxy.getOrUpdate(VNodeState.from(modifiers).toSnabbdom(nodeType))
+    proxy.getOrUpdate(
+      VNodeState.from(modifiers).toSnabbdom(nodeType)
+    )
   }
 }
 
