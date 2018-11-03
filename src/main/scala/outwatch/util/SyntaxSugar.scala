@@ -1,13 +1,12 @@
 package outwatch.util
 
-import outwatch.dom.{IO, ModifierStream, Observable, VDomModifier}
+import outwatch.dom.{ModifierStream, Observable, VDomModifier}
 
 
 object SyntaxSugar {
 
   implicit class BooleanSelector(val conditionStream: Observable[Boolean]) extends AnyVal {
     def ?=(mod: VDomModifier): ModifierStream = {
-
       ModifierStream(
         conditionStream.map(condition => if (condition) mod else VDomModifier.empty)
       )

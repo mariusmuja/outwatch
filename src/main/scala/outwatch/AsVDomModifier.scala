@@ -1,6 +1,6 @@
 package outwatch
 
-import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier, IO}
+import outwatch.dom.{CompositeModifier, IO, ModifierStream, Observable, StringVNode, VDomModifier}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier
@@ -35,4 +35,6 @@ object AsVDomModifier {
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
     ModifierStream(valueStream.map(r.asVDomModifier))
 
+  implicit def ioRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[IO[T]] = (value: IO[T]) =>
+    ModifierStream(Observable.fromTaskLike(value.map(r.asVDomModifier)))
 }

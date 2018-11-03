@@ -61,7 +61,7 @@ object VNodeState {
       flattened(index) match {
         case m: SimpleModifier => modifiers(index) = m
         case m: ModifierStream => streams += index -> m
-        case m: ModifierIO => streams += index -> ModifierStream(Observable.fromTaskLike(m.inner))
+//        case m: ModifierIO => streams += index -> ModifierStream(Observable.fromTaskLike(m.inner))
       }
     }
 
@@ -75,6 +75,7 @@ object VNodeState {
     case m: SimpleModifier => Observable.pure { a => a.update(index, m); a } // (_.updated(index,m))
     case m: CompositeModifier => updaterCM(index, m)
     case m: ModifierStream => updaterMS(index, m)
+//    case m: ModifierIO => updaterMS(index, ModifierStream(Observable.fromTaskLike(m.inner)))
   }
 
   private def updaterMS(index: Int, ms: ModifierStream): Observable[Updater] = {

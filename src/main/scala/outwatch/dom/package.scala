@@ -2,7 +2,7 @@ package outwatch
 
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
-  type VNode = StaticVNode
+  type VNode = VTree
   type VDomModifier = Modifier
 
   object VDomModifier {

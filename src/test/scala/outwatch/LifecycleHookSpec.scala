@@ -259,41 +259,33 @@ object LifecycleHookSpec extends JSDomSuite {
     val insertSink = Sink.create { _: Element =>
       hooks += "insert"
       Continue
-    }
+    }.unsafeRunSync()
     val prepatchSink = Sink.create { _: (Option[Element], Option[Element]) =>
       hooks += "prepatch"
       Continue
-    }
+    }.unsafeRunSync()
     val updateSink = Sink.create { _: (Element, Element) =>
       hooks += "update"
       Continue
-    }
+    }.unsafeRunSync()
     val postpatchSink = Sink.create { _: (Element, Element) =>
       hooks += "postpatch"
       Continue
-
-    }
+    }.unsafeRunSync()
     val destroySink = Sink.create { _: Element =>
       hooks += "destroy"
       Continue
-    }
+    }.unsafeRunSync()
 
-    val logSinks = for {
-      insertSink <- insertSink
-      updateSink <- updateSink
-      destroySink <- destroySink
-      prepatchSink <- prepatchSink
-      postpatchSink <- postpatchSink
-      mod = modifiers(
-        onInsert --> insertSink,
-        onPrePatch --> prepatchSink,
-        onUpdate --> updateSink,
-        onPostPatch --> postpatchSink,
-        onDestroy --> destroySink
-      )
-    } yield mod
+    val logSinks = modifiers(
+      onInsert --> insertSink,
+      onPrePatch --> prepatchSink,
+      onUpdate --> updateSink,
+      onPostPatch --> postpatchSink,
+      onDestroy --> destroySink
+    )
 
-    (hooks, ModifierIO(logSinks))
+    (hooks, logSinks)
   }
 
 

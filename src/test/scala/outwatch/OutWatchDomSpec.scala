@@ -143,49 +143,49 @@ object OutWatchDomSpec extends JSDomSuite {
     streams shouldNotBe Observable.empty
   }
 
-//  test("VDomModifiers should be run once") {
-//    val list = new mutable.ListBuffer[String]
-//
-//    val vtree = div(
-//      IO {
-//        list += "child1"
-//        ModifierStream(Observable(div()))
-//      },
-//      IO {
-//        list += "child2"
-//        ModifierStream(Observable())
-//      },
-//      IO {
-//        list += "children1"
-//        ModifierStream(Observable())
-//      },
-//      IO {
-//        list += "children2"
-//        ModifierStream(Observable())
-//      },
-//      div(
-//        IO {
-//          list += "attr1"
-//          BasicAttr("attr1", "peter")
-//        },
-//        Seq(
-//          IO {
-//            list += "attr2"
-//            BasicAttr("attr2", "hans")
-//          }
-//        )
-//      )
-//    )
-//
-//    val node = document.createElement("div")
-//    document.body.appendChild(node)
-//
-//    list.isEmpty shouldBe true
-//
-//    OutWatch.renderInto(node, vtree).unsafeRunSync()
-//
-//    list.toSeq shouldBe Seq("child1", "child2", "children1", "children2", "attr1", "attr2")
-//  }
+  test("VDomModifiers should be run once") {
+    val list = new mutable.ListBuffer[String]
+
+    val vtree = div(
+      IO {
+        list += "child1"
+        ModifierStream(Observable(div()))
+      },
+      IO {
+        list += "child2"
+        ModifierStream(Observable())
+      },
+      IO {
+        list += "children1"
+        ModifierStream(Observable())
+      },
+      IO {
+        list += "children2"
+        ModifierStream(Observable())
+      },
+      div(
+        IO {
+          list += "attr1"
+          BasicAttr("attr1", "peter")
+        },
+        Seq(
+          IO {
+            list += "attr2"
+            BasicAttr("attr2", "hans")
+          }
+        )
+      )
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    list.isEmpty shouldBe true
+
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+
+    list.toSet shouldBe Set("child1", "child2", "children1", "children2", "attr1", "attr2")
+  }
 
   test("VDomModifiers should provide unique key for child nodes if stream is present") {
     val mods = Seq[Modifier](
@@ -256,67 +256,67 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
 
-//  test("VTrees should run its modifiers once!" ) {
-//    val stringHandler = Handler.create[String]().unsafeRunSync()
-//    var ioCounter = 0
-//    var handlerCounter = 0
-//    stringHandler { _ =>
-//      handlerCounter += 1
-//    }
-//
-//    val vtree = div(
-//      div(
-//        IO {
-//          ioCounter += 1
-//          BasicAttr("hans", "")
-//        }
-//      ),
-//      stringHandler
-//    )
-//
-//    val node = document.createElement("div")
-//    document.body.appendChild(node)
-//
-//    ioCounter shouldBe 0
-//    handlerCounter shouldBe 0
-//    OutWatch.renderInto(node, vtree).unsafeRunSync()
-//    ioCounter shouldBe 1
-//    handlerCounter shouldBe 0
-//    stringHandler.observer.onNext("pups")
-//    ioCounter shouldBe 1
-//    handlerCounter shouldBe 1
-//  }
+  test("VTrees should run its modifiers once!" ) {
+    val stringHandler = Handler.create[String]().unsafeRunSync()
+    var ioCounter = 0
+    var handlerCounter = 0
+    stringHandler { _ =>
+      handlerCounter += 1
+    }
 
-//  test("VTrees should run its modifiers once in CompositeModifier!") {
-//    val stringHandler = Handler.create[String]().unsafeRunSync()
-//    var ioCounter = 0
-//    var handlerCounter = 0
-//    stringHandler { _ =>
-//      handlerCounter += 1
-//    }
-//
-//    val vtree = div(
-//      div(Seq(
-//        IO {
-//          ioCounter += 1
-//          BasicAttr("hans", "")
-//        }
-//      )),
-//      stringHandler
-//    )
-//
-//    val node = document.createElement("div")
-//    document.body.appendChild(node)
-//
-//    ioCounter shouldBe 0
-//    handlerCounter shouldBe 0
-//    OutWatch.renderInto(node, vtree).unsafeRunSync()
-//    ioCounter shouldBe 1
-//    handlerCounter shouldBe 0
-//    stringHandler.observer.onNext("pups")
-//    ioCounter shouldBe 1
-//    handlerCounter shouldBe 1
-//  }
+    val vtree = div(
+      div(
+        IO {
+          ioCounter += 1
+          BasicAttr("hans", "")
+        }
+      ),
+      stringHandler
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    ioCounter shouldBe 0
+    handlerCounter shouldBe 0
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 0
+    stringHandler.observer.onNext("pups")
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 1
+  }
+
+  test("VTrees should run its modifiers once in CompositeModifier!") {
+    val stringHandler = Handler.create[String]().unsafeRunSync()
+    var ioCounter = 0
+    var handlerCounter = 0
+    stringHandler { _ =>
+      handlerCounter += 1
+    }
+
+    val vtree = div(
+      div(Seq(
+        IO {
+          ioCounter += 1
+          BasicAttr("hans", "")
+        }
+      )),
+      stringHandler
+    )
+
+    val node = document.createElement("div")
+    document.body.appendChild(node)
+
+    ioCounter shouldBe 0
+    handlerCounter shouldBe 0
+    OutWatch.renderInto(node, vtree).unsafeRunSync()
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 0
+    stringHandler.observer.onNext("pups")
+    ioCounter shouldBe 1
+    handlerCounter shouldBe 1
+  }
 
   test("VTrees should be correctly patched into the DOM") {
     val id = "msg"
