@@ -75,12 +75,8 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
   private[outwatch] def toSnabbdom(nodeType: String)(implicit scheduler: Scheduler): VNodeProxy = {
 
     val dataObject =  DataObject(
-      attributes.attrs,
-      attributes.props,
-      attributes.styles.toSnabbdom,
-      emitters.toSnabbdom,
-      hooks.toSnabbdom,
-      keyOption.map(_.value).orUndefined
+      attributes.attrs, attributes.props, attributes.styles.toSnabbdom,
+      emitters.toSnabbdom, hooks.toSnabbdom, keyOption.map(_.value).orUndefined
     )
 
     if (nodes.isEmpty) {

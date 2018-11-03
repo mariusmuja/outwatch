@@ -19,22 +19,27 @@ object VNodeState {
 
   private type Updater = Array[SimpleModifier] => Array[SimpleModifier]
 
-  private var keyGen: Int = VNodeState.##
+  private object KeyGen {
+    private var value = KeyGen.##
+
+    def newKey: Key = {
+      value += 1
+      Key(value)
+    }
+  }
+
   private def ensureKeys(mods: ArrayBuffer[SimpleModifier]): Unit = {
     var hasKey = false
     mods.indices.foreach { index =>
       mods(index) match {
-        case vtree: VTree =>
-          mods(index) = vtree.copy(modifiers = Key(keyGen) +: vtree.modifiers)
-          keyGen += 1
+        case vtree: VTree => mods(index) = vtree.copy(modifiers = KeyGen.newKey +: vtree.modifiers)
         case _: Key => hasKey = true
         case _ =>
       }
     }
     // key must be appended at the end, original positions can be updated by the streams
     if (!hasKey) {
-      mods += Key(keyGen)
-      keyGen += 1
+      mods += KeyGen.newKey
     }
   }
 
