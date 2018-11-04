@@ -85,7 +85,7 @@ object Http {
     request(urls.map(url => Request(url)), requestType: HttpRequestType)
 
   def single(request: Request, method: HttpRequestType)(implicit s: Scheduler): IO[Response] =
-    IO.fromFuture(IO(ajax(request.copy(method = method.toString)))).map(toResponse)
+    IO.deferFuture(ajax(request.copy(method = method.toString))).map(toResponse)
 
   def getWithUrl(urls: Observable[String])(implicit s: Scheduler) = requestWithUrl(urls, Get)
 

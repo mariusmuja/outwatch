@@ -1,6 +1,7 @@
 package outwatch
 
-import outwatch.dom.{CompositeModifier, ModifierStream, Observable, StringVNode, VDomModifier, IO}
+import monix.eval.TaskLike
+import outwatch.dom.{CompositeModifier, IO, ModifierStream, Observable, StringVNode, VDomModifier}
 
 trait AsVDomModifier[-T] {
   def asVDomModifier(value: T): VDomModifier
@@ -34,5 +35,8 @@ object AsVDomModifier {
 
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
     IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+
+  implicit def taskLikeRender[T, F[_]: TaskLike](implicit r: AsVDomModifier[T]): AsVDomModifier[F[T]] = (value: F[T]) =>
+    IO.pure(ModifierStream(Observable.fromTaskLike(value).map(r.asVDomModifier)))
 
 }

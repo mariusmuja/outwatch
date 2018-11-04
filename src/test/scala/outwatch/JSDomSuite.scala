@@ -4,6 +4,7 @@ import cats.effect.implicits._
 import cats.effect.{Effect, IO}
 import minitest.TestSuite
 import minitest.api.{SourceLocation, Void}
+import monix.eval.Task
 import monix.execution.Ack.Continue
 import monix.execution.ExecutionModel.SynchronousExecution
 import monix.execution.schedulers.TrampolineScheduler
@@ -58,6 +59,18 @@ trait JSDomSuite extends TestSuite[Unit]
                  with LocalStorageHelper { self =>
 
   implicit val scheduler: Scheduler = TrampolineScheduler(Scheduler.global, SynchronousExecution)
+
+  // hack-ish way to add unsafeRunSync to not have to re-write most tests right away
+  implicit class TaskExt[T](task: Task[T]) {
+    var taskValue: T = _
+    def unsafeRunSync(): T = {
+      task.runAsync {
+        case Right(value) => taskValue = value
+        case Left(ex) => println(ex.getMessage)
+      }
+      taskValue
+    }
+  }
 
   def setup(): Unit = {
     document.body.innerHTML = ""

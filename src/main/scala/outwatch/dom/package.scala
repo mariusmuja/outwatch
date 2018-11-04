@@ -29,6 +29,6 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
   type Handler[T] = outwatch.Handler[T]
   val Handler = outwatch.Handler
 
-  type IO[+T] = cats.effect.IO[T]
-  val IO = cats.effect.IO
+  type IO[+T] = monix.eval.Task[T]
+  val IO = monix.eval.Task
 }

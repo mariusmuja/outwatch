@@ -1,6 +1,5 @@
 package outwatch
 
-import monix.execution.Scheduler
 import outwatch.dom.{IO, Observable}
 
 object Handler {
@@ -14,9 +13,9 @@ object Handler {
     * @tparam T the type parameter of the elements
     * @return the newly created Handler.
     */
-  def create[T](seeds: T*)(implicit s: Scheduler): IO[Handler[T]] = Pipe.create[T](seeds: _*)
+  def create[T](seeds: T*): IO[Handler[T]] = Pipe.create[T](seeds: _*)
 
-  def create[T](implicit s: Scheduler): IO[Handler[T]] = Pipe.create[T]
+  def create[T]: IO[Handler[T]] = Pipe.create[T]
 
 }
 
