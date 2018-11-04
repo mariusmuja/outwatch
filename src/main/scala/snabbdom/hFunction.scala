@@ -3,8 +3,9 @@ package snabbdom
 import org.scalajs.dom._
 
 import scala.scalajs.js
+import scala.scalajs.js.Dynamic.literal
 import scala.scalajs.js.annotation.JSImport
-import scala.scalajs.js.{UndefOr, |}
+import scala.scalajs.js.|
 
 @js.native
 @JSImport("snabbdom/h", JSImport.Namespace, globalFallback = "h")
@@ -15,19 +16,20 @@ object hProvider extends js.Object {
 @js.native
 trait hFunction extends js.Any {
   def apply(nodeType: String, dataObject: DataObject): VNodeProxy = js.native
-  def apply(nodeType: String, dataObject: DataObject, text: js.UndefOr[String]): VNodeProxy = js.native
-  def apply(nodeType: String, dataObject: DataObject, children: js.Array[VNodeProxy]): VNodeProxy = js.native
+  def apply(nodeType: String, dataObject: DataObject, text: String): VNodeProxy = js.native
+  def apply(nodeType: String, dataObject: DataObject, children: js.UndefOr[js.Array[VNodeProxy]]): VNodeProxy = js.native
 }
 
 object hFunction {
   def apply(nodeType: String, dataObject: DataObject): VNodeProxy = {
-    hProvider.default.apply(nodeType, dataObject)
+    hProvider.default.apply(nodeType, dataObject, js.undefined)
   }
-  def apply(nodeType: String, dataObject: DataObject, text: js.UndefOr[String]): VNodeProxy = {
+  def apply(nodeType: String, dataObject: DataObject, text: String): VNodeProxy = {
     hProvider.default.apply(nodeType, dataObject, text)
   }
   def apply(nodeType: String, dataObject: DataObject, children: js.Array[VNodeProxy]): VNodeProxy = {
-    hProvider.default.apply(nodeType, dataObject, children)
+    val nonEmpty: js.UndefOr[js.Array[VNodeProxy]] = if (children.isEmpty) js.undefined else children
+    hProvider.default.apply(nodeType, dataObject, nonEmpty)
   }
 }
 
@@ -51,18 +53,14 @@ object Hooks {
     postpatch: js.UndefOr[HookPairFn] = js.undefined,
     destroy: js.UndefOr[HookSingleFn] = js.undefined
   ): Hooks = {
-    val _insert = insert
-    val _prepatch = prepatch
-    val _update = update
-    val _postpatch = postpatch
-    val _destroy = destroy
-    new Hooks {
-      val insert = _insert
-      val prepatch = _prepatch
-      val update = _update
-      val postpatch = _postpatch
-      val destroy = _destroy
-    }
+
+    literal(
+      insert = insert,
+      prepatch = prepatch,
+      update = update,
+      postpatch = postpatch,
+      destroy = destroy
+    ).asInstanceOf[Hooks]
   }
 }
 
@@ -79,6 +77,8 @@ trait DataObject extends js.Object {
 }
 
 object DataObject {
+
+  private def undefIfEmpty[T](value: js.Dictionary[T]): js.UndefOr[js.Dictionary[T]] = if (value.isEmpty) js.undefined else value
 
   type PropValue = Any
   type AttrValue = String | Boolean
@@ -99,21 +99,14 @@ object DataObject {
             key: js.UndefOr[KeyValue]
            ): DataObject = {
 
-    val _attrs = attrs
-    val _props = props
-    val _style = style
-    val _on = on
-    val _hook = hook
-    val _key = key
-
-    new DataObject {
-      val attrs: js.Dictionary[AttrValue] = _attrs
-      val props: js.Dictionary[PropValue] = _props
-      val style: js.Dictionary[StyleValue] = _style
-      val on: js.Dictionary[js.Function1[Event, Unit]] = _on
-      val hook: Hooks = _hook
-      val key: UndefOr[KeyValue] = _key
-    }
+    literal(
+      attrs = undefIfEmpty(attrs),
+      props = undefIfEmpty(props),
+      style = undefIfEmpty(style),
+      on = undefIfEmpty(on),
+      hook = hook,
+      key = key.asInstanceOf[js.Any]
+    ).asInstanceOf[DataObject]
   }
 }
 

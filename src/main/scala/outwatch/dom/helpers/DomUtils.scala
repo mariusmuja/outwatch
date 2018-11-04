@@ -114,10 +114,9 @@ object VNodeState {
         dom.console.error("Cancelable subscription already present on insert hook, this is indicative of a bug.")
       }
       cancelable = Some(
-        observable
-        .scan(vproxy)(patchProxy)
-        .subscribe(
-          newProxy => {
+        observable.subscribe(
+          mods => {
+            val newProxy = patchProxy(vproxy, mods)
             vproxy.copyFrom(newProxy)
             Continue
           },
