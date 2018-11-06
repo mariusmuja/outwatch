@@ -86,7 +86,7 @@ object DataObject {
   type KeyValue = String | Double  // https://github.com/snabbdom/snabbdom#key--string--number
 
   def apply(attrs: js.Dictionary[AttrValue],
-            on: js.Dictionary[js.Function1[Event, Unit]],
+            on: js.UndefOr[js.Dictionary[js.Function1[Event, Unit]]],
             hooks : Hooks = Hooks()
            ): DataObject = apply(attrs, js.Dictionary.empty, js.Dictionary.empty, on, hooks, js.undefined)
 
@@ -94,7 +94,7 @@ object DataObject {
   def apply(attrs: js.Dictionary[AttrValue],
             props: js.Dictionary[PropValue],
             style: js.Dictionary[StyleValue],
-            on: js.Dictionary[js.Function1[Event, Unit]],
+            on: js.UndefOr[js.Dictionary[js.Function1[Event, Unit]]],
             hook: Hooks,
             key: js.UndefOr[KeyValue]
            ): DataObject = {
@@ -103,7 +103,7 @@ object DataObject {
       attrs = undefIfEmpty(attrs),
       props = undefIfEmpty(props),
       style = undefIfEmpty(style),
-      on = undefIfEmpty(on),
+      on = on,
       hook = hook,
       key = key.asInstanceOf[js.Any]
     ).asInstanceOf[DataObject]

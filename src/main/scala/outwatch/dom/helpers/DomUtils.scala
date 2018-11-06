@@ -106,8 +106,14 @@ object VNodeState {
       implicit val s: Scheduler = scheduler
 
       def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
+        val t1 = System.nanoTime()
         val proxy = modifiers.toSnabbdom(prev.sel)
-        patch(prev, proxy)
+        val t2 = System.nanoTime()
+        dom.console.log("toSnabbdom time: " + (t2 - t1).toDouble/1000000)
+        val res = patch(prev, proxy)
+        val t3 = System.nanoTime()
+        dom.console.log("patch time: " + (t3 - t2).toDouble/1000000)
+        res
       }
 
       if (cancelable.isDefined) {
@@ -162,18 +168,19 @@ private[outwatch] final case class SeparatedModifiers(
   var key: js.UndefOr[Key] = js.undefined
 ) extends SnabbdomModifiers { self =>
 
-  private def add(m: SimpleModifier): Int = m match {
-    case SimpleCompositeModifier(mods) => mods.foreach(add); 0
-    case EmptyModifier => 0
+  private def add(m: SimpleModifier): Unit = m match {
+    case SimpleCompositeModifier(mods) => mods.foreach(add)
+    case EmptyModifier =>
     case e: Emitter => emitters.push(e)
-    case attr: Attribute => attributes.push(attr); 0
+    case attr: Attribute => attributes.push(attr)
     case hook: Hook[_] => hooks.push(hook)
     case hook: LifecycleHook => hooks.push(hook)
-    case sn: StringVNode => nodes.push(sn)
+    case sn: StringVNode => nodes.push(sn); ()
     case sn: VTree =>
       hasVtrees = true
       nodes.push(sn)
-    case k: Key => key = k; 0
+      ()
+    case k: Key => key = k
   }
 }
 
@@ -184,7 +191,6 @@ object SeparatedModifiers {
     sm
   }
 }
-
 
 private[outwatch] final case class SeparatedStyles(
   styleDict: js.Dictionary[Style.Value] = js.Dictionary[Style.Value](),
@@ -228,30 +234,55 @@ private[outwatch] final case class SeparatedAttributes(
 }
 
 private[outwatch] final case class SeparatedHooks(
-  insertHooks: js.Array[InsertHook] = js.Array(),
-  insertProxyHooks: js.Array[InsertProxyHook] = js.Array(),
-  prePatchHooks: js.Array[PrePatchHook] = js.Array(),
-  updateHooks: js.Array[UpdateHook] = js.Array(),
-  postPatchHooks: js.Array[PostPatchHook] = js.Array(),
-  destroyHooks: js.Array[DestroyHook] = js.Array(),
-  destroyProxyHooks: js.Array[DestroyProxyHook] = js.Array()
+  var insertHooks: js.UndefOr[js.Array[InsertHook]] = js.undefined,
+  var prePatchHooks: js.UndefOr[js.Array[PrePatchHook]] = js.undefined,
+  var updateHooks: js.UndefOr[js.Array[UpdateHook]] = js.undefined,
+  var postPatchHooks: js.UndefOr[js.Array[PostPatchHook]] = js.undefined,
+  var destroyHooks: js.UndefOr[js.Array[DestroyHook]] = js.undefined,
+  var insertProxyHooks: js.UndefOr[js.Array[InsertProxyHook]] = js.undefined,
+  var destroyProxyHooks: js.UndefOr[js.Array[DestroyProxyHook]] = js.undefined
 ) extends SnabbdomHooks {
-  @inline def push(h: Hook[_]): Int = h match {
-    case ih: InsertHook => insertHooks.push(ih)
-    case pph: PrePatchHook => prePatchHooks.push(pph)
-    case uh: UpdateHook => updateHooks.push(uh)
-    case pph: PostPatchHook => postPatchHooks.push(pph)
-    case dh: DestroyHook => destroyHooks.push(dh)
+  @inline def push(h: Hook[_]): Unit = h match {
+    case h: InsertHook =>
+      insertHooks.fold {
+        insertHooks = js.Array(h)
+      }(_.push(h))
+    case h: PrePatchHook =>
+      prePatchHooks.fold {
+        prePatchHooks = js.Array(h)
+      }(_.push(h))
+    case h: UpdateHook =>
+      updateHooks.fold {
+        updateHooks = js.Array(h)
+      }(_.push(h))
+    case h: PostPatchHook =>
+      postPatchHooks.fold {
+        postPatchHooks = js.Array(h)
+      }(_.push(h))
+    case h: DestroyHook =>
+      destroyHooks.fold {
+        destroyHooks = js.Array(h)
+      }(_.push(h))
   }
 
-  @inline def push(h: LifecycleHook): Int = h match {
-    case h: InsertProxyHook => insertProxyHooks.push(h)
-    case h: DestroyProxyHook => destroyProxyHooks.push(h)
+  @inline def push(h: LifecycleHook): Unit = h match {
+    case h: InsertProxyHook =>
+      insertProxyHooks.fold {
+        insertProxyHooks = js.Array(h)
+      }(_.push(h))
+    case h: DestroyProxyHook =>
+      destroyProxyHooks.fold {
+        destroyProxyHooks = js.Array(h)
+      }(_.push(h))
+
   }
 }
 
 private[outwatch] final case class SeparatedEmitters(
-  emitters: js.Array[Emitter] = js.Array()
+  var emitters: js.UndefOr[js.Array[Emitter]] = js.undefined
 ) extends SnabbdomEmitters {
-  @inline def push(e: Emitter): Int = emitters.push(e)
+  @inline def push(e: Emitter): Unit =
+    emitters.fold {
+      emitters = js.Array(e)
+    }(_.push(e))
 }

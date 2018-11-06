@@ -11,7 +11,7 @@ object SnabbdomSpec extends JSDomSuite {
 
   test("The Snabbdom Facade should correctly patch the DOM") {
     val message = "Hello World"
-    val vNode = hFunction("span#msg", DataObject(js.Dictionary(), js.Dictionary()), message)
+    val vNode = hFunction("span#msg", DataObject(js.Dictionary(), js.undefined), message)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
@@ -21,7 +21,7 @@ object SnabbdomSpec extends JSDomSuite {
     document.getElementById("msg").innerHTML shouldBe message
 
     val newMessage = "Hello Snabbdom!"
-    val newNode = hFunction("div#new", DataObject(js.Dictionary(), js.Dictionary()), newMessage)
+    val newNode = hFunction("div#new", DataObject(js.Dictionary(), js.undefined), newMessage)
 
     patch(vNode, newNode)
 
@@ -67,7 +67,7 @@ object SnabbdomSpec extends JSDomSuite {
   test("The Snabbdom Facade should correctly handle boolean attributes") {
     val message = "Hello World"
     val attributes = js.Dictionary[dom.Attr.Value]("bool1" -> true, "bool0" -> false, "string1" -> "true", "string0" -> "false")
-    val vNode = hFunction("span#msg", DataObject(attributes, js.Dictionary()), message)
+    val vNode = hFunction("span#msg", DataObject(attributes, js.undefined), message)
 
     val node = document.createElement("div")
     document.body.appendChild(node)

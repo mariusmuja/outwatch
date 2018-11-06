@@ -21,34 +21,30 @@ private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
 
 private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
 
-  @inline private def createHookSingle(hooks: Seq[Hook[dom.Element]], lifecycleHooks: Seq[LifecycleHook]
+  @inline private def createHookSingle(hooks: js.UndefOr[js.Array[_ <: Hook[dom.Element]]], lifecycleHooks: js.UndefOr[js.Array[_ <: LifecycleHook]]
   )(implicit s: Scheduler): js.UndefOr[Hooks.HookSingleFn] = {
     if (hooks.nonEmpty || lifecycleHooks.nonEmpty) { p: VNodeProxy =>
-      for (e <- p.elm) hooks.foreach(_.observer.onNext(e))
-      lifecycleHooks.foreach(_.fn(p, s))
+      if (hooks.nonEmpty) for (e <- p.elm) hooks.get.foreach(_.observer.onNext(e))
+      if (lifecycleHooks.nonEmpty) lifecycleHooks.get.foreach(_.fn(p, s))
     }: Hooks.HookSingleFn
     else js.undefined
   }
 
-  @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]]): js.UndefOr[Hooks.HookPairFn] = {
-    if (hooks.nonEmpty) { (old: VNodeProxy, cur: VNodeProxy) =>
+  @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]]): Hooks.HookPairFn = {
+    (old: VNodeProxy, cur: VNodeProxy) =>
       for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
-    }: Hooks.HookPairFn
-    else js.undefined
   }
 
-  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]): js.UndefOr[Hooks.HookPairFn] = {
-    if (hooks.nonEmpty) { (old: VNodeProxy, cur: VNodeProxy) =>
+  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]): Hooks.HookPairFn = {
+    (old: VNodeProxy, cur: VNodeProxy) =>
       hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
-    }: Hooks.HookPairFn
-    else js.undefined
   }
 
   def toSnabbdom(implicit s: Scheduler): Hooks = {
     val insertHook = createHookSingle(insertHooks, insertProxyHooks)
-    val prePatchHook = createHookPairOption(prePatchHooks)
-    val updateHook = createHookPair(updateHooks)
-    val postPatchHook = createHookPair(postPatchHooks)
+    val prePatchHook = prePatchHooks.flatMap(hooks => createHookPairOption(hooks))
+    val updateHook = updateHooks.flatMap(hooks => createHookPair(hooks))
+    val postPatchHook = postPatchHooks.flatMap(hooks => createHookPair(hooks))
     val destroyHook = createHookSingle(destroyHooks, destroyProxyHooks)
 
     Hooks(insertHook, prePatchHook, updateHook, postPatchHook, destroyHook)
@@ -62,12 +58,10 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
     event => emitters.foreach(_.trigger(event))
   }
 
-  def toSnabbdom: js.Dictionary[js.Function1[dom.Event, Unit]] = {
-    emitters
-      .groupBy(_.eventType)
-      .mapValues(emittersToFunction)
-      .toJSDictionary
-  }
+  def toSnabbdom: js.UndefOr[js.Dictionary[js.Function1[dom.Event, Unit]]] = emitters.map( e =>
+    e.groupBy(_.eventType).mapValues(emittersToFunction).toJSDictionary
+  )
+
 }
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
