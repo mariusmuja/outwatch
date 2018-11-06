@@ -30,12 +30,12 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
-    mods.hooks.insertHooks.get.length shouldBe 2
-    mods.hooks.prePatchHooks.get.length shouldBe 1
-    mods.hooks.updateHooks.get.length shouldBe 1
-    mods.hooks.postPatchHooks.get.length shouldBe 1
-    mods.hooks.destroyHooks.get.length shouldBe 1
-    mods.attributes.attrs.size shouldBe 1
+    mods.hooks.get.insertHooks.get.length shouldBe 2
+    mods.hooks.get.prePatchHooks.get.length shouldBe 1
+    mods.hooks.get.updateHooks.get.length shouldBe 1
+    mods.hooks.get.postPatchHooks.get.length shouldBe 1
+    mods.hooks.get.destroyHooks.get.length shouldBe 1
+    mods.attributes.get.attrs.get.size shouldBe 1
     mods.key shouldBe js.undefined
     streams shouldBe Observable.empty
   }
@@ -62,8 +62,8 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
-    mods.emitters.emitters.get.length shouldBe 2
-    mods.attributes.attrs.size shouldBe 1
+    mods.emitters.get.emitters.length shouldBe 2
+    mods.attributes.get.attrs.get.size shouldBe 1
     mods.nodes.length shouldBe 3
     streams shouldNotBe Observable.empty
   }
@@ -83,8 +83,8 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
-    mods.emitters.emitters.get.length shouldBe 3
-    mods.attributes.attrs.size shouldBe 1
+    mods.emitters.get.emitters.length shouldBe 3
+    mods.attributes.get.attrs.get.size shouldBe 1
     mods.nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
@@ -105,8 +105,8 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
-    mods.emitters.emitters.get.length shouldBe 3
-    mods.attributes.attrs.size shouldBe 1
+    mods.emitters.get.emitters.length shouldBe 3
+    mods.attributes.get.attrs.get.size shouldBe 1
     mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
     mods.key shouldBe Key("123")
@@ -131,13 +131,13 @@ object OutWatchDomSpec extends JSDomSuite {
 
     val VNodeState(mods, streams) = VNodeState.from(modifiers)
 
-    mods.emitters.emitters.get.map(_.eventType).toList shouldBe List("click", "input", "keyup")
-    mods.hooks.insertHooks.get.length shouldBe 1
-    mods.hooks.prePatchHooks.get.length shouldBe 1
-    mods.hooks.updateHooks.get.length shouldBe 1
-    mods.hooks.postPatchHooks.get.length shouldBe 1
-    mods.hooks.destroyHooks shouldBe js.undefined
-    mods.attributes.attrs.size shouldBe 1
+    mods.emitters.get.emitters.map(_.eventType).toList shouldBe List("click", "input", "keyup")
+    mods.hooks.get.insertHooks.get.length shouldBe 1
+    mods.hooks.get.prePatchHooks.get.length shouldBe 1
+    mods.hooks.get.updateHooks.get.length shouldBe 1
+    mods.hooks.get.postPatchHooks.get.length shouldBe 1
+    mods.hooks.get.destroyHooks shouldBe js.undefined
+    mods.attributes.get.attrs.get.size shouldBe 1
     mods.key shouldNotBe js.undefined // because ModifierStreams present
 //    nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
@@ -378,8 +378,8 @@ object OutWatchDomSpec extends JSDomSuite {
 
 
   val fixture = new {
-    val proxy = hFunction("div", DataObject(js.Dictionary("class" -> "red", "id" -> "msg"), js.undefined), js.Array(
-      hFunction("span", DataObject(js.Dictionary(), js.undefined), "Hello")
+    val proxy = hFunction("div", DataObject(js.Dictionary[DataObject.AttrValue]("class" -> "red", "id" -> "msg"), js.undefined), js.Array(
+      hFunction("span", DataObject(js.undefined, js.undefined), "Hello")
     ))
   }
 

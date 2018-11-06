@@ -11,7 +11,7 @@ object SnabbdomSpec extends JSDomSuite {
 
   test("The Snabbdom Facade should correctly patch the DOM") {
     val message = "Hello World"
-    val vNode = hFunction("span#msg", DataObject(js.Dictionary(), js.undefined), message)
+    val vNode = hFunction("span#msg", DataObject(js.undefined, js.undefined), message)
 
     val node = document.createElement("div")
     document.body.appendChild(node)
@@ -21,7 +21,7 @@ object SnabbdomSpec extends JSDomSuite {
     document.getElementById("msg").innerHTML shouldBe message
 
     val newMessage = "Hello Snabbdom!"
-    val newNode = hFunction("div#new", DataObject(js.Dictionary(), js.undefined), newMessage)
+    val newNode = hFunction("div#new", DataObject(js.undefined, js.undefined), newMessage)
 
     patch(vNode, newNode)
 

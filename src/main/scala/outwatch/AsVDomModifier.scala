@@ -19,7 +19,7 @@ object AsVDomModifier {
   implicit def optionModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[Option[T]] =
     (value: Option[T]) => value.fold(VDomModifier.empty)(vm.asVDomModifier)
 
-  implicit def optionModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[js.UndefOr[T]] =
+  implicit def undefOrModifier[T](implicit vm: AsVDomModifier[T]): AsVDomModifier[js.UndefOr[T]] =
     (value: js.UndefOr[T]) => value.fold(VDomModifier.empty)(vm.asVDomModifier)
 
   implicit object VDomModifierAsVDomModifier extends AsVDomModifier[VDomModifier] {

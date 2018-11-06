@@ -9,9 +9,9 @@ import snabbdom.{DataObject, VNodeProxy}
 
 private[outwatch] sealed trait Modifier extends Any
 
-private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
-
 private[outwatch] sealed trait FlatModifier extends Modifier
+
+private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
 
 private[outwatch] final case class ModifierStream(stream: Observable[Modifier]) extends FlatModifier
 

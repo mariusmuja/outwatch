@@ -58,10 +58,8 @@ private[outwatch] trait SnabbdomEmitters { self: SeparatedEmitters =>
     event => emitters.foreach(_.trigger(event))
   }
 
-  def toSnabbdom: js.UndefOr[js.Dictionary[js.Function1[dom.Event, Unit]]] = emitters.map( e =>
-    e.groupBy(_.eventType).mapValues(emittersToFunction).toJSDictionary
-  )
-
+  def toSnabbdom: js.Dictionary[js.Function1[dom.Event, Unit]] =
+    emitters.groupBy(_.eventType).mapValues(emittersToFunction).toJSDictionary
 }
 
 private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
@@ -69,8 +67,8 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
   private[outwatch] def toSnabbdom(nodeType: String)(implicit scheduler: Scheduler): VNodeProxy = {
 
     val dataObject =  DataObject(
-      attributes.attrs, attributes.props, attributes.styles.toSnabbdom,
-      emitters.toSnabbdom, hooks.toSnabbdom, key.map(_.value)
+      attributes.flatMap(_.attrs), attributes.flatMap(_.props), attributes.flatMap(_.styles.map(_.toSnabbdom)),
+      emitters.map(_.toSnabbdom), hooks.map(_.toSnabbdom), key.map(_.value)
     )
 
     if (nodes.isEmpty) {

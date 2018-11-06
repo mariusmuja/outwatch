@@ -78,31 +78,29 @@ trait DataObject extends js.Object {
 
 object DataObject {
 
-  private def undefIfEmpty[T](value: js.Dictionary[T]): js.UndefOr[js.Dictionary[T]] = if (value.isEmpty) js.undefined else value
-
   type PropValue = Any
   type AttrValue = String | Boolean
   type StyleValue = String | js.Dictionary[String]
   type KeyValue = String | Double  // https://github.com/snabbdom/snabbdom#key--string--number
 
-  def apply(attrs: js.Dictionary[AttrValue],
+  def apply(attrs: js.UndefOr[js.Dictionary[AttrValue]],
             on: js.UndefOr[js.Dictionary[js.Function1[Event, Unit]]],
-            hooks : Hooks = Hooks()
-           ): DataObject = apply(attrs, js.Dictionary.empty, js.Dictionary.empty, on, hooks, js.undefined)
+            hooks: js.UndefOr[Hooks] = js.undefined
+           ): DataObject = apply(attrs, js.undefined, js.undefined, on, hooks, js.undefined)
 
 
-  def apply(attrs: js.Dictionary[AttrValue],
-            props: js.Dictionary[PropValue],
-            style: js.Dictionary[StyleValue],
+  def apply(attrs: js.UndefOr[js.Dictionary[AttrValue]],
+            props: js.UndefOr[js.Dictionary[PropValue]],
+            style: js.UndefOr[js.Dictionary[StyleValue]],
             on: js.UndefOr[js.Dictionary[js.Function1[Event, Unit]]],
-            hook: Hooks,
+            hook: js.UndefOr[Hooks],
             key: js.UndefOr[KeyValue]
            ): DataObject = {
 
     literal(
-      attrs = undefIfEmpty(attrs),
-      props = undefIfEmpty(props),
-      style = undefIfEmpty(style),
+      attrs = attrs,
+      props = props,
+      style = style,
       on = on,
       hook = hook,
       key = key.asInstanceOf[js.Any]
