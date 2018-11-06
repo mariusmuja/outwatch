@@ -36,7 +36,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 1
     mods.attributes.attrs.size shouldBe 1
-    mods.keyOption shouldBe None
+    mods.key shouldBe js.undefined
     streams shouldBe Observable.empty
   }
 
@@ -109,7 +109,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.attributes.attrs.size shouldBe 1
     mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
     streams shouldNotBe Observable.empty
-    mods.keyOption shouldBe Some(Key("123"))
+    mods.key shouldBe Key("123")
   }
 
   test("VDomModifiers should be separated correctly with children and properties") {
@@ -138,7 +138,7 @@ object OutWatchDomSpec extends JSDomSuite {
     mods.hooks.postPatchHooks.length shouldBe 1
     mods.hooks.destroyHooks.length shouldBe 0
     mods.attributes.attrs.size shouldBe 1
-    mods.keyOption shouldNotBe None // because ModifierStreams present
+    mods.key shouldNotBe js.undefined // because ModifierStreams present
 //    nodes.length shouldBe 2
     streams shouldNotBe Observable.empty
   }
@@ -149,19 +149,19 @@ object OutWatchDomSpec extends JSDomSuite {
     val vtree = div(
       IO {
         list += "child1"
-        ModifierStream(Observable(div()))
+        ModifierStream(Observable[Modifier]())
       },
       IO {
         list += "child2"
-        ModifierStream(Observable())
+        ModifierStream(Observable[Modifier]())
       },
       IO {
         list += "children1"
-        ModifierStream(Observable())
+        ModifierStream(Observable[Modifier]())
       },
       IO {
         list += "children2"
-        ModifierStream(Observable())
+        ModifierStream(Observable[Modifier]())
       },
       div(
         IO {
@@ -1043,13 +1043,13 @@ object OutWatchDomSpec extends JSDomSuite {
     element.innerHTML shouldBe """<div class="hans">1</div>"""
 
     val innerHandler2 = Handler.create[VDomModifier](IO.pure(EmptyModifier)).unsafeRunSync()
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(innerHandler2)))
+    myHandler.unsafeOnNext(innerHandler2)
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(IO.pure(CompositeModifier(ModifierStream(innerHandler2) :: Nil)))
+    myHandler.unsafeOnNext(modifiers(innerHandler2))
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(IO.pure(CompositeModifier(StringVNode("pete") :: ModifierStream(innerHandler2) :: Nil)))
+    myHandler.unsafeOnNext(modifiers("pete", innerHandler2))
     element.innerHTML shouldBe """<div>pete</div>"""
     innerHandler2.unsafeOnNext(VDomModifier(id := "dieter", "r"))
     element.innerHTML shouldBe """<div id="dieter">peter</div>"""
@@ -1116,14 +1116,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](cls := "hans")))))))
+    myHandler.unsafeOnNext(Observable[VDomModifier](Observable[VDomModifier](cls := "hans")))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
   test("Modifier stream should work for triple nested modifier stream receiver") {
     val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
     val node = div(id := "strings",
-      div(IO.pure(ModifierStream(myHandler)))
+      div(myHandler)
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -1131,14 +1131,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable[VDomModifier](IO.pure(ModifierStream(Observable(cls := "hans"))))))))))
+    myHandler.unsafeOnNext(Observable[VDomModifier](Observable[VDomModifier](Observable(cls := "hans"))))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
   test("Modifier stream should work for multiple nested modifier stream receiver") {
     val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
     val node = div(id := "strings",
-      div(IO.pure(ModifierStream(myHandler)))
+      div(myHandler)
     )
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
@@ -1146,12 +1146,14 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(IO.pure(ModifierStream(
+    myHandler.unsafeOnNext(
       Observable[VDomModifier](
-        VDomModifier(
-          IO.pure(ModifierStream(Observable[VDomModifier]("a"))),
-          IO.pure(ModifierStream(Observable(span("b")))))
-      ))))
+        modifiers(
+          Observable[VDomModifier]("a"),
+          Observable(span("b"))
+        )
+      )
+    )
     element.innerHTML shouldBe """<div>a<span>b</span></div>"""
   }
 

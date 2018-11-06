@@ -13,7 +13,7 @@ trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   def :=(value: T): IO[A] = IO.pure(assign(value))
   def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
   def <--(valueStream: Observable[T]): IO[ModifierStream] = {
-    IO.pure(ModifierStream(valueStream.map(s => IO.pure(assign(s)))))
+    IO.pure(ModifierStream(valueStream.map(s => assign(s))))
   }
 }
 
@@ -106,10 +106,8 @@ object ChildStreamBuilder {
 
   implicit object ChildrenTag
 
-  def <--(valueStream: Observable[VNode]): IO[ModifierStream] =
-    IO.pure(ModifierStream(valueStream))
+  def <--(valueStream: Observable[VNode]): VDomModifier = valueStream
 
-  def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): IO[ModifierStream] =
-    IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+  def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): VDomModifier = valueStream
 }
 

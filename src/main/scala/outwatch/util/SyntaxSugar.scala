@@ -1,6 +1,6 @@
 package outwatch.util
 
-import outwatch.dom.{IO, ModifierStream, Observable, VDomModifier}
+import outwatch.dom.{EmptyModifier, IO, ModifierStream, Observable, VDomModifier}
 
 
 object SyntaxSugar {
@@ -9,7 +9,7 @@ object SyntaxSugar {
     def ?=(mod: VDomModifier): IO[ModifierStream] = {
       mod.map { mod =>
         ModifierStream(
-          conditionStream.map(condition => if (condition) IO.pure(mod) else VDomModifier.empty)
+          conditionStream.map(condition => if (condition) mod else EmptyModifier)
         )
       }
     }

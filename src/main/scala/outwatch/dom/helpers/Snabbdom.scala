@@ -11,9 +11,9 @@ import scala.scalajs.js.JSConverters._
 
 private[outwatch] trait SnabbdomStyles { self: SeparatedStyles =>
   def toSnabbdom: js.Dictionary[Style.Value] = {
-    if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict : Style.Value
-    if (removeDict.nonEmpty) styleDict("remove") = removeDict : Style.Value
-    if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict : Style.Value
+    if (delayedDict.nonEmpty) styleDict("delayed") = delayedDict.get : Style.Value
+    if (removeDict.nonEmpty) styleDict("remove") = removeDict.get : Style.Value
+    if (destroyDict.nonEmpty) styleDict("destroy") = destroyDict.get : Style.Value
 
     styleDict
   }
@@ -76,7 +76,7 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
 
     val dataObject =  DataObject(
       attributes.attrs, attributes.props, attributes.styles.toSnabbdom,
-      emitters.toSnabbdom, hooks.toSnabbdom, keyOption.map(_.value).orUndefined
+      emitters.toSnabbdom, hooks.toSnabbdom, key.map(_.value)
     )
 
     if (nodes.isEmpty) {

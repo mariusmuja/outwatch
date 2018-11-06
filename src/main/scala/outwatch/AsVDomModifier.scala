@@ -34,9 +34,8 @@ object AsVDomModifier {
   }
 
   implicit def observableRender[T](implicit r: AsVDomModifier[T]): AsVDomModifier[Observable[T]] = (valueStream: Observable[T]) =>
-    IO.pure(ModifierStream(valueStream.map(r.asVDomModifier)))
+    IO.pure(ModifierStream(valueStream.concatMap(m => Observable.fromTaskLike(r.asVDomModifier(m)))))
 
   implicit def taskLikeRender[T, F[_]: TaskLike](implicit r: AsVDomModifier[T]): AsVDomModifier[F[T]] = (value: F[T]) =>
-    IO.pure(ModifierStream(Observable.fromTaskLike(value).map(r.asVDomModifier)))
-
+    Observable.fromTaskLike(value)
 }

@@ -3,7 +3,7 @@ package outwatch.dom
 import monix.execution.Scheduler
 import monix.reactive.Observer
 import org.scalajs.dom._
-import outwatch.dom.helpers.VNodeState
+import outwatch.dom.helpers.{VNodeState, ValueObservable}
 import snabbdom.{DataObject, VNodeProxy}
 
 
@@ -13,7 +13,7 @@ private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) e
 
 private[outwatch] sealed trait FlatModifier extends Modifier
 
-private[outwatch] final case class ModifierStream(stream: Observable[VDomModifier]) extends FlatModifier
+private[outwatch] final case class ModifierStream(stream: Observable[Modifier]) extends FlatModifier
 
 private[outwatch] sealed trait SimpleModifier extends FlatModifier
 
