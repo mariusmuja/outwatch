@@ -85,15 +85,19 @@ object Sink {
   def create[T](next: T => Future[Ack],
                 error: Throwable => Unit = _ => (),
                 complete: () => Unit = () => ()
-               )(implicit s: Scheduler): IO[Sink[T]] = {
-    IO {
-      ObserverSink(
-        new Observer[T] {
-          override def onNext(t: T): Future[Ack] = next(t)
-          override def onError(ex: Throwable): Unit = error(ex)
-          override def onComplete(): Unit = complete()
-        }
-      )
+               ): IO[Sink[T]] = {
+    IO.deferAction { implicit scheduler =>
+      IO {
+        ObserverSink(
+          new Observer[T] {
+            override def onNext(t: T): Future[Ack] = next(t)
+
+            override def onError(ex: Throwable): Unit = error(ex)
+
+            override def onComplete(): Unit = complete()
+          }
+        )
+      }
     }
   }
 
