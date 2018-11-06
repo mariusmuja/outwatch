@@ -18,6 +18,16 @@ object AttributeSpec extends JSDomSuite {
     }
   }
 
+  testEffect("class attributes should be merged when given as sequences") {
+    val node = input(
+      cls := Seq("class1", "class2")
+    ).map(_.toSnabbdom)
+
+    node.map { node =>
+      node.data.attrs.toMap shouldBe Map("class" -> "class1 class2")
+    }
+  }
+
   testEffect("custom attributes should be able to be accumulated") {
 
     val node = input(
@@ -29,6 +39,8 @@ object AttributeSpec extends JSDomSuite {
       node.data.attrs.toList shouldBe List("id" -> "foo1,foo2")
     }
   }
+
+
 
   testEffect("data attributes should be able to be accumulated") {
 
@@ -101,8 +113,8 @@ object AttributeSpec extends JSDomSuite {
 
   testEffect("optional attributes should  correctly render") {
     val node = input(
-      data.foo :=? Option("bar"),
-      data.bar :=? Option.empty[String]
+      data.foo := Option("bar"),
+      data.bar := Option.empty[String]
     ).map(_.toSnabbdom)
 
     node.map { node =>
@@ -131,7 +143,7 @@ object AttributeSpec extends JSDomSuite {
   testEffect("apply on vtree should correctly merge styles written with style") {
     val node = input(
       style("color") := "red",
-      fontSize := "5px"
+      fontSize := Seq("1px", "5px")  // 5px will override 1px
     )(
       style("color") := "blue",
       border := "1px solid black"

@@ -5,21 +5,22 @@ import outwatch.dom._
 
 import scala.language.dynamics
 
-
 trait AttributeBuilder[-T, +A <: Attribute] extends Any {
   protected def name: String
   private[outwatch] def assign(value: T): A
 
-  def :=(value: T): IO[A] = IO.pure(assign(value))
-  def :=?(value: Option[T]): Option[VDomModifier] = value.map(:=)
-  def <--(valueStream: Observable[T]): IO[ModifierStream] = {
-    IO.pure(ModifierStream(valueStream.map(s => assign(s))))
-  }
+  def :=(value: T): VDomModifier = IO.pure(assign(value))
+
+  def :=(value: Option[T]): VDomModifier = value.map(:=)
+  def :=(value: Observable[T]): VDomModifier = IO.pure(ModifierStream(value.map(s => assign(s))))
+  def :=(value: Seq[T]): VDomModifier = value.map(:=)
+
+  def <--(value: Observable[T]): VDomModifier = :=(value)
 }
 
 object AttributeBuilder {
-  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): IO[Attr] = builder := true
-  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): IO[Prop] = builder := true
+  implicit def toAttribute(builder: AttributeBuilder[Boolean, Attr]): VDomModifier = builder := true
+  implicit def toProperty(builder: AttributeBuilder[Boolean, Prop]): VDomModifier = builder := true
 }
 
 // Attr

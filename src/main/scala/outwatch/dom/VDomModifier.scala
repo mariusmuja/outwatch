@@ -3,7 +3,7 @@ package outwatch.dom
 import monix.execution.Scheduler
 import monix.reactive.Observer
 import org.scalajs.dom._
-import outwatch.dom.helpers.{VNodeState, ValueObservable}
+import outwatch.dom.helpers.VNodeState
 import snabbdom.{DataObject, VNodeProxy}
 
 
@@ -67,9 +67,7 @@ object Prop {
   type Value = DataObject.PropValue
 }
 
-private[outwatch] sealed trait Style extends Attribute {
-  val value: String
-}
+private[outwatch] sealed trait Style extends Attribute
 object Style {
   type Value = DataObject.StyleValue
 }
@@ -81,8 +79,6 @@ private[outwatch] final case class AccumStyle(title: String, value: String, accu
 private[outwatch] final case class DelayedStyle(title: String, value: String) extends Style
 private[outwatch] final case class RemoveStyle(title: String, value: String) extends Style
 private[outwatch] final case class DestroyStyle(title: String, value: String) extends Style
-
-
 
 // Hooks
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]

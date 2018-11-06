@@ -2,7 +2,6 @@ package outwatch.dom.helpers
 
 import monix.execution.Ack.Continue
 import monix.execution.{Cancelable, Scheduler}
-import monix.reactive.observers.Subscriber
 import org.scalajs.dom
 import outwatch.dom._
 import snabbdom.{VNodeProxy, patch}
