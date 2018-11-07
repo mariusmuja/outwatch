@@ -1,9 +1,10 @@
 package outwatch
 
+import outwatch.dom.{CompositeModifier, EmptyModifier, Implicits, ManagedSubscriptions, Modifier, VTree}
+
 import scala.collection.mutable.ArrayBuffer
 
-
-package object dom extends Implicits with ManagedSubscriptions with SideEffects {
+object all extends Implicits with ManagedSubscriptions with SideEffects {
 
   type VNode = IO[VTree]
   type VDomModifier = IO[Modifier]
@@ -33,3 +34,4 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
   type IO[+T] = monix.eval.Task[T]
   val IO = monix.eval.Task
 }
+
