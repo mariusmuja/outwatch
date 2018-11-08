@@ -67,9 +67,9 @@ scalacOptions ++= {
 
 testFrameworks += new TestFramework("minitest.runner.Framework")
 
-requiresDOM in Test := true
+requireJsDomEnv in Test := true
 
-version in installJsdom := "11.12.0"
+version in installJsdom := "13.0.0"
 
 useYarn := true
 
