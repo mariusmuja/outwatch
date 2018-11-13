@@ -15,7 +15,7 @@ import scala.scalajs.js
 private[outwatch] object BuilderTypes {
   type Attribute[T, _] = helpers.AttributeBuilder[T, Attr]
   type Property[T, _] = helpers.PropBuilder[T]
-  type EventEmitter[E <: dom.Event] = SimpleEmitterBuilder[E, Emitter]
+  type EventEmitter[E <: dom.Event] = SimpleEmitterBuilder[E, VDomModifier]
 
   type Tag[T] = VTree
 
@@ -138,7 +138,7 @@ trait Events
   extends eventProps.HTMLElementEventProps[BuilderTypes.EventEmitter]
   with builders.EventPropBuilder[BuilderTypes.EventEmitter, dom.Event] {
 
-  override def eventProp[V <: dom.Event](key: String): BuilderTypes.EventEmitter[V] =  EmitterBuilder[V](key)
+  override def eventProp[V <: dom.Event](key: String): BuilderTypes.EventEmitter[V] =  EmitterBuilder.event[V](key)
 }
 
 

@@ -2,9 +2,9 @@ package outwatch
 
 import monix.execution.Ack.Stop
 import monix.execution.{Ack, Cancelable, Scheduler}
-import monix.reactive.{Observer, Pipe => MonixPipe}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
+import monix.reactive.{Observer, Pipe => MonixPipe}
 import outwatch.dom.{IO, Observable}
 
 import scala.concurrent.Future
@@ -25,7 +25,7 @@ sealed trait Sink[-T] extends Any {
 
   private[outwatch] def observer: Subscriber[T]
 
-  def unsafeOnNext(value: T): Future[Ack] = observer.onNext(value)
+  def onNext(value: T): Future[Ack] = observer.onNext(value)
 
   def feed(values: Iterator[T]): Future[Ack] = observer.feed(values)
 

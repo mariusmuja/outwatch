@@ -4,7 +4,7 @@ import outwatch.dom.{CompositeModifier, EmptyModifier, Implicits, ManagedSubscri
 
 import scala.collection.mutable.ArrayBuffer
 
-object all extends Implicits with ManagedSubscriptions with SideEffects {
+object all extends Implicits with ManagedSubscriptions with SideEffects with SinkSyntax {
 
   type VNode = IO[VTree]
   type VDomModifier = IO[Modifier]
@@ -27,9 +27,6 @@ object all extends Implicits with ManagedSubscriptions with SideEffects {
 
   type Pipe[-I, +O] = outwatch.Pipe[I, O]
   val Pipe = outwatch.Pipe
-
-  type Handler[T] = outwatch.Handler[T]
-  val Handler = outwatch.Handler
 
   type IO[+T] = monix.eval.Task[T]
   val IO = monix.eval.Task

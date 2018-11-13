@@ -12,39 +12,43 @@ private[outwatch] final class SeparatedModifiers(
   var nodes: js.Array[StaticVNode] = js.Array(),
   var hasVtrees: Boolean = false,
   var key: js.UndefOr[Key] = js.undefined
-) extends SnabbdomModifiers { self =>
+) extends SnabbdomModifiers {
 
   private def add(m: SimpleModifier): Unit = m match {
-    case SimpleCompositeModifier(mods) => mods.foreach(add)
-    case EmptyModifier =>
-    case e: Emitter =>
-      emitters.fold{
-        emitters = new SeparatedEmitters(js.Array(e))
-      }(_.push(e))
     case attr: Attribute =>
       attributes.fold {
         val value = new SeparatedAttributes()
         value.push(attr)
         attributes = value
-      }(_.push(attr))
+      } { a => a.push(attr); () }
+    case sn: VTree =>
+      hasVtrees = true
+      nodes.push(sn)
+      ()
+    case sn: StringVNode =>
+      nodes.push(sn)
+      ()
+    case e: Emitter =>
+      emitters.fold {
+        emitters = new SeparatedEmitters(js.Array(e))
+      } { em => em.push(e); () }
+    case SimpleCompositeModifier(mods) =>
+      mods.foreach(add)
     case hook: Hook[_] =>
       hooks.fold {
         val value = new SeparatedHooks()
         value.push(hook)
         hooks = value
-      }(_.push(hook))
+      } { h => h.push(hook); () }
     case hook: LifecycleHook =>
       hooks.fold {
         val value = new SeparatedHooks()
         value.push(hook)
         hooks = value
-      }(_.push(hook))
-    case sn: StringVNode => nodes.push(sn); ()
-    case sn: VTree =>
-      hasVtrees = true
-      nodes.push(sn)
-      ()
-    case k: Key => key = k
+      } { h => h.push(hook); () }
+    case EmptyModifier =>
+    case k: Key =>
+      key = k
   }
 }
 
@@ -108,7 +112,7 @@ private[outwatch] final class SeparatedAttributes(
         val stl = new SeparatedStyles()
         stl.push(s)
         styles = stl
-      }(_.push(s))
+      } { stl => stl.push(s); () }
   }
 }
 
@@ -125,34 +129,34 @@ private[outwatch] final class SeparatedHooks(
     case h: InsertHook =>
       insertHooks.fold {
         insertHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
     case h: PrePatchHook =>
       prePatchHooks.fold {
         prePatchHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
     case h: UpdateHook =>
       updateHooks.fold {
         updateHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
     case h: PostPatchHook =>
       postPatchHooks.fold {
         postPatchHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
     case h: DestroyHook =>
       destroyHooks.fold {
         destroyHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
   }
 
   @inline def push(h: LifecycleHook): Unit = h match {
     case h: InsertProxyHook =>
       insertProxyHooks.fold {
         insertProxyHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
     case h: DestroyProxyHook =>
       destroyProxyHooks.fold {
         destroyProxyHooks = js.Array(h)
-      }(_.push(h))
+      } { hk => hk.push(h); () }
 
   }
 }
@@ -160,6 +164,9 @@ private[outwatch] final class SeparatedHooks(
 private[outwatch] final class SeparatedEmitters(
   val emitters: js.Array[Emitter]
 ) extends SnabbdomEmitters {
-  @inline def push(e: Emitter): Unit = emitters.push(e)
+  @inline def push(e: Emitter): Unit = {
+    emitters.push(e)
+    ()
+  }
 }
 

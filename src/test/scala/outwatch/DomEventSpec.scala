@@ -74,7 +74,7 @@ object DomEventSpec extends JSDomSuite {
     document.getElementById("child").innerHTML shouldBe ""
 
     val firstMessage = "First"
-    messages.observer.onNext(firstMessage)
+    messages.onNext(firstMessage)
 
     val event = document.createEvent("Events")
     initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
@@ -88,7 +88,7 @@ object DomEventSpec extends JSDomSuite {
     document.getElementById("child").innerHTML shouldBe firstMessage
 
     val secondMessage = "Second"
-    messages.observer.onNext(secondMessage)
+    messages.onNext(secondMessage)
 
     document.getElementById("click").dispatchEvent(event)
 
@@ -316,10 +316,10 @@ object DomEventSpec extends JSDomSuite {
     val node = {
       div(
         button(id := "button",
-          onClick --> sideEffect(_ => triggeredEventFunction += 1),
-          onClick(1) --> sideEffect(triggeredIntFunction += _),
+          onClick --> sideEffect{_ => triggeredEventFunction += 1 },
+          onClick(1) --> sideEffect[Int](triggeredIntFunction += _),
           onClick --> sideEffect{ triggeredFunction += 1 },
-          onUpdate --> sideEffect((old,current) => triggeredFunction2 += 1),
+          onUpdate --> sideEffect{(old, current) => triggeredFunction2 += 1},
           stream
         )
       )

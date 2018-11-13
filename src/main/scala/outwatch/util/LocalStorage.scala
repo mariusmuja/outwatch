@@ -8,7 +8,7 @@ import org.scalajs.dom.window.sessionStorage
 import outwatch.dom.{IO, Observable}
 import outwatch.dom.dsl.events
 import cats.implicits._
-import outwatch.Handler
+import outwatch.{Handler, Pipe}
 
 class Storage(domStorage: dom.Storage) {
   private def handlerWithTransform(key: String, transform: Observable[Option[String]] => Observable[Option[String]])(implicit scheduler: Scheduler) = {
@@ -29,7 +29,7 @@ class Storage(domStorage: dom.Storage) {
     }
   }
 
-  def handlerWithoutEvents(key: String)(implicit scheduler: Scheduler): IO[Handler[Option[String]]] = {
+  def handlerWithoutEvents(key: String)(implicit scheduler: Scheduler): IO[Pipe[Option[String], Option[String]]] = {
     handlerWithTransform(key, identity)
   }
 

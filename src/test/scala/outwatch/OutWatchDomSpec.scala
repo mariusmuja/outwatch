@@ -1,6 +1,5 @@
 package outwatch
 
-import monix.execution.Ack.Continue
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.window.localStorage
 import org.scalajs.dom.{document, html}
@@ -41,7 +40,10 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
   test("VDomModifiers should be separated correctly") {
+    import outwatch.all._
     import dsl.attributes
+
+    val subject = PublishSubject[Int]
 
     val modifiers = Seq(
       BasicAttr("class", "red"),
@@ -54,7 +56,7 @@ object OutWatchDomSpec extends JSDomSuite {
         Seq(
           div(),
           attributes.`class` := "blue",
-          attributes.onClick(1) --> Sink.create[Int](_ => Continue).unsafeRunSync(),
+          attributes.onClick(1) --> subject.toSink,
           attributes.hidden <-- Observable(false)
         ).map(_.unsafeRunSync())
       )
@@ -282,7 +284,7 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vtree).unsafeRunSync()
     ioCounter shouldBe 1
     handlerCounter shouldBe 0
-    stringHandler.observer.onNext("pups")
+    stringHandler.onNext("pups")
     ioCounter shouldBe 1
     handlerCounter shouldBe 1
   }
@@ -313,7 +315,7 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto(node, vtree).unsafeRunSync()
     ioCounter shouldBe 1
     handlerCounter shouldBe 0
-    stringHandler.observer.onNext("pups")
+    stringHandler.onNext("pups")
     ioCounter shouldBe 1
     handlerCounter shouldBe 1
   }
@@ -894,7 +896,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "a"
 
-    myOption.unsafeOnNext(None)
+    myOption.onNext(None)
     element.innerHTML shouldBe ""
   }
 
@@ -909,7 +911,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div>a</div>"
 
-    myOption.unsafeOnNext(None)
+    myOption.onNext(None)
     element.innerHTML shouldBe ""
   }
 
@@ -925,7 +927,7 @@ object OutWatchDomSpec extends JSDomSuite {
     localStorage.getItem(key) shouldBe null
     triggeredHandlerEvents.toList shouldBe List(None)
 
-    storageHandler.unsafeOnNext(Some("joe"))
+    storageHandler.onNext(Some("joe"))
     localStorage.getItem(key) shouldBe "joe"
     triggeredHandlerEvents.toList shouldBe List(None, Some("joe"))
 
@@ -935,7 +937,7 @@ object OutWatchDomSpec extends JSDomSuite {
     }
     initialValue shouldBe Some("joe")
 
-    storageHandler.unsafeOnNext(None)
+    storageHandler.onNext(None)
     localStorage.getItem(key) shouldBe null
     triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None)
 
@@ -950,11 +952,11 @@ object OutWatchDomSpec extends JSDomSuite {
     triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None)
 
     // only trigger handler if value changed
-    storageHandler.unsafeOnNext(None)
+    storageHandler.onNext(None)
     localStorage.getItem(key) shouldBe null
     triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None)
 
-    storageHandler.unsafeOnNext(Some("rhabarbar"))
+    storageHandler.onNext(Some("rhabarbar"))
     localStorage.getItem(key) shouldBe "rhabarbar"
     triggeredHandlerEvents.toList shouldBe List(None, Some("joe"), None, Some("split"), None, Some("rhabarbar"))
 
@@ -975,7 +977,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe """<div class="hans"><b>stark</b></div>"""
 
-    myHandler.unsafeOnNext(Option(id := "fair"))
+    myHandler.onNext(Option(id := "fair"))
     element.innerHTML shouldBe """<div id="fair"></div>"""
   }
 
@@ -990,11 +992,11 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div>bla</div>"
 
-    myHandler.unsafeOnNext(cls := "hans")
+    myHandler.onNext(cls := "hans")
     element.innerHTML shouldBe """<div class="hans">bla</div>"""
 
     val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
-    myHandler.unsafeOnNext(div(
+    myHandler.onNext(div(
       innerHandler,
       cls := "no?",
       "yes?"
@@ -1002,10 +1004,10 @@ object OutWatchDomSpec extends JSDomSuite {
 
     element.innerHTML shouldBe """<div><div class="no?">yes?</div>bla</div>"""
 
-    innerHandler.unsafeOnNext(Seq(span("question:"), id := "heidi"))
+    innerHandler.onNext(Seq(span("question:"), id := "heidi"))
     element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question:</span>yes?</div>bla</div>"""
 
-    myHandler.unsafeOnNext(div(
+    myHandler.onNext(div(
       innerHandler,
       cls := "no?",
       "yes?",
@@ -1014,13 +1016,13 @@ object OutWatchDomSpec extends JSDomSuite {
 
     element.innerHTML shouldBe """<div><div class="no?">yes?<b>go!</b></div>bla</div>"""
 
-    innerHandler.unsafeOnNext(Seq(span("question and answer:"), id := "heidi"))
+    innerHandler.onNext(Seq(span("question and answer:"), id := "heidi"))
     element.innerHTML shouldBe """<div><div class="no?" id="heidi"><span>question and answer:</span>yes?<b>go!</b></div>bla</div>"""
 
-    myHandler.unsafeOnNext(Seq(span("nope")))
+    myHandler.onNext(Seq(span("nope")))
     element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
 
-    innerHandler.unsafeOnNext(b("me?"))
+    innerHandler.onNext(b("me?"))
     element.innerHTML shouldBe """<div><span>nope</span>bla</div>"""
   }
 
@@ -1036,28 +1038,28 @@ object OutWatchDomSpec extends JSDomSuite {
     element.innerHTML shouldBe "<div></div>"
 
     val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
-    myHandler.unsafeOnNext(innerHandler)
+    myHandler.onNext(innerHandler)
     element.innerHTML shouldBe """<div></div>"""
 
-    innerHandler.unsafeOnNext(VDomModifier(cls := "hans", "1"))
+    innerHandler.onNext(VDomModifier(cls := "hans", "1"))
     element.innerHTML shouldBe """<div class="hans">1</div>"""
 
     val innerHandler2 = Handler.create[VDomModifier](IO.pure(EmptyModifier)).unsafeRunSync()
-    myHandler.unsafeOnNext(innerHandler2)
+    myHandler.onNext(innerHandler2)
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(modifiers(innerHandler2))
+    myHandler.onNext(modifiers(innerHandler2))
     element.innerHTML shouldBe """<div></div>"""
 
-    myHandler.unsafeOnNext(modifiers("pete", innerHandler2))
+    myHandler.onNext(modifiers("pete", innerHandler2))
     element.innerHTML shouldBe """<div>pete</div>"""
-    innerHandler2.unsafeOnNext(VDomModifier(id := "dieter", "r"))
+    innerHandler2.onNext(VDomModifier(id := "dieter", "r"))
     element.innerHTML shouldBe """<div id="dieter">peter</div>"""
 
-    innerHandler.unsafeOnNext(b("me?"))
+    innerHandler.onNext(b("me?"))
     element.innerHTML shouldBe """<div id="dieter">peter</div>"""
 
-    myHandler.unsafeOnNext(span("the end"))
+    myHandler.onNext(span("the end"))
     element.innerHTML shouldBe """<div><span>the end</span></div>"""
   }
 
@@ -1075,10 +1077,10 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.outerHTML shouldBe """<div id="strings" data-test="v">ab</div>"""
 
-    innerHandler.unsafeOnNext("c")
+    innerHandler.onNext("c")
     element.outerHTML shouldBe """<div id="strings" data-test="v">ac</div>"""
 
-    outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
+    outerHandler.onNext(Seq[VDomModifier]("meh"))
     element.outerHTML shouldBe """<div id="strings">meh</div>"""
   }
 
@@ -1095,13 +1097,13 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.outerHTML shouldBe """<div id="strings" data-test="v">a</div>"""
 
-    innerHandler.unsafeOnNext("c")
+    innerHandler.onNext("c")
     element.outerHTML shouldBe """<div id="strings" data-test="v" href="c">a</div>"""
 
-    innerHandler.unsafeOnNext("d")
+    innerHandler.onNext("d")
     element.outerHTML shouldBe """<div id="strings" data-test="v" href="d">a</div>"""
 
-    outerHandler.unsafeOnNext(Seq[VDomModifier]("meh"))
+    outerHandler.onNext(Seq[VDomModifier]("meh"))
     element.outerHTML shouldBe """<div id="strings">meh</div>"""
   }
 
@@ -1116,7 +1118,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(Observable[VDomModifier](Observable[VDomModifier](cls := "hans")))
+    myHandler.onNext(Observable[VDomModifier](Observable[VDomModifier](cls := "hans")))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
@@ -1131,7 +1133,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(Observable[VDomModifier](Observable[VDomModifier](Observable(cls := "hans"))))
+    myHandler.onNext(Observable[VDomModifier](Observable[VDomModifier](Observable(cls := "hans"))))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
@@ -1146,7 +1148,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(
+    myHandler.onNext(
       Observable[VDomModifier](
         modifiers(
           Observable[VDomModifier]("a"),
@@ -1169,7 +1171,7 @@ object OutWatchDomSpec extends JSDomSuite {
     val element = document.getElementById("strings")
     element.innerHTML shouldBe "<div></div>"
 
-    myHandler.unsafeOnNext(cls <-- Observable("hans"))
+    myHandler.onNext(cls <-- Observable("hans"))
     element.innerHTML shouldBe """<div class="hans"></div>"""
   }
 
@@ -1185,7 +1187,7 @@ object OutWatchDomSpec extends JSDomSuite {
     element.innerHTML shouldBe """<div id="click"></div>"""
 
     var clickCounter = 0
-    myHandler.unsafeOnNext(onClick --> sideEffect(_ => clickCounter += 1))
+    myHandler.onNext(onClick --> sideEffect(_ => clickCounter += 1))
     element.innerHTML shouldBe """<div id="click"></div>"""
 
     clickCounter shouldBe 0
@@ -1211,11 +1213,11 @@ object OutWatchDomSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
     val element = document.getElementById("strings")
     element.innerHTML shouldBe """<div class="first second"></div>"""
-    myClasses2.unsafeOnNext("third")
+    myClasses2.onNext("third")
     element.innerHTML shouldBe """<div class="first second third"></div>"""
-    myClasses2.unsafeOnNext("more")
+    myClasses2.onNext("more")
     element.innerHTML shouldBe """<div class="first second more"></div>"""
-    myClasses.unsafeOnNext("yeah")
+    myClasses.onNext("yeah")
     element.innerHTML shouldBe """<div class="first yeah more"></div>"""
   }
 
@@ -1246,9 +1248,9 @@ object OutWatchDomSpec extends JSDomSuite {
 
     OutWatch.renderInto(node, vtree).unsafeRunSync()
 
-    handler.unsafeOnNext(1)
-    handler2.unsafeOnNext(1)
-    handler3.unsafeOnNext(1)
+    handler.onNext(1)
+    handler2.onNext(1)
+    handler3.onNext(1)
 
     node.innerHTML shouldBe "<div id=\"main\"><div></div><div></div><div><div>1</div></div><div><div>1</div></div></div>"
   }

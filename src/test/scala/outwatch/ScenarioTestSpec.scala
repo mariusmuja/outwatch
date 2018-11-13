@@ -68,7 +68,7 @@ object ScenarioTestSpec extends JSDomSuite {
 
       div <- div(
         div(
-          button(id := "plus", "+", onClick(Plus) --> store),
+          button(id := "plus", "+", onClick(Plus).-->(store: Sink[Action])),
           button(id := "minus", "-", onClick(Minus) --> store),
           span(id:="counter", store)
         )

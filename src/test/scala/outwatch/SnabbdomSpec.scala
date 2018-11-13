@@ -32,6 +32,7 @@ object SnabbdomSpec extends JSDomSuite {
     import outwatch.dom._
     import outwatch.dom.dsl._
 
+
     val clicks = outwatch.Handler.create[Int](1).unsafeRunSync()
     val nodes = clicks.map { i =>
       div( id := "div",

@@ -24,20 +24,20 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   @inline private def createHookSingle(hooks: js.UndefOr[js.Array[_ <: Hook[dom.Element]]], lifecycleHooks: js.UndefOr[js.Array[_ <: LifecycleHook]]
   )(implicit s: Scheduler): js.UndefOr[Hooks.HookSingleFn] = {
     if (hooks.nonEmpty || lifecycleHooks.nonEmpty) { p: VNodeProxy =>
-      if (hooks.nonEmpty) for (e <- p.elm) hooks.get.foreach(_.observer.onNext(e))
+      if (hooks.nonEmpty) for (e <- p.elm) hooks.get.foreach(_.observer.feed(e :: Nil))
       if (lifecycleHooks.nonEmpty) lifecycleHooks.get.foreach(_.fn(p, s))
     }: Hooks.HookSingleFn
     else js.undefined
   }
 
-  @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]]): Hooks.HookPairFn = {
+  @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]])(implicit s: Scheduler): Hooks.HookPairFn = {
     (old: VNodeProxy, cur: VNodeProxy) =>
-      for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.onNext((o, c)))
+      for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.feed((o, c) :: Nil))
   }
 
-  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]]): Hooks.HookPairFn = {
+  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]])(implicit s: Scheduler): Hooks.HookPairFn = {
     (old: VNodeProxy, cur: VNodeProxy) =>
-      hooks.foreach(_.observer.onNext((old.elm.toOption, cur.elm.toOption)))
+      hooks.foreach(_.observer.feed((old.elm.toOption, cur.elm.toOption)::Nil))
   }
 
   def toSnabbdom(implicit s: Scheduler): Hooks = {

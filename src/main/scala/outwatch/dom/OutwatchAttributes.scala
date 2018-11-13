@@ -19,20 +19,20 @@ trait OutWatchLifeCycleAttributes {
     * This hook is invoked once the DOM element for a vnode has been inserted into the document
     * and the rest of the patch cycle is done.
     */
-  lazy val onInsert   = SimpleEmitterBuilder(InsertHook)
+  lazy val onInsert   = EmitterBuilder.modifier(InsertHook)
 
   /** Lifecycle hook for component prepatch. */
-  lazy val onPrePatch   = SimpleEmitterBuilder(PrePatchHook)
+  lazy val onPrePatch   = EmitterBuilder.modifier(PrePatchHook)
 
   /** Lifecycle hook for component updates. */
-  lazy val onUpdate   = SimpleEmitterBuilder(UpdateHook)
+  lazy val onUpdate   = EmitterBuilder.modifier(UpdateHook)
 
   /**
     * Lifecycle hook for component postpatch.
     *
     *  This hook is invoked every time a node has been patched against an older instance of itself.
     */
-  lazy val onPostPatch   = SimpleEmitterBuilder(PostPatchHook)
+  lazy val onPostPatch   = EmitterBuilder.modifier(PostPatchHook)
 
   /**
     * Lifecycle hook for component destruction.
@@ -40,7 +40,7 @@ trait OutWatchLifeCycleAttributes {
     * This hook is invoked on a virtual node when its DOM element is removed from the DOM
     * or if its parent is being removed from the DOM.
     */
-  lazy val onDestroy  = SimpleEmitterBuilder(DestroyHook)
+  lazy val onDestroy  = EmitterBuilder.modifier(DestroyHook)
 }
 
 /** Snabbdom Key Attribute */

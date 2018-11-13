@@ -3,7 +3,8 @@ package outwatch
 import outwatch.dom.{IO, Observable}
 
 object Handler {
-  private[outwatch] def apply[T](sink: Sink[T], source: Observable[T]): Handler[T] = Pipe(sink, source)
+
+  private[outwatch] def apply[T](sink: Sink[T], source: Observable[T]): Pipe[T, T] = Pipe(sink, source)
 
   /**
     * This function also allows you to create initial values for your newly created Handler.
@@ -13,9 +14,9 @@ object Handler {
     * @tparam T the type parameter of the elements
     * @return the newly created Handler.
     */
-  def create[T](seeds: T*): IO[Handler[T]] = Pipe.create[T](seeds: _*)
+  def create[T](seeds: T*): IO[Pipe[T, T]] = Pipe.create[T](seeds: _*)
 
-  def create[T]: IO[Handler[T]] = Pipe.create[T]
+  def create[T]: IO[Pipe[T, T]] = Pipe.create[T]
 
 }
 

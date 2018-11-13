@@ -42,7 +42,7 @@ object Store {
           val (newState, effects) = reducer.reducer(state, action)
 
           val cancelable = effects.subscribe(
-            e => handler.observer.feed(e :: Nil),
+            e => handler.feed(e :: Nil),
             e => dom.console.error(e.getMessage) // just log the error, don't push it into the handler's observable, because it would stop the scan "loop"
           )
           if (!cancelable.isInstanceOf[IsDummy]) sub += cancelable
