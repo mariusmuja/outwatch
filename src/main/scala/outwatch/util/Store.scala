@@ -3,8 +3,7 @@ package outwatch.util
 import monix.execution.Cancelable.IsDummy
 import monix.execution.cancelables.CompositeCancelable
 import org.scalajs.dom
-import outwatch.dom.helpers.STRef
-import outwatch.dom.{IO, Observable, OutWatch, VNode}
+import outwatch.dom.{IO, Observable}
 import outwatch.{Handler, Pipe}
 
 import scala.util.Try
@@ -26,8 +25,6 @@ object Store {
       (mewState, effect.fold[Observable[A]](Observable.empty)(Observable.fromTaskLike))
     }
   }
-
-  private val storeRef = STRef.empty
 
   def create[State, Action](
     initialState: State,
@@ -61,17 +58,4 @@ object Store {
       }
     }
   }
-
-  def get[S, A]: IO[Pipe[A, S]] = storeRef.asInstanceOf[STRef[Pipe[A, S]]].getOrThrow(NoStoreException)
-
-  def renderWithStore[S, A](
-    initialState: S, reducer: Reducer[S, A], selector: String, root: VNode
-  ): IO[Unit] = for {
-    store <- Store.create(initialState, reducer)
-    _ <- storeRef.asInstanceOf[STRef[Pipe[A, S]]].put(store)
-    _ <- OutWatch.renderInto(selector, root)
-  } yield ()
-
-  private object NoStoreException
-    extends Exception("Application was rendered without specifying a Store, please use Outwatch.renderWithStore instead")
 }

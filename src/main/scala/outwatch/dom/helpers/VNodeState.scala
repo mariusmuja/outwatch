@@ -89,7 +89,7 @@ object VNodeState {
     if (streams.nonEmpty) {
       Observable(streams.map { case (idx, ms) => updaterMS(idx, ms) }: _*).merge
         .scan(modifiers)((mods, func) => func(mods))
-        .startWith(Seq(modifiers))
+        .prepend(modifiers)
         .map(mods => _.updated(index, SimpleCompositeModifier(mods)))
     }
     else Observable.pure(_.updated(index, SimpleCompositeModifier(modifiers)))

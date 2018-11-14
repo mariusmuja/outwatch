@@ -18,10 +18,10 @@ private[outwatch] object Lifecycle {
         val t1 = System.nanoTime()
         val proxy = modifiers.toSnabbdom(prev.sel)
         val t2 = System.nanoTime()
-        dom.console.log("toSnabbdom time: " + (t2 - t1).toDouble / 1000000)
+//        dom.console.log("toSnabbdom time: " + (t2 - t1).toDouble / 1000000)
         val res = patch(prev, proxy)
         val t3 = System.nanoTime()
-        dom.console.log("patch time: " + (t3 - t2).toDouble / 1000000)
+//        dom.console.log("patch time: " + (t3 - t2).toDouble / 1000000)
         res
       }
 

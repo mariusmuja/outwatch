@@ -28,6 +28,8 @@ object all extends Implicits with ManagedSubscriptions with SideEffects with Sin
   type Pipe[-I, +O] = outwatch.Pipe[I, O]
   val Pipe = outwatch.Pipe
 
+  val Handler = outwatch.Handler
+
   type IO[+T] = monix.eval.Task[T]
   val IO = monix.eval.Task
 }
