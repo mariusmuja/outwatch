@@ -20,7 +20,7 @@ object LifecycleHookSpec extends JSDomSuite {
     }
 
     val node = sink.flatMap { sink =>
-      div(onInsert --> sink)
+      div(key := 1, onInsert --> sink)
     }
 
     switch shouldBe false
@@ -46,7 +46,7 @@ object LifecycleHookSpec extends JSDomSuite {
     val node = for {
       sink <- sink
       sink2 <- sink2
-      node <- div(onInsert --> sink)(onInsert --> sink2)
+      node <- div(key := 1, onInsert --> sink)(onInsert --> sink2)
     } yield node
 
     switch shouldBe false
@@ -411,7 +411,7 @@ object LifecycleHookSpec extends JSDomSuite {
     val divTagName = onInsert.map(_.tagName.toLowerCase).filter(_ == "div")
 
     val node = sink.flatMap { sink =>
-      div(onInsert("insert") --> sink,
+      div(key := 1, onInsert("insert") --> sink,
         div(divTagName --> sink),
         span(divTagName --> sink)
       )
@@ -422,10 +422,7 @@ object LifecycleHookSpec extends JSDomSuite {
     operations.toList shouldBe List("div", "insert")
   }
 
-
-
-
-//  import org.scalajs.{dom => dm}
+  //  import org.scalajs.{dom => dm}
 //
 //  def debug(msg: String) = VDomModifier(
 //    Sink.create[dm.Element] { _ => dm.console.log("Insert: " + msg); Continue }.flatMap(onInsert --> _),
@@ -435,7 +432,6 @@ object LifecycleHookSpec extends JSDomSuite {
 //    //    Sink.create[dom.Element] { _ => dom.console.log("Destroy: " + msg); Continue }.flatMap(onDomUnmount --> _),
 //    //    Sink.create[dom.Element] { _ => dom.console.log("PostPatch: " + msg); Continue}.flatMap(onDomUpdate --> _),
 //  )
-
 
   test("Hooks properly unsubscribe streams after nodes are patched") {
 

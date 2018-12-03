@@ -105,8 +105,6 @@ object KeyBuilder {
 
 object ChildStreamBuilder {
 
-  implicit object ChildrenTag
-
   def <--(valueStream: Observable[VNode]): VDomModifier = valueStream
 
   def <--[T](valueStream: Observable[T])(implicit r: AsVDomModifier[T]): VDomModifier = valueStream

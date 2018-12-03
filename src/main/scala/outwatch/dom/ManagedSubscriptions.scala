@@ -1,14 +1,14 @@
 package outwatch.dom
 
 import monix.execution.Ack.Continue
+import monix.execution.Cancelable
 import monix.execution.cancelables.CompositeCancelable
-import monix.execution.{Cancelable, Scheduler}
 import org.scalajs.dom
 import outwatch.dom.dsl.attributes.lifecycle
 
 trait ManagedSubscriptions {
 
-  def managed(subscription: IO[Cancelable])(implicit s: Scheduler): VDomModifier = {
+  def managed(subscription: IO[Cancelable]): VDomModifier = {
     subscription.flatMap { sub: Cancelable =>
       Sink.create[dom.Element] { _ =>
         sub.cancel()
@@ -17,7 +17,7 @@ trait ManagedSubscriptions {
     }
   }
 
-  def managed(sub1: IO[Cancelable], sub2: IO[Cancelable], subscriptions: IO[Cancelable]*)(implicit s: Scheduler): VDomModifier = {
+  def managed(sub1: IO[Cancelable], sub2: IO[Cancelable], subscriptions: IO[Cancelable]*): VDomModifier = {
 
     (sub1 :: sub2 :: subscriptions.toList).sequence.flatMap { subs =>
       val composite = CompositeCancelable(subs: _*)

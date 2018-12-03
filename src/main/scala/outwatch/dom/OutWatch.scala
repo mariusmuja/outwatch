@@ -11,7 +11,7 @@ object OutWatch {
     scheduler <- IO.deferAction(IO.pure)
   } yield {
     val proxy = node.toSnabbdom(scheduler)
-    val elem = dom.document.createElement("app")
+    val elem = dom.document.createElement("div")
     element.appendChild(elem)
     patch(elem, proxy)
     ()
