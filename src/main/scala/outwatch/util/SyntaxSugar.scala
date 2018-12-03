@@ -2,27 +2,25 @@ package outwatch.util
 
 import outwatch.dom.{Observable, VDomModifier}
 
-
-object SyntaxSugar {
-
-  implicit class BooleanSelector(val conditionStream: Observable[Boolean]) extends AnyVal {
-    def ?=(mod: VDomModifier): VDomModifier = {
-      conditionStream.map(_ ?= mod)
-    }
+private[util] final class BooleanSelector(private val conditionStream: Observable[Boolean]) extends AnyVal {
+  def ?=(mod: VDomModifier): VDomModifier = {
+    conditionStream.map(cond => if (cond) mod else VDomModifier.empty)
   }
-
-
-  implicit class BooleanVDomSelector(val condition: Boolean) extends AnyVal {
-    def ?=[T](vDomModifier: => T)(implicit conv: T => VDomModifier): VDomModifier = {
-      if (condition) conv(vDomModifier) else VDomModifier.empty
-    }
-  }
-
-
-  implicit class OptionalVDomModifier[T](vDomModifier: => T) {
-    def when(condition: Boolean)(implicit conv: T => VDomModifier): VDomModifier = {
-      if (condition) conv(vDomModifier) else VDomModifier.empty
-    }
-  }
-
 }
+
+private[util] final class BooleanVDomSelector(private val condition: Boolean) extends AnyVal {
+  def ?=[T](vDomModifier: => T)(implicit conv: T => VDomModifier): VDomModifier = {
+    if (condition) conv(vDomModifier) else VDomModifier.empty
+  }
+}
+
+trait SyntaxSugar {
+  implicit final def booleanStreamSelector(conditionStream: Observable[Boolean]): BooleanSelector =
+    new BooleanSelector(conditionStream)
+
+  implicit def booleanVDomSelector(condition: Boolean): BooleanVDomSelector =
+    new BooleanVDomSelector(condition)
+}
+
+
+object SyntaxSugar extends SyntaxSugar
