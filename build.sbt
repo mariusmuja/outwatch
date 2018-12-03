@@ -20,7 +20,7 @@ libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "3.0.0-RC2",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.6",
   "com.raquo"       %%% "domtypes"    % "0.9",
-  "org.typelevel"   %%% "cats-core"   % "1.4.0",
+  "org.typelevel"   %%% "cats-core"   % "1.5.0",
   "io.monix"        %%% "minitest"    % "2.2.2" % Test
 )
 
