@@ -11,16 +11,16 @@ enablePlugins(GitVersioning)
 
 organization := "com.github.mariusmuja"
 
-scalaVersion := "2.12.7"
+scalaVersion := "2.12.8"
 
-crossScalaVersions := Seq("2.11.12", "2.12.7")
+crossScalaVersions := Seq("2.11.12", "2.12.8")
 
 
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "3.0.0-RC2",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.6",
   "com.raquo"       %%% "domtypes"    % "0.9",
-  "org.typelevel"   %%% "cats-core"   % "1.5.0",
+  "org.typelevel"   %%% "cats-core"   % "1.6.0",
   "io.monix"        %%% "minitest"    % "2.2.2" % Test
 )
 
