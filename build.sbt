@@ -17,11 +17,11 @@ crossScalaVersions := Seq("2.11.12", "2.12.8")
 
 
 libraryDependencies ++= Seq(
-  "io.monix"        %%% "monix"       % "3.0.0-RC2",
+  "io.monix"        %%% "monix"       % "3.0.0-RC3",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.6",
   "com.raquo"       %%% "domtypes"    % "0.9",
-  "org.typelevel"   %%% "cats-core"   % "1.6.0",
-  "io.monix"        %%% "minitest"    % "2.2.2" % Test
+  "org.typelevel"   %%% "cats-core"   % "1.6.1",
+  "io.monix"        %%% "minitest"    % "2.4.0" % Test
 )
 
 npmDependencies in Compile ++= Seq(

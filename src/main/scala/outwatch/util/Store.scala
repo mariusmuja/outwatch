@@ -6,6 +6,7 @@ import org.scalajs.dom
 import outwatch.dom.{IO, Observable}
 import outwatch.{Handler, Pipe}
 
+import scala.language.implicitConversions
 import scala.util.Try
 import scala.util.control.NonFatal
 
