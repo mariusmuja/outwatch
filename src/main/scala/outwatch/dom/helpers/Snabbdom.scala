@@ -25,7 +25,7 @@ private[outwatch] trait SnabbdomHooks { self: SeparatedHooks =>
   )(implicit s: Scheduler): js.UndefOr[Hooks.HookSingleFn] = {
     if (hooks.nonEmpty || lifecycleHooks.nonEmpty) { p: VNodeProxy =>
       if (hooks.nonEmpty) for (e <- p.elm) hooks.get.foreach(_.observer.feed(e :: Nil))
-      if (lifecycleHooks.nonEmpty) lifecycleHooks.get.foreach(_.fn(p, s))
+      lifecycleHooks.foreach(_.foreach(_.fn(p, s)))
     }: Hooks.HookSingleFn
     else js.undefined
   }
@@ -67,8 +67,12 @@ private[outwatch] trait SnabbdomModifiers { self: SeparatedModifiers =>
   private[outwatch] def toSnabbdom(nodeType: String)(implicit scheduler: Scheduler): VNodeProxy = {
 
     val dataObject =  DataObject(
-      attributes.flatMap(_.attrs), attributes.flatMap(_.props), attributes.flatMap(_.styles.map(_.toSnabbdom)),
-      emitters.map(_.toSnabbdom), hooks.map(_.toSnabbdom), key.map(_.value)
+      attributes.flatMap(_.attrs),
+      attributes.flatMap(_.props),
+      attributes.flatMap(_.styles.map(_.toSnabbdom)),
+      emitters.map(_.toSnabbdom),
+      hooks.map(_.toSnabbdom),
+      key.map(_.value)
     )
 
     if (nodes.isEmpty) {

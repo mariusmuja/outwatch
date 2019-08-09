@@ -4,15 +4,15 @@ import monix.execution.Ack.Continue
 import monix.execution.{Cancelable, Scheduler}
 import monix.reactive.OverflowStrategy
 import org.scalajs.dom
-import outwatch.dom.{DestroyProxyHook, InsertProxyHook, LifecycleHook, Observable}
+import outwatch.dom.{DestroyLifecycleHook, InsertLifecycleHook, LifecycleHook, Observable}
 import snabbdom.{VNodeProxy, patch}
 
 private[outwatch] object Lifecycle {
 
-  def hooksFor(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
+  def lifecycleHooks(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
 
     var cancelable: Option[Cancelable] = None
-    val insertHook = InsertProxyHook { (vproxy, scheduler) =>
+    val insertHook = InsertLifecycleHook { (vproxy, scheduler) =>
       implicit val s: Scheduler = scheduler
 
       def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
@@ -41,7 +41,7 @@ private[outwatch] object Lifecycle {
       )
     }
 
-    val destroyHook = DestroyProxyHook { (_, _) =>
+    val destroyHook = DestroyLifecycleHook { (_, _) =>
       cancelable.foreach(_.cancel())
       cancelable = None
     }

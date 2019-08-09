@@ -49,7 +49,7 @@ object VNodeState {
     def flattenHelper(mods: Seq[Modifier]): Unit = {
       mods.foreach {
         case CompositeModifier(inner) => flattenHelper(inner)
-        case m: FlatModifier => flattened += m
+        case m: FlatModifier => flattened.push(m)
       }
     }
     flattenHelper(mods)
@@ -60,9 +60,9 @@ object VNodeState {
 
     flattened.indices.foreach { index =>
       flattened(index) match {
-        case m: SimpleModifier => modifiers(index) = m
+        case m: SimpleModifier => modifiers.update(index, m)
         case m: ModifierStream =>
-          modifiers(index) = EmptyModifier
+          modifiers.update(index, EmptyModifier)
           streams += index -> m
       }
     }
@@ -73,26 +73,26 @@ object VNodeState {
     (modifiers, streams)
   }
 
-  private def updaterM(index: Int, mod: Modifier): Observable[Updater] = mod match {
-    case m: SimpleModifier => Observable.pure { a => a.update(index, m); a } // (_.updated(index,m))
-    case m: CompositeModifier => updaterCM(index, m)
-    case m: ModifierStream => updaterMS(index, m)
+  private def updaterModifier(index: Int, mod: Modifier): Observable[Updater] = mod match {
+    case m: SimpleModifier => Observable.pure { a => a.update(index, m); a }
+    case m: CompositeModifier => updaterCompositeModifier(index, m)
+    case m: ModifierStream => updaterModifierStream(index, m)
   }
 
-  private def updaterMS(index: Int, ms: ModifierStream): Observable[Updater] = {
-    ms.stream.switchMap[Updater](m => updaterM(index, m) )
+  private def updaterModifierStream(index: Int, ms: ModifierStream): Observable[Updater] = {
+    ms.stream.switchMap[Updater](m => updaterModifier(index, m) )
   }
 
-  private def updaterCM(index: Int, cm: CompositeModifier): Observable[Updater] = {
+  private def updaterCompositeModifier(index: Int, cm: CompositeModifier): Observable[Updater] = {
     val (modifiers, streams) = separateStreams(cm.modifiers)
 
     if (streams.nonEmpty) {
-      Observable(streams.map { case (idx, ms) => updaterMS(idx, ms) }: _*).merge
+      Observable(streams.map { case (idx, ms) => updaterModifierStream(idx, ms) }: _*).merge
         .scan(modifiers)((mods, func) => func(mods))
         .prepend(modifiers)
-        .map(mods => _.updated(index, SimpleCompositeModifier(mods)))
+        .map(mods => { a => a.update(index, SimpleCompositeModifier(mods)); a })
     }
-    else Observable.pure(_.updated(index, SimpleCompositeModifier(modifiers)))
+    else Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
   }
 
   private[outwatch] def from(mods: Seq[Modifier]): VNodeState = {
@@ -103,12 +103,12 @@ object VNodeState {
     } else {
 
       val modifierStream =
-        Observable(streams.map { case (index, ms) => updaterMS(index, ms) }: _*).merge
+        Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
           .scan(modifiers)((mods, func) => func(mods))
           .map(SeparatedModifiers.from)
 
       // hooks must be appended at the end, original positions can be updated by the streams
-      val modifiersWithLifecycle = modifiers ++ Lifecycle.hooksFor(modifierStream)
+      val modifiersWithLifecycle = modifiers ++ Lifecycle.lifecycleHooks(modifierStream)
 
       VNodeState(SeparatedModifiers.from(modifiersWithLifecycle), modifierStream)
     }

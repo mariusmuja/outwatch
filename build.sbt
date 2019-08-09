@@ -11,17 +11,17 @@ enablePlugins(GitVersioning)
 
 organization := "com.github.mariusmuja"
 
-scalaVersion := "2.12.8"
+scalaVersion := "2.12.9"
 
-crossScalaVersions := Seq("2.11.12", "2.12.8")
+crossScalaVersions := Seq("2.11.12", "2.12.9")
 
 
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "3.0.0-RC3",
-  "org.scala-js"    %%% "scalajs-dom" % "0.9.6",
-  "com.raquo"       %%% "domtypes"    % "0.9",
+  "org.scala-js"    %%% "scalajs-dom" % "0.9.7",
+  "com.raquo"       %%% "domtypes"    % "0.9.4",
   "org.typelevel"   %%% "cats-core"   % "1.6.1",
-  "io.monix"        %%% "minitest"    % "2.4.0" % Test
+  "io.monix"        %%% "minitest"    % "2.5.0" % Test
 )
 
 npmDependencies in Compile ++= Seq(
@@ -69,7 +69,7 @@ testFrameworks += new TestFramework("minitest.runner.Framework")
 
 requireJsDomEnv in Test := true
 
-version in installJsdom := "13.0.0"
+version in installJsdom := "15.1.1"
 
 useYarn := true
 

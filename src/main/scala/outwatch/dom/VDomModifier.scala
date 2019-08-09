@@ -87,8 +87,8 @@ private[outwatch] final case class UpdateHook(observer: Observer[(Element, Eleme
 private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
 
-private[outwatch] final case class InsertProxyHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
-private[outwatch] final case class DestroyProxyHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
+private[outwatch] final case class InsertLifecycleHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
+private[outwatch] final case class DestroyLifecycleHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
 
 // Static Nodes
 private[outwatch] final case class StringVNode(string: String) extends StaticVNode {

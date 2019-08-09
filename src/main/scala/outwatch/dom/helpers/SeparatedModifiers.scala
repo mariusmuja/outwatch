@@ -16,11 +16,11 @@ private[outwatch] final class SeparatedModifiers(
 
   private def add(m: SimpleModifier): Unit = m match {
     case attr: Attribute =>
-      attributes.fold {
+      attributes.getOrElse {
         val value = new SeparatedAttributes()
-        value.push(attr)
         attributes = value
-      } { a => a.push(attr); () }
+        value
+      }.push(attr)
     case sn: VTree =>
       hasVtrees = true
       nodes.push(sn)
@@ -35,17 +35,17 @@ private[outwatch] final class SeparatedModifiers(
     case SimpleCompositeModifier(mods) =>
       mods.foreach(add)
     case hook: Hook[_] =>
-      hooks.fold {
-        val value = new SeparatedHooks()
-        value.push(hook)
+      hooks.getOrElse {
+        val value  = new SeparatedHooks()
         hooks = value
-      } { h => h.push(hook); () }
+        value
+      }.push(hook)
     case hook: LifecycleHook =>
-      hooks.fold {
+      hooks.getOrElse {
         val value = new SeparatedHooks()
-        value.push(hook)
         hooks = value
-      } { h => h.push(hook); () }
+        value
+      }.push(hook)
     case EmptyModifier =>
     case k: Key =>
       key = k
@@ -122,8 +122,8 @@ private[outwatch] final class SeparatedHooks(
   var updateHooks: js.UndefOr[js.Array[UpdateHook]] = js.undefined,
   var postPatchHooks: js.UndefOr[js.Array[PostPatchHook]] = js.undefined,
   var destroyHooks: js.UndefOr[js.Array[DestroyHook]] = js.undefined,
-  var insertProxyHooks: js.UndefOr[js.Array[InsertProxyHook]] = js.undefined,
-  var destroyProxyHooks: js.UndefOr[js.Array[DestroyProxyHook]] = js.undefined
+  var insertProxyHooks: js.UndefOr[js.Array[InsertLifecycleHook]] = js.undefined,
+  var destroyProxyHooks: js.UndefOr[js.Array[DestroyLifecycleHook]] = js.undefined
 ) extends SnabbdomHooks {
   @inline def push(h: Hook[_]): Unit = h match {
     case h: InsertHook =>
@@ -149,11 +149,11 @@ private[outwatch] final class SeparatedHooks(
   }
 
   @inline def push(h: LifecycleHook): Unit = h match {
-    case h: InsertProxyHook =>
+    case h: InsertLifecycleHook =>
       insertProxyHooks.fold {
         insertProxyHooks = js.Array(h)
       } { hk => hk.push(h); () }
-    case h: DestroyProxyHook =>
+    case h: DestroyLifecycleHook =>
       destroyProxyHooks.fold {
         destroyProxyHooks = js.Array(h)
       } { hk => hk.push(h); () }
