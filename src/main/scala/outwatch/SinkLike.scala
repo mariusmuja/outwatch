@@ -30,9 +30,9 @@ object SinkLike {
 
   implicit def fromSink[T, S](implicit ev: S <:< Sink[T]): SinkLike[T, S] = (s: S) => s
 
-  implicit def fromObserver[T, S](implicit s: Scheduler, ev: S <:< Observer[T]): SinkLike[T, S] = (o: S) => ObserverSink(o)
+  implicit def fromObserver[T, S](implicit s: Scheduler, ev: S <:< Observer[T]): SinkLike[T, S] = (o: S) => ObserverSink(Subscriber(o, s))
 
-  implicit def fromSubscriber[T, S](implicit ev: S <:< Subscriber[T]): SinkLike[T, S] = (s: S) => ObserverSink(s)(s.scheduler)
+  implicit def fromSubscriber[T, S](implicit ev: S <:< Subscriber[T]): SinkLike[T, S] = (s: S) => ObserverSink(s)
 
   type FunctionSink[T] = T => Future[Ack]
   implicit def fromFunction[T, S](implicit s: Scheduler, ev: S <:< FunctionSink[T]): SinkLike[T, S] = (f: S) => {
@@ -49,7 +49,7 @@ object SinkLike {
       def onError(ex: Throwable): Unit = console.error(ex.getMessage, ex.getStackTrace.mkString("\n"))
       def onComplete(): Unit = ()
     }
-    ObserverSink(observer)
+    ObserverSink(Subscriber(observer, s))
   }
 
   type EffectSink = () => Unit

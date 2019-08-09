@@ -37,7 +37,7 @@ final case class TransformingEmitterBuilder[E, O, R] private[helpers](
 
   def -->(sink: Sink[O]): R = {
     val redirected: Sink[E] = sink.redirect[E](transformer)
-    create(redirected.observer)
+    create(redirected.subscriber)
   }
 }
 
@@ -46,7 +46,7 @@ final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends An
   def transform[T](tr: Observable[E] => Observable[T]): EmitterBuilder[T, R] =
     new TransformingEmitterBuilder[E, T, R](tr, create)
 
-  def -->(sink: Sink[E]): R = create(sink.observer)
+  def -->(sink: Sink[E]): R = create(sink.subscriber)
 }
 
 object EmitterBuilder extends EmitterOps {
