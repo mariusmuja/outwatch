@@ -1,6 +1,5 @@
 package outwatch
 
-import monix.execution.Ack.Stop
 import monix.execution.{Ack, Cancelable, Scheduler}
 import monix.reactive.observers.{SafeSubscriber, Subscriber}
 import monix.reactive.subjects.PublishSubject
@@ -8,7 +7,6 @@ import monix.reactive.{Observer, Pipe => MonixPipe}
 import outwatch.dom.{IO, Observable}
 
 import scala.concurrent.Future
-import scala.util.control.NonFatal
 
 
 sealed trait Sink[-T] extends Any {
@@ -120,25 +118,6 @@ object Sink {
     ObserverSink(input)
   }
 
-  private class ContramapObserver[R, T](obs: Observer[T])(f: R => T) extends Observer[R] {
-    override def onNext(elem: R): Future[Ack] = {
-      var streamError = true
-      try {
-        val a = f(elem)
-        streamError = false
-        obs.onNext(a)
-      } catch {
-        case NonFatal(ex) if streamError =>
-          onError(ex)
-          Stop
-      }
-    }
-
-    override def onError(ex: Throwable): Unit = obs.onError(ex)
-
-    override def onComplete(): Unit = obs.onComplete()
-  }
-
 
   /**
     * Creates a new sink. This sink will transform each value it receives and then forward it along to the passed sink.
@@ -152,7 +131,7 @@ object Sink {
     */
   def redirectMap[T, R](sink: Sink[T])(f: R => T): Sink[R] = {
     implicit val scheduler = sink.observer.scheduler
-    ObserverSink(new ContramapObserver(sink.observer)(f))
+    ObserverSink(sink.observer.contramap(f))
   }
 
 }
