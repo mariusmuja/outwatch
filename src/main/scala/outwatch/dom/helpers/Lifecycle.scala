@@ -9,19 +9,19 @@ import snabbdom.{VNodeProxy, patch}
 
 private[outwatch] object Lifecycle {
 
-  def lifecycleHooks(observable: Observable[SeparatedModifiers]): Seq[LifecycleHook] = {
+  def lifecycleHooks(observable: Observable[SimpleModifiers]): Seq[LifecycleHook] = {
 
     var cancelable: Option[Cancelable] = None
     val insertHook = InsertLifecycleHook { (vproxy, scheduler) =>
       implicit val s: Scheduler = scheduler
 
-      def patchProxy(prev: VNodeProxy, modifiers: SeparatedModifiers): VNodeProxy = {
-        val t1 = System.nanoTime()
-        val proxy = modifiers.toSnabbdom(prev.sel)
-        val t2 = System.nanoTime()
+      def patchProxy(prev: VNodeProxy, modifiers: SimpleModifiers): VNodeProxy = {
+//        val t1 = System.nanoTime()
+        val proxy = SnabbdomModifiers.toSnabbdom(prev.sel, modifiers)
+//        val t2 = System.nanoTime()
 //        dom.console.log("toSnabbdom time: " + (t2 - t1).toDouble / 1000000)
         val res = patch(prev, proxy)
-        val t3 = System.nanoTime()
+//        val t3 = System.nanoTime()
 //        dom.console.log("patch time: " + (t3 - t2).toDouble / 1000000)
         res
       }

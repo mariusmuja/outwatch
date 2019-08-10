@@ -4,13 +4,8 @@ import outwatch.dom._
 
 import scala.scalajs.js
 
-private[outwatch] case class VNodeState(
-  initial: SeparatedModifiers,
-  stream: Observable[SeparatedModifiers]
-) extends SnabbdomState
 
-
-object VNodeState {
+object StreamHandler {
 
   private type Updater = js.Array[SimpleModifier] => js.Array[SimpleModifier]
 
@@ -87,30 +82,40 @@ object VNodeState {
     val (modifiers, streams) = separateStreams(cm.modifiers)
 
     if (streams.nonEmpty) {
-      Observable(streams.map { case (idx, ms) => updaterModifierStream(idx, ms) }: _*).merge
-        .scan(modifiers)((mods, func) => func(mods))
+      val updaters = if (streams.length == 1) {
+        val (index, ms) = streams(0)
+        updaterModifierStream(index, ms)
+      } else {
+        Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
+      }
+
+      updaters.scan(modifiers)((mods, func) => func(mods))
         .prepend(modifiers)
         .map(mods => { a => a.update(index, SimpleCompositeModifier(mods)); a })
     }
     else Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
   }
 
-  private[outwatch] def from(mods: Seq[Modifier]): VNodeState = {
+  private[outwatch] def from(mods: Seq[Modifier]): SimpleModifiers = {
     val (modifiers, streams) = separateStreams(mods)
 
     if (streams.isEmpty) {
-      VNodeState(SeparatedModifiers.from(modifiers), Observable.empty)
+      SimpleModifiers.from(modifiers)
     } else {
-
-      val modifierStream =
+      val updaters = if (streams.length == 1) {
+        val (index, ms) = streams(0)
+        updaterModifierStream(index, ms)
+      } else {
         Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
-          .scan(modifiers)((mods, func) => func(mods))
-          .map(SeparatedModifiers.from)
+      }
+
+      val modifierStream = updaters.scan(modifiers)((mods, func) => func(mods))
+        .map(SimpleModifiers.from)
 
       // hooks must be appended at the end, original positions can be updated by the streams
       val modifiersWithLifecycle = modifiers ++ Lifecycle.lifecycleHooks(modifierStream)
 
-      VNodeState(SeparatedModifiers.from(modifiersWithLifecycle), modifierStream)
+      SimpleModifiers.from(modifiersWithLifecycle)
     }
   }
 }

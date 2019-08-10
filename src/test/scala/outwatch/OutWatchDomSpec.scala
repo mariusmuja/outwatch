@@ -27,16 +27,16 @@ object OutWatchDomSpec extends JSDomSuite {
       PostPatchHook(PublishSubject())
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val mods = StreamHandler.from(modifiers)
 
     mods.hooks.get.insertHooks.get.length shouldBe 2
     mods.hooks.get.prePatchHooks.get.length shouldBe 1
     mods.hooks.get.updateHooks.get.length shouldBe 1
     mods.hooks.get.postPatchHooks.get.length shouldBe 1
     mods.hooks.get.destroyHooks.get.length shouldBe 1
-    mods.attributes.get.attrs.get.size shouldBe 1
+    mods.attrs.get.size shouldBe 1
     mods.key shouldBe js.undefined
-    streams shouldBe Observable.empty
+    mods.hooks.get.insertLifecycleHooks.isDefined shouldBe false
   }
 
   test("VDomModifiers should be separated correctly") {
@@ -62,12 +62,12 @@ object OutWatchDomSpec extends JSDomSuite {
       )
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val mods = StreamHandler.from(modifiers)
 
-    mods.emitters.get.emitters.length shouldBe 2
-    mods.attributes.get.attrs.get.size shouldBe 1
+    mods.emitters.get.length shouldBe 2
+    mods.attrs.get.size shouldBe 1
     mods.nodes.length shouldBe 3
-    streams shouldNotBe Observable.empty
+    mods.hooks.get.insertLifecycleHooks.isDefined shouldBe true
   }
 
   test("VDomModifiers should be separated correctly with children") {
@@ -83,12 +83,12 @@ object OutWatchDomSpec extends JSDomSuite {
       div().unsafeRunSync()
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val mods = StreamHandler.from(modifiers)
 
-    mods.emitters.get.emitters.length shouldBe 3
-    mods.attributes.get.attrs.get.size shouldBe 1
+    mods.emitters.get.length shouldBe 3
+    mods.attrs.get.size shouldBe 1
     mods.nodes.length shouldBe 2
-    streams shouldNotBe Observable.empty
+    mods.hooks.get.insertLifecycleHooks.isDefined shouldBe true
   }
 
   test("VDomModifiers should be separated correctly with string children") {
@@ -105,12 +105,12 @@ object OutWatchDomSpec extends JSDomSuite {
       Key("123")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val mods = StreamHandler.from(modifiers)
 
-    mods.emitters.get.emitters.length shouldBe 3
-    mods.attributes.get.attrs.get.size shouldBe 1
+    mods.emitters.get.length shouldBe 3
+    mods.attrs.get.size shouldBe 1
     mods.nodes.collect{ case StringVNode(s) => s}.toSet shouldBe Set("text", "text2")
-    streams shouldNotBe Observable.empty
+    mods.hooks.get.insertLifecycleHooks.isDefined shouldBe true
     mods.key shouldBe Key("123")
   }
 
@@ -131,18 +131,18 @@ object OutWatchDomSpec extends JSDomSuite {
       StringVNode("text")
     )
 
-    val VNodeState(mods, streams) = VNodeState.from(modifiers)
+    val mods = StreamHandler.from(modifiers)
 
-    mods.emitters.get.emitters.map(_.eventType).toList shouldBe List("click", "input", "keyup")
+    mods.emitters.get.map(_.eventType).toList shouldBe List("click", "input", "keyup")
     mods.hooks.get.insertHooks.get.length shouldBe 1
     mods.hooks.get.prePatchHooks.get.length shouldBe 1
     mods.hooks.get.updateHooks.get.length shouldBe 1
     mods.hooks.get.postPatchHooks.get.length shouldBe 1
     mods.hooks.get.destroyHooks shouldBe js.undefined
-    mods.attributes.get.attrs.get.size shouldBe 1
+    mods.attrs.get.size shouldBe 1
     mods.key shouldNotBe js.undefined // because ModifierStreams present
 //    nodes.length shouldBe 2
-    streams shouldNotBe Observable.empty
+    mods.hooks.get.insertLifecycleHooks.isDefined shouldBe true
   }
 
   test("VDomModifiers should be run once") {
@@ -197,13 +197,13 @@ object OutWatchDomSpec extends JSDomSuite {
       // div().unsafeRunSync(), div().unsafeRunSync() //TODO: this should also work, but key is derived from hashCode of VTree (which in this case is equal)
     )
 
-    val state =  VNodeState.from(mods)
-    val nodes = state.initial.nodes
+    val sm =  StreamHandler.from(mods)
+    val nodes = sm.nodes
 
     nodes.length shouldBe 2
-    state.stream shouldNotBe Observable.empty
+    sm.hooks.get.insertLifecycleHooks.isDefined shouldBe true
 
-    val proxy = state.toSnabbdom("div")
+    val proxy = SnabbdomModifiers.toSnabbdom("div", sm)
     proxy.key.isDefined shouldBe true
 
     proxy.children.get.length shouldBe 2
@@ -223,13 +223,13 @@ object OutWatchDomSpec extends JSDomSuite {
       div()(IO.pure(Key(5678))).unsafeRunSync()
     )
 
-    val state = VNodeState.from(mods)
-    val nodes = state.initial.nodes
+    val sm =  StreamHandler.from(mods)
+    val nodes = sm.nodes
 
     nodes.length shouldBe 1
-    state.stream shouldNotBe Observable.empty
+    sm.hooks.get.insertLifecycleHooks.isDefined shouldBe true
 
-    val proxy = state.toSnabbdom("div")
+    val proxy = SnabbdomModifiers.toSnabbdom("div", sm)
     proxy.key.toOption shouldBe Some(1234)
 
     proxy.children.get(0).key.toOption shouldBe Some(5678)

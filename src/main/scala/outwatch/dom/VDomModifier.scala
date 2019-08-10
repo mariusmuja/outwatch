@@ -3,7 +3,7 @@ package outwatch.dom
 import monix.execution.Scheduler
 import monix.reactive.Observer
 import org.scalajs.dom._
-import outwatch.dom.helpers.VNodeState
+import outwatch.dom.helpers.SnabbdomModifiers
 import snabbdom.{DataObject, VNodeProxy}
 
 
@@ -116,11 +116,9 @@ private[outwatch] final case class VTree(nodeType: String, modifiers: Array[Modi
   }
 
   private val proxy = new Memoized[VNodeProxy]
-  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = {
-    proxy.getOrUpdate(
-      VNodeState.from(modifiers).toSnabbdom(nodeType)
-    )
-  }
+  override def toSnabbdom(implicit s: Scheduler): VNodeProxy = proxy.getOrUpdate(
+    SnabbdomModifiers.toProxy(nodeType, modifiers)
+  )
 }
 
 
