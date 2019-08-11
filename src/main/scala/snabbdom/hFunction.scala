@@ -123,14 +123,14 @@ object patch {
   def apply(firstNode: org.scalajs.dom.Element, vNode: VNodeProxy): VNodeProxy = p(firstNode, vNode)
 }
 
-@js.native
+
 trait VNodeProxy extends js.Object {
   var sel: String
   var data: DataObject
-  var children: js.UndefOr[js.Array[VNodeProxy]]
-  var elm: js.UndefOr[Element]
-  var text: js.UndefOr[String]
-  var key: js.UndefOr[DataObject.KeyValue]
+  var children: js.UndefOr[js.Array[VNodeProxy]] = js.undefined
+  var elm: js.UndefOr[Element] = js.undefined
+  var text: js.UndefOr[String] = js.undefined
+  var key: js.UndefOr[DataObject.KeyValue] = js.undefined
 }
 
 object VNodeProxy {
@@ -142,8 +142,9 @@ object VNodeProxy {
       vproxy.text = newProxy.text
       vproxy.data = newProxy.data
       vproxy.elm = newProxy.elm
-      vproxy.key= newProxy.key
-      vproxy.sel= newProxy.sel
+      vproxy.key = newProxy.key
+      vproxy.sel = newProxy.sel
+
       vproxy
     }
   }

@@ -7,6 +7,7 @@ import outwatch.dom._
 import outwatch.dom.dsl._
 
 import scala.collection.mutable
+import scala.collection.mutable.ArrayBuffer
 
 
 object LifecycleHookSpec extends JSDomSuite {
@@ -371,9 +372,9 @@ object LifecycleHookSpec extends JSDomSuite {
 
     val nodes = PublishSubject[VNode]
 
-    var latest = ""
+    val elems = ArrayBuffer[String]()
     val sink = Sink.create { elem: String =>
-      latest = elem
+      elems.append(elem)
       Continue
     }
 
@@ -387,15 +388,15 @@ object LifecycleHookSpec extends JSDomSuite {
 
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
-    latest shouldBe ""
+    elems.isEmpty shouldBe true
 
     sub.onNext("first")
-    latest shouldBe "first"
+    elems shouldBe ArrayBuffer("first")
 
     nodes.onNext(div()) // this triggers child destroy and subscription cancelation
 
     sub.onNext("second")
-    latest shouldBe "first"
+    elems shouldBe ArrayBuffer("first")
   }
 
 

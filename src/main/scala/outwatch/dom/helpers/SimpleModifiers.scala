@@ -13,7 +13,7 @@ private[outwatch] final class SimpleModifiers(
   var hooks: js.UndefOr[SeparatedHooks] = js.undefined,
   var nodes: js.Array[StaticVNode] = js.Array(),
   var hasVtrees: Boolean = false,
-  var key: js.UndefOr[Key] = js.undefined
+  var key: js.UndefOr[Key] = js.undefined,
 ) {
 
   private def add(m: SimpleModifier): Unit = m match {

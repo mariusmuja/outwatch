@@ -74,7 +74,7 @@ private[outwatch] object SnabbdomModifiers {
       modifiers.key.map(_.value)
     )
 
-    if (modifiers.nodes.isEmpty) {
+    val proxy = if (modifiers.nodes.isEmpty) {
       hFunction(nodeType, dataObject)
     } else {
       if (modifiers.hasVtrees) {
@@ -84,9 +84,7 @@ private[outwatch] object SnabbdomModifiers {
         hFunction(nodeType, dataObject, modifiers.nodes.map(_.asInstanceOf[StringVNode].string).mkString)
       }
     }
-  }
 
-  def toProxy(nodeType: String, modifiers: Array[Modifier])(implicit scheduler: Scheduler): VNodeProxy = {
-    toSnabbdom(nodeType, StreamHandler.from(modifiers))
+    proxy
   }
 }

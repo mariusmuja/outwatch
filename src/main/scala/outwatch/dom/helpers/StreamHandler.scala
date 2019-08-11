@@ -13,8 +13,12 @@ object StreamHandler {
     private var value = KeyGen.##
 
     def newKey: Key = {
+      Key(newValue)
+    }
+
+    private def newValue: Int = {
       value += 1
-      Key(value)
+      value
     }
   }
 
@@ -22,7 +26,7 @@ object StreamHandler {
     var hasKey = false
     mods.indices.foreach { index =>
       mods(index) match {
-        case vtree: VTree => mods(index) = vtree.copy(modifiers = KeyGen.newKey +: vtree.modifiers)
+        case vtree: VTree => vtree.modifiers.splice(0, 0, KeyGen.newKey)
         case _: Key => hasKey = true
         case _ =>
       }
@@ -99,9 +103,7 @@ object StreamHandler {
   private[outwatch] def from(mods: Seq[Modifier]): SimpleModifiers = {
     val (modifiers, streams) = separateStreams(mods)
 
-    if (streams.isEmpty) {
-      SimpleModifiers.from(modifiers)
-    } else {
+    if (streams.nonEmpty) {
       val updaters = if (streams.length == 1) {
         val (index, ms) = streams(0)
         updaterModifierStream(index, ms)
@@ -109,14 +111,13 @@ object StreamHandler {
         Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
       }
 
-      val modifierStream = updaters.scan(modifiers)((mods, func) => func(mods))
+      val modifiersStream = updaters.scan(modifiers)((mods, func) => func(mods))
         .map(SimpleModifiers.from)
 
       // hooks must be appended at the end, original positions can be updated by the streams
-      val modifiersWithLifecycle = modifiers ++ Lifecycle.lifecycleHooks(modifierStream)
-
-      SimpleModifiers.from(modifiersWithLifecycle)
+      modifiers.push(Lifecycle.lifecycleHooks(modifiersStream): _*)
     }
+    SimpleModifiers.from(modifiers)
   }
 }
 

@@ -8,6 +8,7 @@ import com.raquo.domtypes.jsdom.defs.eventProps
 import monix.execution.{Ack, Cancelable}
 import monix.reactive.OverflowStrategy.Unbounded
 import org.scalajs.dom
+import outwatch.AsVDomModifier
 import outwatch.dom.helpers._
 
 import scala.scalajs.js
@@ -15,7 +16,7 @@ import scala.scalajs.js
 private[outwatch] object BuilderTypes {
   type Attribute[T, _] = helpers.AttributeBuilder[T, Attr]
   type Property[T, _] = helpers.PropBuilder[T]
-  type EventEmitter[E <: dom.Event] = SimpleEmitterBuilder[E, VDomModifier]
+  type EventEmitter[E <: dom.Event] = EmitterBuilder[E, VDomModifier]
 
   type Tag[T] = VTree
 
@@ -47,6 +48,10 @@ trait TagModifiers {
   def modifiers(mods: VDomModifier*): VDomModifier = VDomModifier(mods)
 
   val empty: VDomModifier = VDomModifier.empty
+
+  def async[T: AsVDomModifier, U: AsVDomModifier](value: IO[T], initial: U = empty): VDomModifier = VDomModifier.async(value, initial)
+
+  def sync[T: AsVDomModifier](value: IO[T]): VDomModifier = VDomModifier.sync(value)
 }
 
 trait Tags

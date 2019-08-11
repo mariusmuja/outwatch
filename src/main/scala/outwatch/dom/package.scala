@@ -11,11 +11,17 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
   object VDomModifier {
     val empty: VDomModifier = IO.pure(EmptyModifier)
 
+    def async[T: AsVDomModifier, U: AsVDomModifier](value: IO[T], initial: U = empty): VDomModifier = {
+      Observable.fromTask(value).map(AsVDomModifier[T].asVDomModifier).prepend(AsVDomModifier[U].asVDomModifier(initial))
+    }
+
+    def sync[T: AsVDomModifier](value: IO[T]): VDomModifier = value.flatMap(AsVDomModifier[T].asVDomModifier)
+
     def apply(modifier: VDomModifier, modifier2: VDomModifier, modifiers: VDomModifier*): VDomModifier = {
       (ArrayBuffer(modifier, modifier2) ++ modifiers).sequence.map(CompositeModifier)
     }
 
-    def apply[T: AsVDomModifier](t: T): VDomModifier = AsVDomModifier[T].asVDomModifier(t)
+    def apply[T: AsVDomModifier](t: T): VDomModifier = t
   }
 
   type Observable[+A] = monix.reactive.Observable[A]
