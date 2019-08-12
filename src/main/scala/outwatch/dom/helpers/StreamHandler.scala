@@ -33,7 +33,7 @@ object StreamHandler {
     }
     // key must be appended at the end, original positions can be updated by the streams
     if (!hasKey) {
-      mods += KeyGen.newKey
+      mods.push(KeyGen.newKey)
       ()
     }
   }
@@ -51,6 +51,7 @@ object StreamHandler {
         case m: FlatModifier => flattened.push(m)
       }
     }
+
     flattenHelper(mods)
 
     // separate
@@ -59,10 +60,11 @@ object StreamHandler {
 
     flattened.indices.foreach { index =>
       flattened(index) match {
-        case m: SimpleModifier => modifiers.update(index, m)
+        case m: SimpleModifier =>
+          modifiers.update(index, m)
         case m: ModifierStream =>
           modifiers.update(index, EmptyModifier)
-          streams += index -> m
+          streams.push(index -> m)
       }
     }
 
@@ -79,7 +81,7 @@ object StreamHandler {
   }
 
   private def updaterModifierStream(index: Int, ms: ModifierStream): Observable[Updater] = {
-    ms.stream.switchMap[Updater](m => updaterModifier(index, m) )
+    ms.stream.switchMap[Updater](m => updaterModifier(index, m))
   }
 
   private def updaterCompositeModifier(index: Int, cm: CompositeModifier): Observable[Updater] = {
@@ -90,14 +92,16 @@ object StreamHandler {
         val (index, ms) = streams(0)
         updaterModifierStream(index, ms)
       } else {
-        Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
+        Observable.fromIterable(streams).mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
       }
 
       updaters.scan(modifiers)((mods, func) => func(mods))
         .prepend(modifiers)
         .map(mods => { a => a.update(index, SimpleCompositeModifier(mods)); a })
     }
-    else Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
+    else {
+      Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
+    }
   }
 
   private[outwatch] def from(mods: Seq[Modifier]): SimpleModifiers = {
@@ -108,7 +112,7 @@ object StreamHandler {
         val (index, ms) = streams(0)
         updaterModifierStream(index, ms)
       } else {
-        Observable(streams.map { case (index, ms) => updaterModifierStream(index, ms) }: _*).merge
+        Observable.fromIterable(streams).mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
       }
 
       val modifiersStream = updaters.scan(modifiers)((mods, func) => func(mods))
