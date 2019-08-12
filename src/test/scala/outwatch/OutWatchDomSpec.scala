@@ -1064,6 +1064,52 @@ object OutWatchDomSpec extends JSDomSuite {
   }
 
 
+
+  test("Modifier stream should work for nested modifier stream receiver") {
+    val myHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    val node = div(id := "strings",
+      div(myHandler)
+    )
+
+    OutWatch.renderInto("#app", node).unsafeRunSync()
+
+    val element = document.getElementById("strings")
+    element.innerHTML shouldBe "<div></div>"
+
+    val innerHandler = Handler.create[VDomModifier]().unsafeRunSync()
+    myHandler.onNext(innerHandler)
+    element.innerHTML shouldBe """<div></div>"""
+
+    innerHandler.onNext(a())
+    element.innerHTML shouldBe """<div><a></a></div>"""
+
+    innerHandler.onNext(modifiers(cls := "hans", "1"))
+    element.innerHTML shouldBe """<div class="hans">1</div>"""
+
+    val innerHandler2 = Handler.create[VDomModifier](empty).unsafeRunSync()
+    myHandler.onNext(innerHandler2)
+    element.innerHTML shouldBe """<div></div>"""
+
+    myHandler.onNext(modifiers(innerHandler2))
+    element.innerHTML shouldBe """<div></div>"""
+
+    myHandler.onNext(modifiers("pete", innerHandler2))
+    element.innerHTML shouldBe """<div>pete</div>"""
+
+    innerHandler2.onNext(modifiers(id := "dieter", "r"))
+    element.innerHTML shouldBe """<div id="dieter">peter</div>"""
+
+    val innerHandler3 = Handler.create[VDomModifier](empty).unsafeRunSync()
+    innerHandler2.onNext(modifiers(cls := "header", innerHandler3))
+
+    innerHandler3.onNext(modifiers("r", b("end")))
+    element.innerHTML shouldBe """<div class="header">peter<b>end</b></div>""".stripMargin
+
+    myHandler.onNext(span("the end"))
+    element.innerHTML shouldBe """<div><span>the end</span></div>"""
+  }
+
+
   test("Modifier stream should work for nested observables with seq modifiers ") {
     val innerHandler = Handler.create("b").unsafeRunSync()
     val outerHandler = Handler.create(Seq[VDomModifier]("a", data.test := "v", innerHandler)).unsafeRunSync
