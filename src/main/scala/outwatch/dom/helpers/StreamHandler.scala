@@ -9,34 +9,16 @@ object StreamHandler {
 
   private type Updater = js.Array[SimpleModifier] => js.Array[SimpleModifier]
 
-  private object KeyGen {
-    private var value = KeyGen.##
+  private def ensureStaticVNodeKeys(mods: SimpleModifiers, key: String): Unit = {
 
-    def newKey: Key = {
-      Key(newValue)
-    }
-
-    private def newValue: Int = {
-      value += 1
-      value
-    }
-  }
-
-  private def ensureKeys(mods: js.Array[SimpleModifier]): Unit = {
-    var hasKey = false
-    mods.indices.foreach { index =>
-      mods(index) match {
-        case vtree: VTree => vtree.modifiers.splice(0, 0, KeyGen.newKey)
-        case _: Key => hasKey = true
-        case _ =>
+    mods.nodes.indices.foreach { index =>
+      mods.nodes(index) match  {
+        case vtree: VTree => vtree.modifiers.splice(0, 0, Key(key + "." + index))
+        case _: StringVNode =>
       }
     }
-    // key must be appended at the end, original positions can be updated by the streams
-    if (!hasKey) {
-      mods.push(KeyGen.newKey)
-      ()
-    }
   }
+
 
   // separates modifiers into SimpleModifier(s) and ModifierStream(s)
   private def separateStreams(mods: Seq[Modifier]): (js.Array[SimpleModifier], js.Array[(Int, ModifierStream)]) = {
@@ -67,9 +49,6 @@ object StreamHandler {
           streams.push(index -> m)
       }
     }
-
-    // ensure key present for VTrees with stream siblings, as well as for the VTree containing the streams
-    if (streams.nonEmpty) ensureKeys(modifiers)
 
     (modifiers, streams)
   }
@@ -104,7 +83,9 @@ object StreamHandler {
     }
   }
 
+
   private[outwatch] def from(mods: Seq[Modifier]): SimpleModifiers = {
+
     val (modifiers, streams) = separateStreams(mods)
 
     if (streams.nonEmpty) {
@@ -115,13 +96,22 @@ object StreamHandler {
         Observable.fromIterable(streams).mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
       }
 
+      val streamID = streams.##.toString
+
       val modifiersStream = updaters.scan(modifiers)((mods, func) => func(mods))
-        .map(SimpleModifiers.from)
+        .map { m => SimpleModifiers.from(m, streamID) }
 
       // hooks must be appended at the end, original positions can be updated by the streams
       modifiers.push(Lifecycle.lifecycleHooks(modifiersStream): _*)
+
+      val simpleModifiers = SimpleModifiers.from(modifiers, streamID)
+      ensureStaticVNodeKeys(simpleModifiers, streamID)
+
+      simpleModifiers
     }
-    SimpleModifiers.from(modifiers)
+    else {
+      SimpleModifiers.from(modifiers)
+    }
   }
 }
 

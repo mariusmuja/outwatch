@@ -1,6 +1,6 @@
 package outwatch.dom.helpers
 
-import outwatch.dom._
+import outwatch.dom.{ asVDomModifier => _, _}
 
 import scala.scalajs.js
 
@@ -67,9 +67,10 @@ private[outwatch] final class SimpleModifiers(
 }
 
 private[outwatch] object SimpleModifiers {
-  def from(mods: js.Array[SimpleModifier]): SimpleModifiers = {
+  def from(mods: js.Array[SimpleModifier], streamID: js.UndefOr[String] = js.undefined): SimpleModifiers = {
     val sm = new SimpleModifiers()
     mods.foreach(sm.add)
+    sm.key = sm.key.orElse(streamID.map((s: String) => Key(s)))
     sm
   }
 }
