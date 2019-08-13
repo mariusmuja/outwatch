@@ -49,7 +49,7 @@ trait TagModifiers {
 
   val empty: VDomModifier = VDomModifier.empty
 
-  def async[T: AsVDomModifier, U: AsVDomModifier](value: IO[T], initial: U = empty): VDomModifier = VDomModifier.async(value, initial)
+  def async[T: AsVDomModifier, U: AsVDomModifier](initial: => U = empty)(value: IO[T]): VDomModifier = VDomModifier.async(initial)(value)
 
   def sync[T: AsVDomModifier](value: IO[T]): VDomModifier = VDomModifier.sync(value)
 }

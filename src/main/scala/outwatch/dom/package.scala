@@ -5,13 +5,15 @@ import scala.collection.mutable.ArrayBuffer
 
 package object dom extends Implicits with ManagedSubscriptions with SideEffects {
 
+
+
   type VNode = IO[VTree]
   type VDomModifier = IO[Modifier]
 
   object VDomModifier {
     val empty: VDomModifier = IO.pure(EmptyModifier)
 
-    def async[T: AsVDomModifier, U: AsVDomModifier](value: IO[T], initial: U = empty): VDomModifier = {
+    def async[T: AsVDomModifier, U: AsVDomModifier](initial: => U = empty)(value: IO[T]): VDomModifier = {
       Observable.fromTask(value).map(AsVDomModifier[T].asVDomModifier).prepend(AsVDomModifier[U].asVDomModifier(initial))
     }
 
