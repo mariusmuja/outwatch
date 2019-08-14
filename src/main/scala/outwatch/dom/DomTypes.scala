@@ -169,8 +169,8 @@ abstract class DocumentEvents
 // Styles
 
 private[outwatch] trait SimpleStyleBuilder extends builders.StyleBuilders[VDomModifier] {
-  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): VDomModifier = style := value
-  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): VDomModifier = style := value
+  override protected def buildDoubleStyleSetter(style: keys.Style[Double], value: Double): VDomModifier = new BasicStyleBuilder[Double](style.cssName) := value
+  override protected def buildIntStyleSetter(style: keys.Style[Int], value: Int): VDomModifier = new BasicStyleBuilder[Int](style.cssName) := value
   override protected def buildStringStyleSetter(style: keys.Style[_], value: String): VDomModifier = new BasicStyleBuilder[Any](style.cssName) := value
 }
 

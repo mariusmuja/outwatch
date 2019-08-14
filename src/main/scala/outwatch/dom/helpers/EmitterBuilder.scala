@@ -7,17 +7,18 @@ import outwatch.all.VDomModifier
 import outwatch.dom.{Emitter, IO, Modifier, Observable}
 
 
-trait EmitterBuilder[O, R] extends Any {
+trait EmitterBuilder[+O, +R] extends Any {
 
   def transform[T](tr: Observable[O] => Observable[T]): EmitterBuilder[T, R]
 
   def -->(sink: Sink[O]): R
 
   @inline final def apply[T](value: => T): EmitterBuilder[T, R] = mapTo(value)
+  @inline final def apply[T](latest: Observable[T]): EmitterBuilder[T, R] = withLatestFrom(latest)
 
   @inline final def mapTo[T](value: => T): EmitterBuilder[T, R] = map(_ => value)
 
-  @inline final def apply[T](latest: Observable[T]): EmitterBuilder[T, R] = transform(_.withLatestFrom(latest)((_, u) => u))
+  @inline final def withLatestFrom[T](latest: Observable[T]): EmitterBuilder[T, R] = transform(_.withLatestFrom(latest)((_, u) => u))
 
   @inline final def map[T](f: O => T): EmitterBuilder[T, R] = transform(_.map(f))
 
@@ -26,7 +27,7 @@ trait EmitterBuilder[O, R] extends Any {
   @inline final def collect[T](f: PartialFunction[O, T]): EmitterBuilder[T, R] = transform(_.collect(f))
 }
 
-final case class TransformingEmitterBuilder[E, O, R] private[helpers](
+final case class TransformingEmitterBuilder[E, +O, +R] private[helpers](
   transformer: Observable[E] => Observable[O],
   create: Observer[E] => R
 ) extends EmitterBuilder[O, R] {
@@ -41,7 +42,7 @@ final case class TransformingEmitterBuilder[E, O, R] private[helpers](
   }
 }
 
-final case class SimpleEmitterBuilder[E, R](create: Observer[E] => R) extends AnyVal with EmitterBuilder[E, R] {
+final case class SimpleEmitterBuilder[+E, +R](create: Observer[E] => R) extends AnyVal with EmitterBuilder[E, R] {
 
   def transform[T](tr: Observable[E] => Observable[T]): EmitterBuilder[T, R] =
     new TransformingEmitterBuilder[E, T, R](tr, create)

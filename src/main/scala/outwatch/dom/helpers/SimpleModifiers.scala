@@ -1,6 +1,6 @@
 package outwatch.dom.helpers
 
-import outwatch.dom.{ asVDomModifier => _, _}
+import outwatch.dom.{asVDomModifier => _, _}
 
 import scala.scalajs.js
 

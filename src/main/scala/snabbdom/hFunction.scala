@@ -155,7 +155,6 @@ object VNodeProxy {
 @JSImport("snabbdom", JSImport.Namespace, globalFallback = "snabbdom")
 object Snabbdom extends js.Object {
   def init(args: js.Array[Any]): js.Function2[Node | VNodeProxy, VNodeProxy, VNodeProxy] = js.native
-
 }
 
 @js.native

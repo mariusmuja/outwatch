@@ -10,15 +10,13 @@ object StreamHandler {
   private type Updater = js.Array[SimpleModifier] => js.Array[SimpleModifier]
 
   private def ensureStaticVNodeKeys(mods: SimpleModifiers, key: String): Unit = {
-
     mods.nodes.indices.foreach { index =>
-      mods.nodes(index) match  {
+      mods.nodes(index) match {
         case vtree: VTree => vtree.modifiers.splice(0, 0, Key(key + "." + index))
         case _: StringVNode =>
       }
     }
   }
-
 
   // separates modifiers into SimpleModifier(s) and ModifierStream(s)
   private def separateStreams(mods: Seq[Modifier]): (js.Array[SimpleModifier], js.Array[(Int, ModifierStream)]) = {
@@ -66,20 +64,16 @@ object StreamHandler {
   private def updaterCompositeModifier(index: Int, cm: CompositeModifier): Observable[Updater] = {
     val (modifiers, streams) = separateStreams(cm.modifiers)
 
-    if (streams.nonEmpty) {
-      val updaters = if (streams.length == 1) {
-        val (index, ms) = streams(0)
+    if (streams.isEmpty) {
+      Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
+    } else {
+      val updaters = Observable.fromIterable(streams).mergeMap { case (index, ms) =>
         updaterModifierStream(index, ms)
-      } else {
-        Observable.fromIterable(streams).mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
       }
 
       updaters.scan(modifiers)((mods, func) => func(mods))
         .prepend(modifiers)
         .map(mods => { a => a.update(index, SimpleCompositeModifier(mods)); a })
-    }
-    else {
-      Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
     }
   }
 
@@ -88,16 +82,14 @@ object StreamHandler {
 
     val (modifiers, streams) = separateStreams(mods)
 
-    if (streams.nonEmpty) {
-      val updaters = if (streams.length == 1) {
-        val (index, ms) = streams(0)
-        updaterModifierStream(index, ms)
-      } else {
-        Observable.fromIterable(streams).mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
-      }
-
+    if (streams.isEmpty) {
+      SimpleModifiers.from(modifiers)
+    } else {
       val streamID = streams.##.toString
 
+      val updaters = Observable.fromIterable(streams).mergeMap { case (index, ms) =>
+        updaterModifierStream(index, ms)
+      }
       val modifiersStream = updaters.scan(modifiers)((mods, func) => func(mods))
         .map { m => SimpleModifiers.from(m, streamID) }
 
@@ -108,9 +100,6 @@ object StreamHandler {
       ensureStaticVNodeKeys(simpleModifiers, streamID)
 
       simpleModifiers
-    }
-    else {
-      SimpleModifiers.from(modifiers)
     }
   }
 }

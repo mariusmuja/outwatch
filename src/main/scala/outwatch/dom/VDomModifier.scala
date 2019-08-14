@@ -20,9 +20,9 @@ private[outwatch] final case class ModifierStream(stream: Observable[Modifier]) 
 private[outwatch] sealed trait SimpleModifier extends FlatModifier
 
 
-private[outwatch] final case class SimpleCompositeModifier(modifiers: Seq[SimpleModifier]) extends SimpleModifier
+// SimpleModifier
 
-// Modifiers
+private[outwatch] final case class SimpleCompositeModifier(modifiers: Seq[SimpleModifier]) extends SimpleModifier
 
 private[outwatch] final case class Emitter(eventType: String, trigger: Event => Unit) extends SimpleModifier
 
@@ -43,13 +43,14 @@ private[outwatch] sealed trait StaticVNode extends SimpleModifier {
 }
 
 private[outwatch] final case class Key(value: Key.Value) extends SimpleModifier
-object Key {
+private[outwatch] object Key {
   type Value = DataObject.KeyValue
 }
 
 private[outwatch] case object EmptyModifier extends SimpleModifier
 
-// Attributes
+// Attribute
+
 private[outwatch] sealed trait Attr extends Attribute {
   val value: Attr.Value
 }
@@ -74,6 +75,7 @@ object Style {
   type Value = DataObject.StyleValue
 }
 
+// Style
 
 private[outwatch] final case class BasicStyle(title: String, value: String) extends Style
 private[outwatch] final case class AccumStyle(title: String, value: String, accum: (String, String) => String) extends Style
@@ -82,17 +84,21 @@ private[outwatch] final case class DelayedStyle(title: String, value: String) ex
 private[outwatch] final case class RemoveStyle(title: String, value: String) extends Style
 private[outwatch] final case class DestroyStyle(title: String, value: String) extends Style
 
-// Hooks
+// Hook
+
 private[outwatch] final case class InsertHook(observer: Observer[Element]) extends Hook[Element]
 private[outwatch] final case class PrePatchHook(observer: Observer[(Option[Element], Option[Element])]) extends Hook[(Option[Element], Option[Element])]
 private[outwatch] final case class UpdateHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class PostPatchHook(observer: Observer[(Element, Element)]) extends Hook[(Element, Element)]
 private[outwatch] final case class DestroyHook(observer: Observer[Element]) extends Hook[Element]
 
+// LifecycleHook
+
 private[outwatch] final case class InsertLifecycleHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
 private[outwatch] final case class DestroyLifecycleHook(fn: (VNodeProxy, Scheduler) => Unit) extends LifecycleHook
 
-// Static Nodes
+// StaticVNode
+
 private[outwatch] final case class StringVNode(string: String) extends StaticVNode {
   override def toSnabbdom(implicit s: Scheduler): VNodeProxy = VNodeProxy.fromString(string)
 }
