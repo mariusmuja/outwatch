@@ -3,3 +3,5 @@ target/
 project/project/
 index.html
 src/main/scala/browser
+*/yarn.lock
+yarn.lock
