@@ -45,7 +45,6 @@ inThisBuild(Seq(
     }
   },
   licenses += ("Apache-2.0", url("https://www.apache.org/licenses/LICENSE-2.0.html")),
-  resolvers += "jitpack" at "https://jitpack.io",
   publishMavenStyle := true,
   pomIncludeRepository := { _ => false },
 ))
@@ -64,6 +63,7 @@ lazy val redux = project.in(file("redux"))
 
 
 lazy val outwatch = project.in(file("."))
+  .enablePlugins(ScalaJSPlugin)
   .settings(name := "outwatch")
   .dependsOn(core, util, router, redux)
   .aggregate(core, util, router, redux)
