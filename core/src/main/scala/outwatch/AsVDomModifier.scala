@@ -31,7 +31,7 @@ object AsVDomModifier {
   }
   
   implicit def seqModifier[T: AsVDomModifier]: AsVDomModifier[Seq[T]] =
-    (value: Seq[T]) => value.map(AsVDomModifier[T].asVDomModifier).sequence.map(CompositeModifier)
+    (value: Seq[T]) => IO.sequence(value.map(AsVDomModifier[T].asVDomModifier)).map(CompositeModifier)
 
   implicit def optionModifier[T: AsVDomModifier]: AsVDomModifier[Option[T]] =
     (value: Option[T]) => value.fold(VDomModifier.empty)(AsVDomModifier[T].asVDomModifier)

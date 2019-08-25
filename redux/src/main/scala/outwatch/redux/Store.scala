@@ -8,7 +8,6 @@ import outwatch.Handler
 import outwatch.dom.{IO, Observable}
 import outwatch.Pipe.>-->
 
-import scala.language.{higherKinds, implicitConversions}
 import scala.util.control.NonFatal
 
 /**

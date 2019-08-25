@@ -5,7 +5,6 @@ import cats.syntax.all._
 import outwatch.AsVDomModifier
 import outwatch.dom.VDomModifier
 
-import scala.language.higherKinds
 import scala.util.control.NonFatal
 
 package object data {

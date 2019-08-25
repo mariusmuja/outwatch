@@ -124,7 +124,7 @@ trait Attrs
   // super.className.accum(" ") would have been nicer, but we can't do super.className on a lazy val
   override lazy val className = new AccumAttrBuilder[String]("class",
     stringReflectedAttr(attrKey = "class", propKey = "className"),
-    _ + " " + _
+    (a, b) => a.toString + " " + b.toString
   )
 }
 

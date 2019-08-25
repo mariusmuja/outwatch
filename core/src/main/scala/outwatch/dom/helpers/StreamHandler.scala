@@ -19,13 +19,13 @@ object StreamHandler {
   }
 
   // separates modifiers into SimpleModifier(s) and ModifierStream(s)
-  private def separateStreams(mods: Seq[Modifier]): (js.Array[SimpleModifier], js.Array[(Int, ModifierStream)]) = {
+  private def separateStreams(mods: Iterable[Modifier]): (js.Array[SimpleModifier], js.Array[(Int, ModifierStream)]) = {
 
     // flatten first
     val flattened = js.Array[FlatModifier]()
-    flattened.sizeHint(mods.length)
+    flattened.sizeHint(mods.size)
 
-    def flattenHelper(mods: Seq[Modifier]): Unit = {
+    def flattenHelper(mods: Iterable[Modifier]): Unit = {
       mods.foreach {
         case CompositeModifier(inner) => flattenHelper(inner)
         case m: FlatModifier => flattened.push(m)
@@ -78,7 +78,7 @@ object StreamHandler {
   }
 
 
-  private[outwatch] def from(mods: Seq[Modifier]): SimpleModifiers = {
+  private[outwatch] def from(mods: Iterable[Modifier]): SimpleModifiers = {
 
     val (modifiers, streams) = separateStreams(mods)
 

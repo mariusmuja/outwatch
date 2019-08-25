@@ -9,7 +9,6 @@ import outwatch.dom.helpers._
 import snabbdom.{DataObject, hFunction}
 
 import scala.collection.mutable
-import scala.language.reflectiveCalls
 import scala.scalajs.js
 import scala.scalajs.js.JSON
 

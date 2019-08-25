@@ -9,7 +9,6 @@ import outwatch.dom.{IO, Observable, VNode, dsl}
 import outwatch.Pipe.>-->
 
 import scala.annotation.tailrec
-import scala.language.implicitConversions
 import scala.reflect.ClassTag
 import scala.util.control.NonFatal
 

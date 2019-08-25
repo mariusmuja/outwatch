@@ -27,7 +27,7 @@ private[outwatch] object SnabbdomModifiers {
   }
 
   @inline private def createEvents(emitters: js.Array[Emitter]): js.Dictionary[js.Function1[dom.Event, Unit]] =
-    emitters.groupBy(_.eventType).mapValues(emittersToFunction).toJSDictionary
+    emitters.groupBy(_.eventType).view.mapValues(emittersToFunction).toMap.toJSDictionary
 
 
 
@@ -40,12 +40,12 @@ private[outwatch] object SnabbdomModifiers {
     else js.undefined
   }
 
-  @inline private def createHookPair(hooks: Seq[Hook[(dom.Element, dom.Element)]])(implicit s: Scheduler): Hooks.HookPairFn = {
+  @inline private def createHookPair(hooks: js.Array[_ <: Hook[(dom.Element, dom.Element)]])(implicit s: Scheduler): Hooks.HookPairFn = {
     (old: VNodeProxy, cur: VNodeProxy) =>
       for (o <- old.elm; c <- cur.elm) hooks.foreach(_.observer.feed((o, c) :: Nil))
   }
 
-  @inline private def createHookPairOption(hooks: Seq[Hook[(Option[dom.Element], Option[dom.Element])]])(implicit s: Scheduler): Hooks.HookPairFn = {
+  @inline private def createHookPairOption(hooks: js.Array[_ <: Hook[(Option[dom.Element], Option[dom.Element])]])(implicit s: Scheduler): Hooks.HookPairFn = {
     (old: VNodeProxy, cur: VNodeProxy) =>
       hooks.foreach(_.observer.feed((old.elm.toOption, cur.elm.toOption)::Nil))
   }

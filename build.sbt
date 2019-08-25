@@ -5,7 +5,7 @@ inThisBuild(Seq(
   organization := "com.github.mariusmuja",
   scalaVersion := crossScalaVersions.value.head,
   version := "1.0.0-RC1-" + git.gitHeadCommit.value.get.take(8),
-  crossScalaVersions := Seq("2.12.9", "2.11.12"),
+  crossScalaVersions := Seq("2.13.0", "2.12.9", "2.11.12"),
 
   scalacOptions += {
     val local = baseDirectory.value.toURI
@@ -21,26 +21,36 @@ inThisBuild(Seq(
       "-feature" ::
       "-language:_" ::
       "-Xcheckinit" ::
-      "-Xfuture" ::
       "-Xlint" ::
-      "-Ypartial-unification" ::
-      "-Yno-adapted-args" ::
-      "-Ywarn-infer-any" ::
       "-Ywarn-value-discard" ::
-      "-Ywarn-nullary-override" ::
-      "-Ywarn-nullary-unit" ::
       "-P:scalajs:sjsDefinedByDefault" ::
       Nil,
 
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, 12)) =>
+      case Some((2, 13)) =>
         "-Ywarn-extra-implicit" ::
           "-Ywarn-unused:-explicits,-implicits,_" ::
           Nil
+      case Some((2, 12)) =>
+      "-Xfuture" ::
+        "-Ywarn-extra-implicit" ::
+          "-Ywarn-unused:-explicits,-implicits,_" ::
+      	"-Ypartial-unification" ::
+      "-Yno-adapted-args" ::
+      "-Ywarn-infer-any" ::
+      "-Ywarn-nullary-override" ::
+      "-Ywarn-nullary-unit" ::
+          Nil
       case _             =>
+      "-Xfuture" ::
         "-Ywarn-unused" ::
           "-Xexperimental" ::   // SAM conversion
+      	"-Ypartial-unification" ::
+      "-Yno-adapted-args" ::
+      "-Ywarn-infer-any" ::
+      "-Ywarn-nullary-override" ::
+      "-Ywarn-nullary-unit" ::
           Nil
     }
   },

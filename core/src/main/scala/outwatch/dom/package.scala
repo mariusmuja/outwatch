@@ -20,7 +20,7 @@ package object dom extends Implicits with ManagedSubscriptions with SideEffects 
     def sync[T: AsVDomModifier](value: IO[T]): VDomModifier = value.flatMap(AsVDomModifier[T].asVDomModifier)
 
     def apply(modifier: VDomModifier, modifier2: VDomModifier, modifiers: VDomModifier*): VDomModifier = {
-      (ArrayBuffer(modifier, modifier2) ++ modifiers).sequence.map(CompositeModifier)
+      IO.sequence((ArrayBuffer(modifier, modifier2) ++ modifiers)).map(CompositeModifier)
     }
 
     def apply[T: AsVDomModifier](t: T): VDomModifier = t

@@ -3,7 +3,6 @@ package outwatch.router
 import java.util.UUID
 import java.util.regex.{Matcher, Pattern}
 
-import scala.language.{higherKinds, implicitConversions}
 import shapeless.{::, Generic, HList, HNil}
 import shapeless.ops.hlist.{Reverse, Tupler}
 

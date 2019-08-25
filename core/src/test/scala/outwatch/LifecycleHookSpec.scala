@@ -254,7 +254,7 @@ object LifecycleHookSpec extends JSDomSuite {
   }
 
 
-  private def createLifecycleHooks: (Seq[String], VDomModifier) = {
+  private def createLifecycleHooks: (scala.collection.Seq[String], VDomModifier) = {
 
     val hooks = mutable.ArrayBuffer.empty[String]
     val insertSink = Sink.create { _: Element =>

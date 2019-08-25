@@ -14,8 +14,4 @@ trait Implicits {
 
   implicit def StyleIsBuilder[T](style: keys.Style[T]): BasicStyleBuilder[T] = new BasicStyleBuilder[T](style.cssName)
 
-  private[outwatch] implicit class SeqIOSequence[T](args: Seq[IO[T]]) {
-    val sequence: IO[Seq[T]] = IO.sequence(args)
-  }
-
 }

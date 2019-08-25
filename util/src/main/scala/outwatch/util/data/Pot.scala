@@ -301,8 +301,6 @@ sealed abstract class Pot[+A] extends Product with Serializable { self =>
 
 object Pot {
 
-  import scala.language.implicitConversions
-
   /** An implicit conversion that converts an option to an iterable value
     */
   implicit def pot2Iterable[A](pot: Pot[A]): Iterable[A] = pot.toList

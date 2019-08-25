@@ -13,7 +13,7 @@ object all extends Implicits with ManagedSubscriptions with SideEffects with Sin
     val empty: VDomModifier = IO.pure(EmptyModifier)
 
     def apply(modifier: VDomModifier, modifier2: VDomModifier, modifiers: VDomModifier*): VDomModifier = {
-      (ArrayBuffer(modifier, modifier2) ++ modifiers).sequence.map(CompositeModifier)
+      IO.sequence((ArrayBuffer(modifier, modifier2) ++ modifiers)).map(CompositeModifier)
     }
 
     def apply[T: AsVDomModifier](t: T): VDomModifier = AsVDomModifier[T].asVDomModifier(t)

@@ -13,7 +13,7 @@ private[outwatch] sealed trait Modifier extends Any
 
 private[outwatch] sealed trait FlatModifier extends Modifier
 
-private[outwatch] final case class CompositeModifier(modifiers: Seq[Modifier]) extends Modifier
+private[outwatch] final case class CompositeModifier(modifiers: Iterable[Modifier]) extends Modifier
 
 private[outwatch] final case class ModifierStream(stream: Observable[Modifier]) extends FlatModifier
 
@@ -22,7 +22,7 @@ private[outwatch] sealed trait SimpleModifier extends FlatModifier
 
 // SimpleModifier
 
-private[outwatch] final case class SimpleCompositeModifier(modifiers: Seq[SimpleModifier]) extends SimpleModifier
+private[outwatch] final case class SimpleCompositeModifier(modifiers: Iterable[SimpleModifier]) extends SimpleModifier
 
 private[outwatch] final case class Emitter(eventType: String, trigger: Event => Unit) extends SimpleModifier
 
@@ -106,7 +106,7 @@ private[outwatch] final case class StringVNode(string: String) extends StaticVNo
 private[outwatch] final case class VTree(nodeType: String, modifiers: js.Array[Modifier] = js.Array()) extends StaticVNode {
 
   def apply(args: VDomModifier*): VNode = {
-    args.sequence.map(args => copy(modifiers = modifiers ++ args))
+    IO.sequence(args).map(args => copy(modifiers = modifiers ++ args))
   }
 
   private var proxy: Option[VNodeProxy] = None

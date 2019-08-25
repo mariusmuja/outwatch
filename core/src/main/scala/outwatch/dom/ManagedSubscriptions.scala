@@ -19,7 +19,7 @@ trait ManagedSubscriptions {
 
   def managed(sub1: IO[Cancelable], sub2: IO[Cancelable], subscriptions: IO[Cancelable]*): VDomModifier = {
 
-    (sub1 :: sub2 :: subscriptions.toList).sequence.flatMap { subs =>
+    IO.sequence(sub1 :: sub2 :: subscriptions.toList).flatMap { subs =>
       val composite = CompositeCancelable(subs: _*)
       Sink.create[dom.Element]{ _ =>
         composite.cancel()
