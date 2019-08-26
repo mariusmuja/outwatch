@@ -27,7 +27,7 @@ private[outwatch] object SnabbdomModifiers {
   }
 
   @inline private def createEvents(emitters: js.Array[Emitter]): js.Dictionary[js.Function1[dom.Event, Unit]] =
-    emitters.groupBy(_.eventType).view.mapValues(emittersToFunction).toMap.toJSDictionary
+    emitters.groupBy(_.eventType).mapValues(emittersToFunction).toMap.toJSDictionary
 
 
 
