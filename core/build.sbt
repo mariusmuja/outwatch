@@ -4,10 +4,10 @@ enablePlugins(ScalaJSBundlerPlugin)
 name := "outwatch-core"
 
 libraryDependencies ++= Seq(
-  "io.monix"        %%% "monix"       % "3.0.0-eddc79d-SNAPSHOT",
+  "io.monix"        %%% "monix"       % "3.0.0",
   "org.scala-js"    %%% "scalajs-dom" % "0.9.7",
   "com.raquo"       %%% "domtypes"    % "0.9.5",
-  "org.typelevel"   %%% "cats-core"   % "2.0.0-RC1",
+  "org.typelevel"   %%% "cats-core"   % "2.0.0",
   "io.monix" %%% "minitest" % "2.6.0" % Test
 )
 
