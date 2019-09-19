@@ -165,6 +165,6 @@ object Sink {
 
 }
 
-final case class ObserverSink[-T](sub: Subscriber[T]) extends Sink[T] {
-  override val subscriber = sub
+final case class ObserverSink[-T](sub: Subscriber[T]) extends AnyVal with Sink[T] {
+  @inline override def subscriber = sub
 }
