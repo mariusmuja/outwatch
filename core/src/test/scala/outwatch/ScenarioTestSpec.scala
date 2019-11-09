@@ -84,34 +84,28 @@ object ScenarioTestSpec extends JSDomSuite {
     document.getElementById("greeting").innerHTML shouldBe greetStart + name2
   }
 
-  test("A component should be referential transparent") {
 
-    def component() = {
-      Handler.create[String].flatMap { handler =>
-        div(
-          button(onClick("clicked") --> handler),
-          div(cls := "label", handler)
-        )
+  test("A component should be referential transparent 2") {
+
+    def emitter() = {
+      Handler.create[Int].flatMap { handler =>
+        onClick.mapTo(0).transform(s => s) --> handler
       }
     }
 
     val clickEvt = document.createEvent("Events")
     initEvent(clickEvt)("click", true, true)
 
-    val comp = component()
+    val emt = emitter()
 
-    val component1 = div(component(), component())
-    val component2 = div(comp, comp)
+    val component1 = div(emitter(), emitter())
+    val component2 = div(emt, emt)
 
     val element1 = document.createElement("div")
     OutWatch.renderInto(element1, component1).unsafeRunSync()
 
     val element2 = document.createElement("div")
     OutWatch.renderInto(element2, component2).unsafeRunSync()
-
-    element1.getElementsByTagName("button").item(0).dispatchEvent(clickEvt)
-
-    element2.getElementsByTagName("button").item(0).dispatchEvent(clickEvt)
 
     element1.innerHTML shouldBe element2.innerHTML
   }
