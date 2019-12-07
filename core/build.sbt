@@ -5,8 +5,8 @@ name := "outwatch-core"
 
 libraryDependencies ++= Seq(
   "io.monix"        %%% "monix"       % "3.1.0",
-  "org.scala-js"    %%% "scalajs-dom" % "0.9.7",
-  "com.raquo"       %%% "domtypes"    % "0.9.5",
+  "org.scala-js"    %%% "scalajs-dom" % "0.9.8",
+  "com.raquo"       %%% "domtypes"    % "0.9.6",
   "org.typelevel"   %%% "cats-core"   % "2.0.0",
   "io.monix" 	    %%% "minitest"    % "2.7.0" % Test
 )
