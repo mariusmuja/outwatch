@@ -23,7 +23,7 @@ inThisBuild(Seq(
       "-Xcheckinit" ::
       "-Xlint" ::
       "-Ywarn-value-discard" ::
-      "-P:scalajs:sjsDefinedByDefault" ::
+//      "-P:scalajs:sjsDefinedByDefault" ::
       Nil,
 
   scalacOptions ++= {
