@@ -18,8 +18,10 @@ testFrameworks += new TestFramework("minitest.runner.Framework")
 
 
 npmDependencies in Compile ++= Seq(
-  "snabbdom" -> "0.7.2"
+  "snabbdom" -> "0.7.4"
 )
+
+skip in packageJSDependencies := false
 
 requireJsDomEnv in Test := true
 

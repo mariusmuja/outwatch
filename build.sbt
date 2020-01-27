@@ -31,6 +31,7 @@ inThisBuild(Seq(
       case Some((2, 13)) =>
         "-Ywarn-extra-implicit" ::
           "-Ywarn-unused:-explicits,-implicits,_" ::
+          "-P:scalajs:sjsDefinedByDefault" ::
           Nil
       case Some((2, 12)) =>
       "-Xfuture" ::
