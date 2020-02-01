@@ -17,6 +17,8 @@ private[outwatch] final case class CompositeModifier(modifiers: Iterable[Modifie
 
 private[outwatch] final case class ModifierStream(stream: Observable[Modifier]) extends FlatModifier
 
+//private[outwatch] final case class ValueModifierStream(value: SimpleModifier, stream: Observable[Modifier]) extends FlatModifier
+
 private[outwatch] sealed trait SimpleModifier extends FlatModifier
 
 

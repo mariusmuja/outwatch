@@ -31,14 +31,14 @@ object StreamHandler {
         case m: FlatModifier => flattened.push(m)
       }
     }
-
     flattenHelper(mods)
 
     // separate
-    val modifiers = new js.Array[SimpleModifier](flattened.size)
+    val modifiers = new js.Array[SimpleModifier](flattened.length)
     val streams = js.Array[(Int, ModifierStream)]()
 
-    flattened.indices.foreach { index =>
+    var index = 0
+    while (index < flattened.length) {
       flattened(index) match {
         case m: SimpleModifier =>
           modifiers.update(index, m)
@@ -46,6 +46,7 @@ object StreamHandler {
           modifiers.update(index, EmptyModifier)
           streams.push(index -> m)
       }
+      index += 1
     }
 
     (modifiers, streams)
@@ -67,9 +68,8 @@ object StreamHandler {
     if (streams.isEmpty) {
       Observable.pure { a => a.update(index, SimpleCompositeModifier(modifiers)); a }
     } else {
-      val updaters = Observable.fromIterable(streams).mergeMap { case (index, ms) =>
-        updaterModifierStream(index, ms)
-      }
+      val updaters = Observable.fromIterable(streams)
+        .mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
 
       updaters.scan(modifiers)((mods, func) => func(mods))
         .prepend(modifiers)
@@ -87,9 +87,9 @@ object StreamHandler {
     } else {
       val streamID = streams.##.toString
 
-      val updaters = Observable.fromIterable(streams).mergeMap { case (index, ms) =>
-        updaterModifierStream(index, ms)
-      }
+      val updaters = Observable.fromIterable(streams)
+        .mergeMap { case (index, ms) => updaterModifierStream(index, ms) }
+
       val modifiersStream = updaters.scan(modifiers)((mods, func) => func(mods))
         .map { m => SimpleModifiers.from(m, streamID) }
 
