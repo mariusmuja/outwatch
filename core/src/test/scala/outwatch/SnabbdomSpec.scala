@@ -1,7 +1,7 @@
 package outwatch
 
 import org.scalajs.dom.{document, html}
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 import snabbdom._
 
 import scala.scalajs.js
@@ -49,10 +49,10 @@ object SnabbdomSpec extends JSDomSuite {
     OutWatch.renderInto("#app", div(nodes)).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("input", false, true)
+    inputEvt.initEvent("input", false, true)
 
     val clickEvt = document.createEvent("Events")
-    initEvent(clickEvt)("click", true, true)
+    clickEvt.initEvent("click", true, true)
 
     def inputElement() = document.getElementById("input").asInstanceOf[html.Input]
     val btn = document.getElementById("btn")

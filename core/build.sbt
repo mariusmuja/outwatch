@@ -4,11 +4,11 @@ enablePlugins(ScalaJSBundlerPlugin)
 name := "outwatch-core"
 
 libraryDependencies ++= Seq(
-  "io.monix"        %%% "monix"       % "3.1.0",
-  "org.scala-js"    %%% "scalajs-dom" % "0.9.8",
-  "com.raquo"       %%% "domtypes"    % "0.9.6",
-  "org.typelevel"   %%% "cats-core"   % "2.0.0",
-  "io.monix" 	    %%% "minitest"    % "2.7.0" % Test
+  "io.monix"        %%% "monix"       % "3.2.1",
+  "org.scala-js"    %%% "scalajs-dom" % "1.0.0",
+  "com.raquo"       %%% "domtypes"    % "0.10.0",
+  "org.typelevel"   %%% "cats-core"   % "2.1.1",
+  "io.monix" 	    %%% "minitest"    % "2.8.2" % Test
 )
 
 resolvers += Resolver.sonatypeRepo("public")
@@ -21,14 +21,12 @@ npmDependencies in Compile ++= Seq(
   "snabbdom" -> "0.7.2"
 )
 
-skip in packageJSDependencies := false
+//skip in packageJSDependencies := false
 
 requireJsDomEnv in Test := true
 
 publishArtifact in Test := false
 
 parallelExecution in Test := false
-
-version in installJsdom := "15.1.1"
 
 useYarn := true

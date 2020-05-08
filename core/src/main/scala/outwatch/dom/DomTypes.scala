@@ -126,6 +126,8 @@ trait Attrs
     stringReflectedAttr(attrKey = "class", propKey = "className"),
     (a, b) => a.toString + " " + b.toString
   )
+
+  lazy val id = idAttr
 }
 
 // Svg attributes

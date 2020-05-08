@@ -2,7 +2,7 @@ package outwatch
 
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{document, html}
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 import outwatch.dom._
 import outwatch.dom.dsl._
 import outwatch.dom.helpers._
@@ -1186,7 +1186,7 @@ object OutWatchDomSpec extends JSDomSuite {
 
     clickCounter shouldBe 0
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
     clickCounter shouldBe 1
   }

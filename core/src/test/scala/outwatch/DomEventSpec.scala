@@ -2,7 +2,7 @@ package outwatch
 
 import monix.reactive.subjects.PublishSubject
 import org.scalajs.dom.{html, _}
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 import outwatch.dom._
 import outwatch.dom.dsl.{svg => _, _}
 
@@ -24,7 +24,7 @@ object DomEventSpec extends JSDomSuite {
     document.getElementById("btn").hasAttribute("disabled") shouldBe false
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
     document.getElementById("btn").hasAttribute("disabled") shouldBe true
@@ -46,7 +46,7 @@ object DomEventSpec extends JSDomSuite {
     document.getElementById("child").innerHTML shouldBe ""
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
     document.getElementById("child").innerHTML shouldBe message
@@ -77,7 +77,7 @@ object DomEventSpec extends JSDomSuite {
     messages.onNext(firstMessage)
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
     document.getElementById("click").dispatchEvent(event)
 
     document.getElementById("child").innerHTML shouldBe firstMessage
@@ -224,7 +224,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
 
     document.getElementById("click").dispatchEvent(event)
 
@@ -248,7 +248,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
 
 
     document.getElementById("click").dispatchEvent(event)
@@ -276,7 +276,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
 
     document.getElementById("click").dispatchEvent(event)
 
@@ -298,7 +298,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("input", false, true)
+    inputEvt.initEvent("input", false, true)
 
 
     document.getElementById("input").dispatchEvent(inputEvt)
@@ -328,7 +328,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("click", false, true)
+    inputEvt.initEvent("click", false, true)
 
     document.getElementById("button").dispatchEvent(inputEvt)
     stream.onNext("woop")
@@ -359,7 +359,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("click", true, false)
+    inputEvt.initEvent("click", true, false)
 
     document.getElementById("input").dispatchEvent(inputEvt)
 
@@ -390,10 +390,10 @@ object DomEventSpec extends JSDomSuite {
     val submitButton = document.getElementById("submit")
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("input", false, true)
+    inputEvt.initEvent("input", false, true)
 
     val clickEvt = document.createEvent("Events")
-    initEvent(clickEvt)("click", true, true)
+    clickEvt.initEvent("click", true, true)
 
     inputElement.value = "item 1"
     inputElement.dispatchEvent(inputEvt)
@@ -429,7 +429,7 @@ object DomEventSpec extends JSDomSuite {
     checkbox.checked shouldBe false
 
     val clickEvt = document.createEvent("Events")
-    initEvent(clickEvt)("click", true, true)
+    clickEvt.initEvent("click", true, true)
 
     onButton.dispatchEvent(clickEvt)
 
@@ -456,7 +456,7 @@ object DomEventSpec extends JSDomSuite {
     OutWatch.renderInto("#app", node).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("click", true, false)
+    inputEvt.initEvent("click", true, false)
 
     document.getElementById("input").dispatchEvent(inputEvt)
 

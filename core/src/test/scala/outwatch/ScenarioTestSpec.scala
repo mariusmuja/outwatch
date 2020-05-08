@@ -1,7 +1,7 @@
 package outwatch
 
 import org.scalajs.dom.{html, _}
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 import outwatch.dom._
 import outwatch.dom.dsl._
 
@@ -33,7 +33,7 @@ object ScenarioTestSpec extends JSDomSuite {
     OutWatch.renderInto(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
 
     document.getElementById("counter").innerHTML shouldBe 0.toString
 
@@ -68,7 +68,7 @@ object ScenarioTestSpec extends JSDomSuite {
 
 
     val evt = document.createEvent("HTMLEvents")
-    initEvent(evt)("input", false, true)
+    evt.initEvent("input", false, true)
     val name = "Luka"
 
     document.getElementById("input").asInstanceOf[html.Input].value = name
@@ -94,7 +94,7 @@ object ScenarioTestSpec extends JSDomSuite {
     }
 
     val clickEvt = document.createEvent("Events")
-    initEvent(clickEvt)("click", true, true)
+    clickEvt.initEvent("click", true, true)
 
     val emt = emitter()
 
@@ -180,10 +180,10 @@ object ScenarioTestSpec extends JSDomSuite {
     OutWatch.renderInto(root, vtree).unsafeRunSync()
 
     val inputEvt = document.createEvent("HTMLEvents")
-    initEvent(inputEvt)("input", false, true)
+    inputEvt.initEvent("input", false, true)
 
     val clickEvt = document.createEvent("Events")
-    initEvent(clickEvt)("click", true, true)
+    clickEvt.initEvent("click", true, true)
 
     val inputElement = document.getElementById("input").asInstanceOf[html.Input]
     val submitButton = document.getElementById("submit")

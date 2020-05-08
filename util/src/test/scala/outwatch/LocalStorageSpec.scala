@@ -2,7 +2,7 @@ package outwatch
 
 import org.scalajs.dom.window.localStorage
 import org.scalajs.dom.{document, window}
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 
 import scala.collection.mutable
 
@@ -16,7 +16,7 @@ trait LocalStorageHelper {
     else window.localStorage.setItem(key, newValue)
 
     val event = document.createEvent("Events")
-    initEvent(event)("storage", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("storage", canBubbleArg = true, cancelableArg = false)
     event.asInstanceOf[js.Dynamic].key = key
     event.asInstanceOf[js.Dynamic].newValue = newValue
     event.asInstanceOf[js.Dynamic].oldValue = oldValue

@@ -2,7 +2,7 @@ package outwatch
 
 
 import org.scalajs.dom.document
-import outwatch.Deprecated.IgnoreWarnings.initEvent
+import outwatch.EventExt._
 import outwatch.dom._
 import outwatch.dom.dsl._
 import outwatch.redux.Store
@@ -40,7 +40,7 @@ object StoreSpec extends JSDomSuite {
     OutWatch.renderInto(root, node).unsafeRunSync()
 
     val event = document.createEvent("Events")
-    initEvent(event)("click", canBubbleArg = true, cancelableArg = false)
+    event.initEvent("click", canBubbleArg = true, cancelableArg = false)
 
     document.getElementById("counter").innerHTML shouldBe 0.toString
 
