@@ -5,7 +5,7 @@ inThisBuild(Seq(
   organization := "com.github.mariusmuja",
   scalaVersion := crossScalaVersions.value.head,
   version := "1.0.0-RC1-" + git.gitHeadCommit.value.get.take(8),
-  crossScalaVersions := Seq("2.13.1", "2.12.10"),
+  crossScalaVersions := Seq("2.13.2", "2.12.11"),
 
   scalacOptions += {
     val local = baseDirectory.value.toURI

@@ -4,7 +4,7 @@ name := "outwatch-util"
 
 requireJsDomEnv in Test := true
 
-version in installJsdom := "11.12.0"
+version in installJsdom := "16.2.2"
 
 publishArtifact in Test := false
 
